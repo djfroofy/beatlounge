@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import random
 
 from twisted.internet import reactor
@@ -8,9 +10,9 @@ import fluidsynth
 fs = fluidsynth.Synth()
 fs.start()
 
-sfid = fs.sfload("example.sf2")
-bass_sfid = fs.sfload("hs_magic_techno_drums.sf2")
-johan_sfid = fs.sfload("Johansson_BeautifulPad.sf2")
+sfid = fs.sfload("sf2/example.sf2")
+bass_sfid = fs.sfload("sf2/hs_magic_techno_drums.sf2")
+johan_sfid = fs.sfload("sf2/Johansson_BeautifulPad.sf2")
 fs.program_select(0, sfid, 0, 0)
 fs.program_select(1, sfid, 0, 0)
 fs.program_select(2, sfid, 0, 0)
