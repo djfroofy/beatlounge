@@ -36,7 +36,7 @@ fs.start()
 
 
 
-class Enunciator(object):
+class Instrument(object):
 
     def __init__(self, *args, **kwargs):
         self.sf2 = kwargs['sf2path']
@@ -44,7 +44,7 @@ class Enunciator(object):
         self.fs = fs
         self.sfid = self.fs.sfload(self.sf2)
 
-        super(Enunciator, self).__init__()
+        super(Instrument, self).__init__()
 
     def __str__(self, *args, **kwargs):
         return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
