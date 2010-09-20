@@ -1,14 +1,16 @@
 #!/usr/bin/env python
+import types
 import random
-import fluidsynth
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
+import fluidsynth
+
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 
-import constants
+from txbeatlounge import constants
 
 
 def windex(lst):
@@ -35,7 +37,6 @@ fs = fluidsynth.Synth()
 fs.start()
 
 
-
 class Enunciator(object):
 
     def __init__(self, *args, **kwargs):
@@ -49,38 +50,34 @@ class Enunciator(object):
     def __str__(self, *args, **kwargs):
         return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
 
-    def select_program(self):
-        self.fs.program_select(self.channel, self.sfid, 0, 0)
+    def program_select(self, bank=0, preset=0):
+        self.fs.program_select(self.channel, self.sfid, bank, preset)
+
+    select_program = program_select
 
     def stopall(self):
         for n in range(128):
-            self.fs.noteoff(self.channel, n)
+            self.noteoff(n)
 
     def playchord(self, notes, vol=50):
         for n in notes:
-            self.playnote(n, vol)
+            self.noteon(n, vol)
 
     def stopchord(self, notes):
         for n in notes:
-            self.fs.noteoff(self.channel, n)
-
-    def playnote(self, n, vol=50):
-        self.fs.noteon(self.channel, n, vol)
-
-    def stopnote(self, n):
-        self.fs.noteoff(self.channel, n)
+            self.noteoff(n)
 
     def on_octaves(self, note, vol=30, up=0):
         '''Turns on 60, 48... for note=60'''
 
         if up:
             while note <= 127:
-                self.fs.noteon(self.channel, note, vol)
+                self.noteon(note, vol)
                 note += 12
 
         else:
             while note >= 0:
-                self.fs.noteon(self.channel, note, vol)
+                self.noteon(note, vol)
                 note -= 12
 
     def off_octaves(self, note, up=0):
@@ -88,13 +85,52 @@ class Enunciator(object):
 
         if up:
             while note <= 127:
-                self.fs.noteoff(self.channel, note)
+                self.noteoff(note)
                 note += 12
 
             while note >= 0:
-                self.fs.noteoff(self.channel, note)
+                self.noteoff(note)
                 note -= 12
 
+
+# Proxy normal methods taking a channel on Synth
+for attr in dir(fluidsynth.Synth):
+    if attr[0] == '_':
+        continue
+    method = getattr(fluidsynth.Synth, attr)
+    if not type(method) == types.MethodType:
+        continue
+    if hasattr(Enunciator, attr):
+        continue
+    varnames = method.im_func.func_code.co_varnames
+    if varnames[1:3] == ('chan', 'sfid'):
+        def make_wrapper(method_name):
+            def method(self, *p, **kw):
+                return getattr(self.fs, method_name)(self.channel, self.sfid, *p, **kw)
+            return method
+        setattr(Enunciator, attr, make_wrapper(attr))
+    elif varnames[1:2] == ('chan',):
+        def make_wrapper(method_name):
+            def method(self, *p, **kw):
+                return getattr(self.fs, method_name)(self.channel, *p, **kw)
+            return method
+        setattr(Enunciator, attr, make_wrapper(attr))
+    elif varnames[1:2] == ('sfid',):
+        def make_wrapper(method_name):
+            def method(self, *p, **kw):
+                return getattr(self.fs, method_name)(self.sfid, *p, **kw)
+            return method
+        setattr(Enunciator, attr, make_wrapper(attr))
+    else:
+        def make_wrapper(method_name):
+            def method(self, *p, **kw):
+                return getattr(self.fs, method_name)(*p, **kw)
+            return method
+        setattr(Enunciator, attr, make_wrapper(attr))
+                   
+
+Enunciator.playnote = Enunciator.noteon
+Enunciator.stopnote = Enunciator.noteoff
 
 class PatternGenerator(object):
 
@@ -105,7 +141,6 @@ class PatternGenerator(object):
         self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
         self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
         super(PatternGenerator, self).__init__()
-        print 'wtf'
         logging.debug('instantiated PatternGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights))
 
     def __str__(self):
