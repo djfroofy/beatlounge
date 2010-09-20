@@ -117,7 +117,7 @@ class PatternGenerator(object):
 
     @property
     def notes(self):
-        return ''.join([i[0] for i in self.noteweights])
+        return [i[0] for i in self.noteweights]
 
     @property
     def all_midi_notes(self):
