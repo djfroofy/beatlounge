@@ -97,7 +97,15 @@ class Instrument(object):
                 note -= 12
 
 
-class PatternGenerator(object):
+class BaseGenerator(object):
+    pass
+
+
+
+
+
+
+class PatternGenerator(BaseGenerator):
 
     def __init__(self, *args, **kwargs):
         self.e = args[0]
@@ -156,16 +164,41 @@ class PatternGenerator(object):
 
 
 
+def rising_gen(gen):
+    while True:
+        for i in range(gen.num):
+            if not any([divmod(i, o)[1] for o in gen.ones]):
+                gen.e.playchord(gen.all_midi_notes, 127)
 
-class BeatGenerator(object):
+            gen.e.playnote(gen.choose_one(), i)
+            yield
+
+
+def kick_gen(gen):
+    while True:
+        for i in range(gen.num):
+            if not all([divmod(i, o)[1] for o in gen.ones]):
+                gen.e.playnote(gen.choose_one(), random.randrange(30,50))
+
+            else:
+                if random.random() < .5:
+                    gen.e.playnote(gen.choose_one(), random.randrange(15, 40))
+
+            yield
+
+
+class BeatGenerator(BaseGenerator):
 
     def __init__(self, *args, **kwargs):
         self.e = args[0]
-        self.number = kwargs.get('number') or 128
-        self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
+        self.num = kwargs.get('number') or 128
+        self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4]
         self.midi_noteweights = kwargs.get('midi_noteweights') or [(47, 10),(48, 10),(49, 10),(50, 10),(51, 10),(52, 10)]
+
+        self.gen = kwargs.get('gen') or kick_gen
         super(BeatGenerator, self).__init__()
-        logging.debug('instantiated BeatGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.midi_noteweights))
+        self.e.select_program()
+        logging.debug('instantiated BeatGenerator with: %s, %s, %s, %s' % (self.e, self.num, self.ones, self.midi_noteweights))
 
     def __str__(self):
         return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.midi_noteweights)
@@ -174,11 +207,17 @@ class BeatGenerator(object):
         return iter(self)
 
     def __iter__(self):
+        return self.gen(self)
+        '''
         def gen():
             while True:
                 for i in range(self.number):
                     if not any([divmod(i, o)[1] for o in self.ones]):
-                        self.e.playchord(self.all_midi_notes)
+                        self.e.playchord(self.all_midi_notes, 127)
+
+                    self.e.playnote(self.choose_one(), i)
+                    yield
+
 
                     else:
 
@@ -194,6 +233,7 @@ class BeatGenerator(object):
                     yield
 
         return gen()
+        '''
 
 
     def choose_one(self):
