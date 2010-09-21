@@ -32,7 +32,7 @@ def midi_to_letter(midi):
 
 
 fs = fluidsynth.Synth()
-fs.start()
+fs.start('coreaudio') # 'jack' ... make python settings module?
 
 
 
@@ -91,6 +91,7 @@ class Enunciator(object):
                 self.fs.noteoff(self.channel, note)
                 note += 12
 
+        else:
             while note >= 0:
                 self.fs.noteoff(self.channel, note)
                 note -= 12
@@ -105,7 +106,6 @@ class PatternGenerator(object):
         self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
         self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
         super(PatternGenerator, self).__init__()
-        print 'wtf'
         logging.debug('instantiated PatternGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights))
 
     def __str__(self):
@@ -155,3 +155,46 @@ class PatternGenerator(object):
         return gen()
 
 
+class BeatGenerator(object):
+
+    def __init__(self, *args, **kwargs):
+        self.e = args[0]
+        self.number = kwargs.get('number') or 128
+        self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
+        self.midi_noteweights = kwargs.get('midi_noteweights') or [(47, 10),(48, 10),(49, 10),(50, 10),(51, 10),(52, 10)]
+        super(BeatGenerator, self).__init__()
+        logging.debug('instantiated BeatGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.midi_noteweights))
+
+    def __str__(self):
+        return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.midi_noteweights)
+
+    def choose_one(self):
+        return windex(self.midi_noteweights)
+
+    @property
+    def all_midi_notes(self):
+        return [i[0] for i in self.midi_noteweights]
+
+    def get_generator(self):
+        def gen():
+            while True:
+                for i in range(128):
+                    self.e.select_program()
+                    if not any([divmod(i, o)[1] for o in self.ones]):
+                        print 'big one'
+                        self.e.playchord(self.all_midi_notes)
+
+                    else:
+
+                        if any([not divmod(i, o)[1] for o in self.ones]):
+                            for x in range(3):
+                                self.e.playnote(self.choose_one(), random.choice(range(35,50)))
+
+                        else:
+                            self.e.playnote(self.choose_one(), random.choice(range(25, 40)))
+
+
+                    logging.debug('yielding from %s' % self)
+                    yield
+
+        return gen()
