@@ -140,6 +140,7 @@ class PatternGenerator(object):
     def __iter__(self):
         while True:
             for i in range(self.number):
+                #self.e.select_program()
                 note = random.choice(self.notes)
                 notes = getattr(constants, note)
                 if not any([divmod(i, o)[1] for o in self.ones]):
