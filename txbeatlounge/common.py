@@ -112,6 +112,27 @@ class PatternGenerator(object):
     def __str__(self):
         return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights)
 
+    def __call__(self):
+        return iter(self)
+
+    def __iter__(self):
+        while True:
+            for i in range(self.number):
+                note = random.choice(self.notes)
+                notes = getattr(constants, note)
+                if not any([divmod(i, o)[1] for o in self.ones]):
+                    self.e.playchord(self.all_midi_notes, 10)
+
+                else:
+                    self.e.stopchord(self.all_midi_notes[12:])
+                    self.e.playchord(notes[4:6], random.choice(range(5,35)))
+
+                    for n in range(3):
+                        self.e.playnote(self.get_random_note(), random.choice(range(10,20)))
+
+                logging.debug('yielding from %s' % self)
+                yield
+
     @property
     def notes_weighted(self):
         return ''.join([i[0]*i[1] for i in self.noteweights])
@@ -134,27 +155,6 @@ class PatternGenerator(object):
         return note
 
 
-    def __call__(self):
-        return iter(self)
-
-    def __iter__(self):
-        while True:
-            for i in range(self.number):
-                #self.e.select_program()
-                note = random.choice(self.notes)
-                notes = getattr(constants, note)
-                if not any([divmod(i, o)[1] for o in self.ones]):
-                    self.e.playchord(self.all_midi_notes, 10)
-
-                else:
-                    self.e.stopchord(self.all_midi_notes[12:])
-                    self.e.playchord(notes[4:6], random.choice(range(5,35)))
-
-                    for n in range(3):
-                        self.e.playnote(self.get_random_note(), random.choice(range(10,20)))
-
-                logging.debug('yielding from %s' % self)
-                yield
 
 
 class BeatGenerator(object):
@@ -170,19 +170,14 @@ class BeatGenerator(object):
     def __str__(self):
         return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.midi_noteweights)
 
-    def choose_one(self):
-        return windex(self.midi_noteweights)
+    def __call__(self):
+        return iter(self)
 
-    @property
-    def all_midi_notes(self):
-        return [i[0] for i in self.midi_noteweights]
-
-    def get_generator(self):
+    def __iter__(self):
         def gen():
             while True:
-                for i in range(128):
+                for i in range(self.number):
                     if not any([divmod(i, o)[1] for o in self.ones]):
-                        print 'big one'
                         self.e.playchord(self.all_midi_notes)
 
                     else:
@@ -199,3 +194,19 @@ class BeatGenerator(object):
                     yield
 
         return gen()
+
+
+    def choose_one(self):
+        return windex(self.midi_noteweights)
+
+    @property
+    def all_midi_notes(self):
+        return [i[0] for i in self.midi_noteweights]
+
+
+class KickGenerator(object):
+
+    def __iter__(self):
+        pass
+
+
