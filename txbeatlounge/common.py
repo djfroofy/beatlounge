@@ -105,7 +105,7 @@ class PatternGenerator(object):
         self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
         self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
         super(PatternGenerator, self).__init__()
-        print 'wtf'
+        self.e.select_program()
         logging.debug('instantiated PatternGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights))
 
     def __str__(self):
@@ -132,26 +132,26 @@ class PatternGenerator(object):
         logging.debug('random note: %s' % midi_to_letter(note))
         return note
 
-    def get_generator(self):
-        def gen():
-            while True:
-                for i in range(self.number):
-                    self.e.select_program()
-                    note = random.choice(self.notes)
-                    notes = getattr(constants, note)
-                    if not any([divmod(i, o)[1] for o in self.ones]):
-                        self.e.playchord(self.all_midi_notes, 10)
 
-                    else:
-                        self.e.stopchord(self.all_midi_notes[12:])
-                        self.e.playchord(notes[4:6], random.choice(range(5,35)))
+    def __call__(self):
+        return iter(self)
 
-                        for n in range(3):
-                            self.e.playnote(self.get_random_note(), random.choice(range(10,20)))
+    def __iter__(self):
+        while True:
+            for i in range(self.number):
+                note = random.choice(self.notes)
+                notes = getattr(constants, note)
+                if not any([divmod(i, o)[1] for o in self.ones]):
+                    self.e.playchord(self.all_midi_notes, 10)
 
-                    logging.debug('yielding from %s' % self)
-                    yield
+                else:
+                    self.e.stopchord(self.all_midi_notes[12:])
+                    self.e.playchord(notes[4:6], random.choice(range(5,35)))
 
-        return gen()
+                    for n in range(3):
+                        self.e.playnote(self.get_random_note(), random.choice(range(10,20)))
+
+                logging.debug('yielding from %s' % self)
+                yield
 
 
