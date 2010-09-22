@@ -45,6 +45,7 @@ class Instrument(object):
         self.sfid = self.fs.sfload(self.sf2)
 
         super(Instrument, self).__init__()
+        self.select_program()
 
     def __str__(self, *args, **kwargs):
         return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
@@ -105,7 +106,6 @@ class PatternGenerator(object):
         self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
         self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
         super(PatternGenerator, self).__init__()
-        self.e.select_program()
         logging.debug('instantiated PatternGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights))
 
     def __str__(self):
