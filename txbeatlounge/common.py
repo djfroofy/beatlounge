@@ -2,6 +2,7 @@
 import random
 import fluidsynth
 import logging
+from copy import copy
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -102,6 +103,18 @@ class BaseGenerator(object):
         guess = random.randrange(self.volume-self.humanize, self.volume + self.humanize)
         return max([0, min([127, guess+offset])])
 
+    @property
+    def all_midi_notes(self):
+        notes = []
+        for n in self.notes:
+            notes.extend(getattr(constants, n))
+        return sorted(notes)
+
+    @property
+    def notes(self):
+        return NotImplementedError('subclasses must provide, self.notes, a list of A/B/C/Df')
+
+
 
 class PatternGenerator(BaseGenerator):
 
@@ -118,18 +131,46 @@ class PatternGenerator(BaseGenerator):
     def notes(self):
         return [i[0] for i in self.noteweights]
 
-    @property
-    def all_midi_notes(self):
-        notes = []
-        for n in self.notes:
-            notes.extend(getattr(constants, n))
-
-        return sorted(notes)
-
     def get_random_note(self):
         note = random.choice(getattr(constants, windex(self.noteweights)))
         logging.debug('random note: %s' % midi_to_letter(note))
         return note
+
+
+def chords1_gen(self):
+    chord_gen = self.chord_gen()
+    while True:
+        for i in range(self.num):
+            for i in range(len(self.chords)):
+                self.e.stopall()
+                self.e.playchord(self.chord_to_midi(chord_gen.next()), self.get_volume())
+                yield
+
+
+class ProgressionGenerator(BaseGenerator):
+
+    def __init__(self, *args, **kwargs):
+        super(ProgressionGenerator, self).__init__(*args, **kwargs)
+        self.chords = kwargs.get('chords') or [('C', 'E', 'G'), ('A', 'C', 'E')]
+        self.gen = kwargs.get('gen') or chords1_gen
+
+    def notes(self):
+        notes = []
+        for c in self.chords:
+            notes.extend(list(c))
+        return set(notes)
+
+    def chord_to_midi(self, chord):
+        notes = []
+        for n in chord:
+            notes.extend(getattr(constants, n))
+        return notes
+
+    def chord_gen(self):
+        while True:
+            c = copy(self.chords)
+            while c:
+                yield c.pop()
 
 
 class BeatGenerator(BaseGenerator):
