@@ -2,38 +2,20 @@
 import random
 import fluidsynth
 import logging
+from copy import copy
 
 logging.basicConfig(level=logging.DEBUG)
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
 
-import constants
-
-
-def windex(lst):
-    '''an attempt to make a random.choose() function that makes weighted choices
-
-    accepts a list of tuples with the item and probability as a pair'''
-
-    wtotal = sum([x[1] for x in lst])
-    n = random.uniform(0, wtotal)
-    for item, weight in lst:
-        if n < weight:
-            break
-        n = n - weight
-    return item
-
-def midi_to_letter(midi):
-    for l in constants.NOTES:
-        if midi in getattr(constants, l):
-            return l
-
+from txbeatlounge import constants
+from txbeatlounge.generators import pattern1_gen, kick_gen, rising_gen
+from txbeatlounge.utils import windex, midi_to_letter
 
 
 fs = fluidsynth.Synth()
-fs.start()
-
+fs.start('coreaudio') # 'jack' ... make python settings module?
 
 
 class Instrument(object):
@@ -84,7 +66,7 @@ class Instrument(object):
                 self.fs.noteon(self.channel, note, vol)
                 note -= 12
 
-    def off_octaves(self, note, up=0):
+    def off_octaves(self, note, up=1):
         '''Turns of 60, 72... for note=60'''
 
         if up:
@@ -92,24 +74,55 @@ class Instrument(object):
                 self.fs.noteoff(self.channel, note)
                 note += 12
 
+        else:
             while note >= 0:
                 self.fs.noteoff(self.channel, note)
                 note -= 12
 
 
-class PatternGenerator(object):
+class BaseGenerator(object):
 
     def __init__(self, *args, **kwargs):
         self.e = args[0]
-        #self.note = kwargs.get('note') or 'c'
-        self.number = kwargs.get('number') or 128
-        self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4, 2]
-        self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
-        super(PatternGenerator, self).__init__()
-        logging.debug('instantiated PatternGenerator with: %s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights))
+        self.e.select_program()
+        self.num = kwargs.get('number') or 128
+        self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4]
+        self.gen = kwargs.get('gen') or kick_gen
+        self.volume = kwargs.get('volume') or 50 # between 30 and 97
+        self.humanize = kwargs.get('humanize') or 10 # between 0 and 30
 
     def __str__(self):
-        return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.noteweights)
+        return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.gen)
+
+    def __call__(self):
+        return iter(self)
+
+    def __iter__(self):
+        return self.gen(self)
+
+    def get_volume(self, offset=0):
+        guess = random.randrange(self.volume-self.humanize, self.volume + self.humanize)
+        return max([0, min([127, guess+offset])])
+
+    @property
+    def all_midi_notes(self):
+        notes = []
+        for n in self.notes:
+            notes.extend(getattr(constants, n))
+        return sorted(notes)
+
+    @property
+    def notes(self):
+        return NotImplementedError('subclasses must provide, self.notes, a list of A/B/C/Df')
+
+
+
+class PatternGenerator(BaseGenerator):
+
+    def __init__(self, *args, **kwargs):
+        super(PatternGenerator, self).__init__(*args, **kwargs)
+        self.gen = kwargs.get('gen') or pattern1_gen
+        self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
 
     @property
     def notes_weighted(self):
@@ -119,39 +132,65 @@ class PatternGenerator(object):
     def notes(self):
         return [i[0] for i in self.noteweights]
 
-    @property
-    def all_midi_notes(self):
-        notes = []
-        for n in self.notes:
-            notes.extend(getattr(constants, n))
-
-        return sorted(notes)
-
     def get_random_note(self):
         note = random.choice(getattr(constants, windex(self.noteweights)))
         logging.debug('random note: %s' % midi_to_letter(note))
         return note
 
 
-    def __call__(self):
-        return iter(self)
-
-    def __iter__(self):
-        while True:
-            for i in range(self.number):
-                note = random.choice(self.notes)
-                notes = getattr(constants, note)
-                if not any([divmod(i, o)[1] for o in self.ones]):
-                    self.e.playchord(self.all_midi_notes, 10)
-
-                else:
-                    self.e.stopchord(self.all_midi_notes[12:])
-                    self.e.playchord(notes[4:6], random.choice(range(5,35)))
-
-                    for n in range(3):
-                        self.e.playnote(self.get_random_note(), random.choice(range(10,20)))
-
-                logging.debug('yielding from %s' % self)
+def chords1_gen(self):
+    chord_gen = self.chord_gen()
+    while True:
+        for i in range(self.num):
+            for i in range(len(self.chords)):
+                self.e.stopall()
+                self.e.playchord(self.chord_to_midi(chord_gen.next()), self.get_volume())
                 yield
+
+
+class ProgressionGenerator(BaseGenerator):
+
+    def __init__(self, *args, **kwargs):
+        super(ProgressionGenerator, self).__init__(*args, **kwargs)
+        self.chords = kwargs.get('chords') or [('C', 'E', 'G'), ('A', 'C', 'E')]
+        self.gen = kwargs.get('gen') or chords1_gen
+
+    def notes(self):
+        notes = []
+        for c in self.chords:
+            notes.extend(list(c))
+        return set(notes)
+
+    def chord_to_midi(self, chord):
+        notes = []
+        for n in chord:
+            notes.extend(getattr(constants, n))
+        return notes
+
+    def chord_gen(self):
+        while True:
+            c = copy(self.chords)
+            while c:
+                yield c.pop()
+
+
+class BeatGenerator(BaseGenerator):
+
+    def __init__(self, *args, **kwargs):
+        super(BeatGenerator, self).__init__(*args, **kwargs)
+        self.midi_noteweights = kwargs.get('midi_noteweights') or [(47, 10),(48, 10),(49, 10),(50, 10),(51, 10),(52, 10)]
+        logging.debug('instantiated BeatGenerator with: %s, %s, %s, %s' % (self.e, self.num, self.ones, self.midi_noteweights))
+
+    def choose_one(self):
+        return windex(self.midi_noteweights)
+
+    @property
+    def all_midi_notes(self):
+        return sorted([i[0] for i in self.midi_noteweights])
+
+
+class KickGenerator(BaseGenerator):
+
+    pass
 
 

@@ -20,3 +20,9 @@ def all_equal():
         li.append((n, 1))
 
     return li
+
+
+# scales
+
+C_bhairav = [('C', 40),('Df', 4),('E', 12),('F', 12),('G', 32),('Af', 4),('B', 4)]
+C_aeolian = [('C', 30),('D', 8),('Ef', 12),('F', 15),('G', 20),('Af', 4),('Bf', 10)]
