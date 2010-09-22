@@ -1,4 +1,6 @@
+from zope.interface import implements
 
+from twisted.internet.interfaces import IReactorTime
 from twisted.internet.defer import Deferred, succeed
 from twisted.internet.task import LoopingCall
 
@@ -77,4 +79,44 @@ class Scheduler(object):
         
 
 schedule = Scheduler().schedule
+
+
+class BeatClock(object):
+    implements(IReactorTime)
+
+    def __init__(self, bpm=135, clock=None):
+        if clock is None:
+            from twisted.internet import reactor as clock
+        self.clock = clock
+        self.bpm = bpm
+        self.reset()
+
+    def reset(self):
+        self.start_seconds = self.clock.seconds()
+
+    def _get_bpm(self):
+        return self._bpm
+    
+    def _set_bpm(self, bpm):
+        self._bpm = bpm
+        self._time_skew = 60. / float(self._bpm)
+
+    bpm = property(_get_bpm, _set_bpm)
+
+    def callLater(self, beats, f, *a, **k):
+        return self.clock.callLater(beats * self._time_skew, f, *a, **k)
+
+
+    def beats(self):
+        return (self.clock.seconds() - self.start_seconds) / self._time_skew
+
+
+    def cancelCallLater(self, callid):
+        return self.clock.concelCallLater(callid)
+
+    def getDelayedCalls(self):
+        return self.clock.getDelayedCalls()
+
+    def seconds(self):
+        return self.clock.seconds()
 
