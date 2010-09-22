@@ -165,12 +165,13 @@ class PatternGenerator(BaseGenerator):
 
 
 def rising_gen(gen):
+    incr = 128/gen.num
     while True:
         for i in range(gen.num):
             if not any([divmod(i, o)[1] for o in gen.ones]):
                 gen.e.playchord(gen.all_midi_notes, 127)
 
-            gen.e.playnote(gen.choose_one(), i)
+            gen.e.playnote(gen.choose_one(), incr*i)
             yield
 
 
@@ -178,11 +179,11 @@ def kick_gen(gen):
     while True:
         for i in range(gen.num):
             if not all([divmod(i, o)[1] for o in gen.ones]):
-                gen.e.playnote(gen.choose_one(), random.randrange(30,50))
+                gen.e.playnote(gen.choose_one(), gen.get_volume(10))
 
             else:
                 if random.random() < .5:
-                    gen.e.playnote(gen.choose_one(), random.randrange(15, 40))
+                    gen.e.playnote(gen.choose_one(), gen.get_volume(-10))
 
             yield
 
@@ -196,6 +197,8 @@ class BeatGenerator(BaseGenerator):
         self.midi_noteweights = kwargs.get('midi_noteweights') or [(47, 10),(48, 10),(49, 10),(50, 10),(51, 10),(52, 10)]
 
         self.gen = kwargs.get('gen') or kick_gen
+        self.volume = kwargs.get('volume') or 50 # between 30 and 97
+        self.humanize = kwargs.get('humanize') or 10 # between 0 and 30
         super(BeatGenerator, self).__init__()
         self.e.select_program()
         logging.debug('instantiated BeatGenerator with: %s, %s, %s, %s' % (self.e, self.num, self.ones, self.midi_noteweights))
@@ -234,7 +237,12 @@ class BeatGenerator(BaseGenerator):
 
         return gen()
         '''
+    def get_volume(self, offset=None):
+        guess = random.randrange(self.volume-self.humanize, self.volume + self.humanize)
+        if not offset:
+            return guess
 
+        return max([0, min([127, guess+offset])])
 
     def choose_one(self):
         return windex(self.midi_noteweights)
