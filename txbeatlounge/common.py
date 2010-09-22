@@ -133,12 +133,21 @@ class PatternGenerator(BaseGenerator):
 
     def get_random_note(self):
         note = random.choice(getattr(constants, windex(self.noteweights)))
-        logging.debug('random note: %s' % midi_to_letter(note))
+        #logging.debug('random note: %s' % midi_to_letter(note))
         return note
 
 
 def chords1_gen(self):
     chord_gen = self.chord_gen()
+    while True:
+        for i in range(self.num):
+            for i in range(len(self.chords)):
+                self.e.stopall()
+                self.e.playchord(self.chord_to_midi(chord_gen.next()), self.get_volume())
+                yield
+
+def random_chords_gen(self):
+    chord_gen = self.random_chord_gen()
     while True:
         for i in range(self.num):
             for i in range(len(self.chords)):
@@ -152,7 +161,8 @@ class ProgressionGenerator(BaseGenerator):
     def __init__(self, *args, **kwargs):
         super(ProgressionGenerator, self).__init__(*args, **kwargs)
         self.chords = kwargs.get('chords') or [('C', 'E', 'G'), ('A', 'C', 'E')]
-        self.gen = kwargs.get('gen') or chords1_gen
+        self.gen = kwargs.get('gen') or random_chords_gen
+
 
     def notes(self):
         notes = []
@@ -171,6 +181,10 @@ class ProgressionGenerator(BaseGenerator):
             c = copy(self.chords)
             while c:
                 yield c.pop()
+
+    def random_chord_gen(self):
+        while True:
+            yield random.choice(self.chords)
 
 
 class BeatGenerator(BaseGenerator):

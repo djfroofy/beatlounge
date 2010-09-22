@@ -31,14 +31,14 @@ def pattern1_gen(self):
             note = random.choice(self.notes)
             notes = getattr(constants, note)
             if not any([divmod(i, o)[1] for o in self.ones]):
-                self.e.playchord(self.all_midi_notes, 10)
+                self.e.playchord(self.all_midi_notes, self.get_volume()-10)
 
             else:
                 self.e.stopchord(self.all_midi_notes[12:])
-                self.e.playchord(notes[4:6], random.choice(range(5,35)))
+                self.e.playchord(notes[4:6], self.get_volume())
 
                 for n in range(3):
-                    self.e.playnote(self.get_random_note(), random.choice(range(10,20)))
+                    self.e.playnote(self.get_random_note(), self.get_volume()-5)
 
             yield
 
