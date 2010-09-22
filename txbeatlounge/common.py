@@ -31,8 +31,8 @@ class Instrument(object):
     def __str__(self, *args, **kwargs):
         return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
 
-    def select_program(self):
-        self.fs.program_select(self.channel, self.sfid, 0, 0)
+    def select_program(self, bank=0, preset=0):
+        self.fs.program_select(self.channel, self.sfid, bank, preset)
 
     def stopall(self):
         for n in range(128):
@@ -147,7 +147,7 @@ def chords1_gen(self):
                 yield
 
 def random_chords_gen(self):
-    chord_gen = self.random_chord_gen()
+    chord_gen = self.chord_gen()
     while True:
         for i in range(self.num):
             for i in range(len(self.chords)):
@@ -187,6 +187,7 @@ class ProgressionGenerator(BaseGenerator):
             yield random.choice(self.chords)
 
 
+
 class BeatGenerator(BaseGenerator):
 
     def __init__(self, *args, **kwargs):
@@ -200,6 +201,36 @@ class BeatGenerator(BaseGenerator):
     @property
     def all_midi_notes(self):
         return sorted([i[0] for i in self.midi_noteweights])
+
+
+
+def bass_gen(self):
+    note_gen = self.random_note_gen()
+    while True:
+        for i in range(self.num):
+            if random.random() < .8:
+                self.e.stopall()
+                if random.random() < .9:
+                    self.e.playnote(note_gen.next(), self.get_volume())
+            yield
+
+
+class BassLineGenerator(BeatGenerator):
+
+    def __init__(self, *args, **kwargs):
+        super(BassLineGenerator, self).__init__(*args, **kwargs)
+        self.gen = kwargs.get('gen') or bass_gen
+        self.midi_noteweights = kwargs.get('midi_noteweights') or [(36,10),(33,8),(40, 8),(31, 5),(43,5),(47,2),(48,5),(50,2),(53,1),(55,3),(60,4)]
+
+    def note_gen(self):
+        while True:
+            c = copy(self.midi_noteweights)
+            while c:
+                yield c.pop()[0]
+
+    def random_note_gen(self):
+        while True:
+            yield random.choice(self.midi_noteweights)[0]
 
 
 class KickGenerator(BaseGenerator):
