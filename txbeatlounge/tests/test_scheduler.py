@@ -8,7 +8,7 @@ from twisted.trial.unittest import TestCase
 
 
 from txbeatlounge.scheduler import Scheduler
-from txbeatlounge.scheduler import BeatClock
+from txbeatlounge.scheduler import BeatClock, Timely
 
 class FakeDelayedCall(object):
 
@@ -203,5 +203,43 @@ class BeatClockTests(TestCase):
 
         self.assertEquals(seconds, [2,4,6,8,10])
         self.assertEquals(beats, [1.0, 2.0, 3.0, 4.0, 5.0])
+
+
+class TimelyTests(TestCase):
+
+
+    def setUp(self):
+        super(TimelyTests, self).setUp()
+        self.clock = FakeClock()
+
+
+    def test_timely(self):
+        timely = Timely(self.clock)
+
+        seconds = []
+        called = [ False ]
+    
+        @timely
+        def make_beats(a, b=1):
+            self.assertEquals(a, 1)
+            self.assertEquals(b, 2)
+            seconds.append(self.clock.seconds())
+            yield 1
+            seconds.append(self.clock.seconds())
+            yield 2
+            seconds.append(self.clock.seconds())
+            yield 4
+            seconds.append(self.clock.seconds())
+
+        def cb(ignore):
+            called[0] = True
+
+        make_beats(1, b=2).addCallback(cb)
+
+        self.clock.tickUntil(10)
+
+        self.assertEquals(seconds, [0,1,3,7])
+        self.assert_(called[0])
+
 
 

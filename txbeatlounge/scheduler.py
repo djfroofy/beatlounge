@@ -1,3 +1,5 @@
+from functools import wraps
+
 from zope.interface import implements
 
 from twisted.internet.interfaces import IReactorTime
@@ -119,4 +121,38 @@ class BeatClock(object):
 
     def seconds(self):
         return self.clock.seconds()
+
+
+
+class TimedGenerator(object):
+
+    def __init__(self, gen, clock):
+        self.gen = gen
+        self.clock = clock
+
+    def __call__(self):
+        self.on_complete = Deferred()
+        self._resume()
+        return self.on_complete
+
+
+    def _resume(self):
+        try:
+            wait = self.gen.next()
+            self.clock.callLater(wait, self._resume)
+        except StopIteration:
+            self.on_complete.callback(None)
+
+class Timely(object):
+
+    def __init__(self, clock):
+        self.clock = clock
+
+    
+    def __call__(self, f):
+        @wraps(f)
+        def wrapper(*a, **k):
+            gen = f(*a, **k)
+            return TimedGenerator(gen, self.clock)()
+        return wrapper
 
