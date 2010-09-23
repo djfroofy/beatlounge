@@ -164,7 +164,6 @@ class ProgressionGenerator(BaseGenerator):
         self.chords = kwargs.get('chords') or [('C', 'E', 'G'), ('A', 'C', 'E')]
         self.gen = kwargs.get('gen') or random_chords_gen
 
-
     def notes(self):
         notes = []
         for c in self.chords:
@@ -177,9 +176,13 @@ class ProgressionGenerator(BaseGenerator):
             notes.extend(getattr(constants, n))
         return notes
 
+    def random_note_from_chord(self, chord):
+        return random.choice(self.chord_to_midi(chord))
+
     def chord_gen(self):
         while True:
             c = copy(self.chords)
+            c.reverse()
             while c:
                 yield c.pop()
 
