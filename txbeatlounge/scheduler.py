@@ -22,10 +22,10 @@ class CountingProxy(object):
             self.threshold_reached(scheduled_event, count)
 
     def __call__(self, *args, **kwargs):
-        self.func(*args, **kwargs)
+        rv = self.func(*args, **kwargs)
         self.count = self.count + 1
         self.on_count(self.scheduled_event, self.count)
-
+        return rv
 
     def __repr__(self):
         return 'CountingProxy(%r)' % self.func
