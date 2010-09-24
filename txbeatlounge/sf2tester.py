@@ -32,13 +32,14 @@ def main():
     parser.add_option('-e', '--range-end', dest='range_end', default=128, type='int')
     parser.add_option('-i', '--interval', dest='interval', default=0.125, type='float')
     parser.add_option('-n', '--note', dest='note', default=-1, type='int')
+    parser.add_option('-p', '--preset', dest='preset', default=0, type='int')
 
     opts, args = parser.parse_args()
     sf2path = args[0]
     if opts.note != -1:
         opts.range_start = opts.note
         opts.range_end = opts.note + 1
-    instrument = Instrument(sf2path=sf2path)
+    instrument = Instrument(sf2path=sf2path, preset=opts.preset)
 
     schedule(play).start(0)
     reactor.run()

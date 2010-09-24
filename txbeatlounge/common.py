@@ -23,6 +23,7 @@ class Instrument(object):
     def __init__(self, *args, **kwargs):
         self.sf2 = kwargs['sf2path']
         self.channel = kwargs.get('channel', 0)
+        self.preset = kwargs.get('preset', 0)
         self.fs = fs
         self.sfid = self.fs.sfload(self.sf2)
 
@@ -32,7 +33,9 @@ class Instrument(object):
     def __str__(self, *args, **kwargs):
         return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
 
-    def select_program(self, bank=0, preset=0):
+    def select_program(self, bank=0, preset=None):
+        if preset is None:
+            preset = self.preset
         self.fs.program_select(self.channel, self.sfid, bank, preset)
 
     def stopall(self):
