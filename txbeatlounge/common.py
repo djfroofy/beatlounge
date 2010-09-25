@@ -234,7 +234,7 @@ class BassLineGenerator(BeatGenerator):
 
     def random_note_gen(self):
         while True:
-            yield random.choice(self.midi_noteweights)[0]
+            yield windex(self.midi_noteweights)
 
 
 class KickGenerator(BaseGenerator):
