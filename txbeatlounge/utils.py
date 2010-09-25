@@ -21,3 +21,18 @@ def midi_to_letter(midi):
         if midi in getattr(constants, l):
             return l
 
+
+
+spaces = {
+    '8trip': 1/12.,
+    '16th': 1/8.,
+    '8th': 1/4.,
+    'qtrup': 1/3.,
+    'quarter': 1,
+    'half': 2,
+    'whole': 4,
+}
+
+def clock_converter(bpm, space):
+    return (60./bpm) * spaces[space]
+
