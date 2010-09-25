@@ -1,6 +1,4 @@
-#!/usr/bin/env python
 import random
-import fluidsynth
 import logging
 from copy import copy
 
@@ -13,11 +11,6 @@ from txbeatlounge import constants
 from txbeatlounge.generators import pattern1_gen, kick_gen, rising_gen
 from txbeatlounge.utils import windex, midi_to_letter
 
-
-fs = fluidsynth.Synth()
-fs.start('coreaudio') # 'jack' ... make python settings module?
-
-
 def channels():
     channel = 0
     while 1:
@@ -28,18 +21,25 @@ channels = channels()
 class Instrument(object):
 
     def __init__(self, *args, **kwargs):
+        reactor = kwargs.get('reactor', None)
+        if reactor is None:
+            from txbeatlounge.internet import reactor
+            reactor.callWhenRunning(self.start)
+        self.reactor = reactor
         self.sf2 = kwargs['sf2path']
         self.channel = kwargs.get('channel', None)
         if self.channel is None:
             self.channel = channels.next()
         self.preset = kwargs.get('preset', 0)
-        self.fs = fs
-        self.sfid = self.fs.sfload(self.sf2)
 
-        super(Instrument, self).__init__()
+    def start(self):
+        self.fs = self.reactor.synth
+        self.sfid = self.fs.sfload(self.sf2)
         self.select_program()
 
     def __str__(self, *args, **kwargs):
+        if not hasattr(self, 'fs'):
+            return '%s instrument (stopped)' % self.sf2
         return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
 
     def select_program(self, bank=0, preset=None):
@@ -96,7 +96,7 @@ class BaseGenerator(object):
 
     def __init__(self, *args, **kwargs):
         self.e = args[0]
-        self.e.select_program()
+        #self.e.select_program()
         self.num = kwargs.get('number') or 128
         self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4]
         self.gen = kwargs.get('gen') or kick_gen

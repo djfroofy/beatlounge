@@ -6,6 +6,24 @@ from twisted.internet.interfaces import IReactorTime
 from twisted.internet.defer import Deferred, succeed
 from twisted.internet.task import LoopingCall
 
+from fluidsynth import Synth
+
+
+class BeatReactor(object):
+    audioDevice = 'coreaudio'
+    synth = Synth()
+
+    def __init__(self, reactor=None):
+        if reactor is None:
+            from twisted.internet import reactor
+        self.reactor = reactor
+
+    def run(self):
+        self.synth.start(self.audioDevice)
+        self.reactor.run()
+
+    def __getattr__(self, attr):
+        return getattr(self.reactor, attr)
 
 class CountingProxy(object):
 
@@ -32,20 +50,29 @@ class CountingProxy(object):
 
 class ScheduledEvent(object):
 
-    def __init__(self, task, clock):
+    def __init__(self, task, clock, reactor=None):
         self.task = task
         self.clock = clock
+        if reactor is None:
+            from txbeatlounge.internet import reactor
+        self.reactor = reactor
 
     def start(self, interval, now=True):
-        self.task.start(interval, now)
+        def _start():
+            self.task.start(interval, now)
+        self.reactor.callWhenRunning(_start)
         return self
        
     def start_later(self, when, interval):
-        self.clock.callLater(when, lambda : self.task.start(interval, True))
+        def _start():
+            self.clock.callLater(when, lambda : self.task.start(interval, True))
+        self.reactor.callWhenRunning(_start)
         return self
  
     def stop_at_interval(self, interval):
-        self.clock.callLater(interval, self.task.stop)
+        def _stop():
+            self.clock.callLater(interval, self.task.stop)
+        self.reactor.callWhenRunning(_stop)
         return self
 
     def stop_after_iterations(self, iterations):
