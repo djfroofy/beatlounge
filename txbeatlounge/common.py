@@ -18,11 +18,20 @@ fs = fluidsynth.Synth()
 fs.start('coreaudio') # 'jack' ... make python settings module?
 
 
+def channels():
+    channel = 0
+    while 1:
+        yield channel
+        channel += 1
+channels = channels()
+
 class Instrument(object):
 
     def __init__(self, *args, **kwargs):
         self.sf2 = kwargs['sf2path']
-        self.channel = kwargs.get('channel', 0)
+        self.channel = kwargs.get('channel', None)
+        if self.channel is None:
+            self.channel = channels.next()
         self.preset = kwargs.get('preset', 0)
         self.fs = fs
         self.sfid = self.fs.sfload(self.sf2)
