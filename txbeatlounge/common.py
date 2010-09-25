@@ -20,17 +20,16 @@ channels = channels()
 
 class Instrument(object):
 
-    def __init__(self, *args, **kwargs):
-        reactor = kwargs.get('reactor', None)
+    def __init__(self, sf2path=None, reactor=None, channel=None, preset=0, **kw):
         if reactor is None:
             from txbeatlounge.internet import reactor
-            reactor.callWhenRunning(self.start)
+        reactor.callWhenRunning(self.start)
         self.reactor = reactor
-        self.sf2 = kwargs['sf2path']
-        self.channel = kwargs.get('channel', None)
-        if self.channel is None:
-            self.channel = channels.next()
-        self.preset = kwargs.get('preset', 0)
+        self.sf2 = sf2path
+        if channel is None:
+            channel = channels.next()
+        self.channel = channel
+        self.preset = preset
 
     def start(self):
         self.fs = self.reactor.synth
@@ -94,14 +93,15 @@ class Instrument(object):
 
 class BaseGenerator(object):
 
-    def __init__(self, *args, **kwargs):
-        self.e = args[0]
+    def __init__(self, instrument, number=128, ones=(128, 64, 32, 16, 8, 4),
+                 gen=None, volume=50, humanize=10, **kw):
+        self.e = instrument
         #self.e.select_program()
-        self.num = kwargs.get('number') or 128
-        self.ones = kwargs.get('ones') or [128, 64, 32, 16, 8, 4]
-        self.gen = kwargs.get('gen') or kick_gen
-        self.volume = kwargs.get('volume') or 50 # between 30 and 97
-        self.humanize = kwargs.get('humanize') or 10 # between 0 and 30
+        self.num = number
+        self.ones = ones
+        self.gen = gen or kick_gen
+        self.volume = volume
+        self.humanize = humanize # between 0 and 30
 
     def __str__(self):
         return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.gen)
@@ -131,9 +131,9 @@ class BaseGenerator(object):
 
 class PatternGenerator(BaseGenerator):
 
-    def __init__(self, *args, **kwargs):
-        super(PatternGenerator, self).__init__(*args, **kwargs)
-        self.gen = kwargs.get('gen') or pattern1_gen
+    def __init__(self, instrument, **kwargs):
+        kwargs['gen'] = kwargs.get('gen', pattern1_gen)
+        super(PatternGenerator, self).__init__(instrument, **kwargs)
         self.noteweights = kwargs.get('noteweights') or [('C', 20), ('E', 15), ('G', 17), ('A', 12)]
 
     @property
@@ -206,8 +206,8 @@ class ProgressionGenerator(BaseGenerator):
 
 class BeatGenerator(BaseGenerator):
 
-    def __init__(self, *args, **kwargs):
-        super(BeatGenerator, self).__init__(*args, **kwargs)
+    def __init__(self, instrument, **kwargs):
+        super(BeatGenerator, self).__init__(instrument, **kwargs)
         self.midi_noteweights = kwargs.get('midi_noteweights') or [(47, 10),(48, 10),(49, 10),(50, 10),(51, 10),(52, 10)]
         logging.debug('instantiated BeatGenerator with: %s, %s, %s, %s' % (self.e, self.num, self.ones, self.midi_noteweights))
 
@@ -233,9 +233,9 @@ def bass_gen(self):
 
 class BassLineGenerator(BeatGenerator):
 
-    def __init__(self, *args, **kwargs):
-        super(BassLineGenerator, self).__init__(*args, **kwargs)
-        self.gen = kwargs.get('gen') or bass_gen
+    def __init__(self, instrument, **kwargs):
+        kwargs['gen'] = kwargs.get('gen', bass_gen)
+        super(BassLineGenerator, self).__init__(instrument, **kwargs)
         self.midi_noteweights = kwargs.get('midi_noteweights') or [(36,10),(33,8),(40, 8),(31, 5),(43,5),(47,2),(48,5),(50,2),(53,1),(55,3),(60,4)]
 
     def note_gen(self):
