@@ -32,6 +32,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     entry_points = { 'console_scripts' :
-        'playsf2 = txbeatlounge.sf2tester:main' },
+        ['playsf2 = txbeatlounge.sf2tester:main',
+        'beatlounge = txbeatlounge.console:main'] },
 )
 

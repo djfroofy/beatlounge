@@ -2,7 +2,7 @@ import sys
 
 import optparse
 
-from twisted.internet import reactor
+from txbeatlounge.internet import reactor
 
 from txbeatlounge.common import Instrument
 from txbeatlounge.scheduler import Scheduler, BeatClock, Timely

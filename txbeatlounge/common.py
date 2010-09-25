@@ -23,13 +23,13 @@ class Instrument(object):
     def __init__(self, sf2path=None, reactor=None, channel=None, preset=0, **kw):
         if reactor is None:
             from txbeatlounge.internet import reactor
-        reactor.callWhenRunning(self.start)
         self.reactor = reactor
         self.sf2 = sf2path
         if channel is None:
             channel = channels.next()
         self.channel = channel
         self.preset = preset
+        reactor.callWhenRunning(self.start)
 
     def start(self):
         self.fs = self.reactor.synth
