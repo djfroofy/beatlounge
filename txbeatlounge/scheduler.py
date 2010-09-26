@@ -57,15 +57,20 @@ class ScheduledEvent(object):
             from txbeatlounge.internet import reactor
         self.reactor = reactor
 
-    def start(self, interval, now=True):
+    def start(self, interval=0, now=True):
         def _start():
             self.task.start(interval, now)
         self.reactor.callWhenRunning(_start)
         return self
-       
-    def start_later(self, when, interval):
+ 
+    def start_later(self, when=0, interval=0, beat=None):
         def _start():
             self.clock.callLater(when, lambda : self.task.start(interval, True))
+        # TODO - for beats support time signatures other than 4/4
+        if beat is not None:
+            beats = self.clock.beats()
+            last_beat = int(beats)
+            when = (last_beat + beat) - beats 
         self.reactor.callWhenRunning(_start)
         return self
  
@@ -139,7 +144,7 @@ class BeatClock(object):
 
 
     def beats(self):
-        return (self.clock.seconds() - self.start_seconds) / self._time_skew
+        return (self.clock.seconds() - self.start_seconds) / self._time_skew * 2
 
 
     def cancelCallLater(self, callid):
