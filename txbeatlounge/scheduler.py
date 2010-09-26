@@ -94,16 +94,18 @@ class ScheduledEvent(object):
 
 class Scheduler(object):
 
-    def __init__(self, clock=None):
+    def __init__(self, clock=None, reactor=None):
         if clock is None:
             from twisted.internet import reactor as clock
+        self.reactor = reactor
         self.clock = clock
 
 
     def schedule(self, func, *args, **kw):
         task = LoopingCall(CountingProxy(func), *args, **kw)
         task.clock = self.clock
-        task.f.scheduled_event = scheduled = ScheduledEvent(task, self.clock)
+        task.f.scheduled_event = scheduled = ScheduledEvent(task,
+            self.clock, self.reactor)
         return scheduled
         
 

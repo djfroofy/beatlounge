@@ -75,12 +75,27 @@ class FakeClock(object):
         for i in range(ticks):
             self.tick()
 
+
+class TestReactor(object):
+
+    def __init__(self):
+        from twisted.internet import reactor
+        self.reactor = reactor
+
+    def callWhenRunning(self, f, *a, **k):
+        f(*a, **k)
+
+    def __getattr__(self, a):
+        return getattr(self.reactor, a)
+
 class SchedulerTests(TestCase):
 
     def setUp(self):
+        from twisted.internet import reactor
         super(SchedulerTests, self).setUp()
         self.clock = FakeClock()
-        self.schedule = Scheduler(self.clock).schedule
+        self.schedule = Scheduler(self.clock,
+                                  reactor=TestReactor()).schedule
 
     def test_start(self):
         seconds = [ ]
