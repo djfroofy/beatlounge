@@ -254,3 +254,76 @@ class KickGenerator(BaseGenerator):
     pass
 
 
+from txosc import osc
+from txosc import dispatch
+from txosc import async
+
+
+
+
+def wii_gen(self):
+    while True:
+        for i in range(self.num):
+            print 'yo'
+            print self.pitch, self.roll, self.yaw
+            r = random.random()
+            if r < self.pitch:
+                print 'we up in this'
+                self.e.playnote(random.randrange(60, 80), 127) #min([int(self.yaw)*200, 127]))
+
+
+            self.e.playnote(60, 127)
+
+
+            yield
+
+
+
+
+class WiiGenerator(BaseGenerator):
+    '''receives messages on localhost:port from the wiimote
+
+    sets the parameters as values on the instance for use in writing generator functions'''
+
+
+    def __init__(self, instrument, *args, **kwargs):
+        super(WiiGenerator, self).__init__(instrument, **kwargs)
+        self.e = instrument
+        self.gen = kwargs.get('gen') or wii_gen
+
+        self.port = kwargs.get('port') or 8005
+        self.receiver = dispatch.Receiver()
+        self._server_port = reactor.listenUDP(self.port, async.DatagramServerProtocol(self.receiver))
+        print("Listening on osc.udp://localhost:%s" % (self.port))
+
+        self.receiver.addCallback("/wii/1/accel/pry/0", self.set_pitch)
+        self.receiver.addCallback("/wii/1/accel/pry/1", self.set_roll)
+        self.receiver.addCallback("/wii/1/accel/pry/2", self.set_yaw)
+        self.receiver.addCallback("/wii/1/accel/pry/3", self.set_accel)
+        self.pitch = 0
+        self.roll = 0
+        self.yaw = 0
+        self.accel = 0
+
+        self.receiver.fallback = self.fallback
+
+
+    def set_pitch(self, message, address):
+        print message
+        self.pitch = message.arguments[0].value
+
+    def set_roll(self, message, address):
+        print message
+        self.roll = message.arguments[0].value
+
+    def set_yaw(self, message, address):
+        print message
+        self.yaw = message.arguments[0].value
+
+    def set_accel(self, message, address):
+        print message
+        self.accel = message.arguments[0].value
+
+    def fallback(self, message, address):
+        print message
+
