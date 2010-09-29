@@ -1,3 +1,4 @@
 zope.interface==3.6.1
 Twisted==10.1.0
 pyFluidSynth==1.2.4
+txosc==0.2.0

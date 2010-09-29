@@ -8,13 +8,14 @@ from twisted.python import failure, reflect, log
 
 from txbeatlounge.internet import reactor
 
-def runWithProtocol(klass):
+def runWithProtocol(klass, audioDev):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
     try:
         p = ServerProtocol(klass)
         stdio.StandardIO(p)
+        reactor.audioDevice = audioDev
         reactor.run()
     finally:
         termios.tcsetattr(fd, termios.TCSANOW, oldSettings)
@@ -24,13 +25,19 @@ def runWithProtocol(klass):
 def main(argv=None, reactor=None):
     log.startLogging(file('child.log', 'w'))
 
+    audioDev = 'coreaudio'
+
     if argv is None:
         argv = sys.argv[1:]
+        if argv:
+            audioDev = argv[0]
+            argv = argv[2:]
     if argv:
         klass = reflect.namedClass(argv[0])
     else:
         klass = ConsoleManhole
-    runWithProtocol(klass)
+    log.msg('audio dev: %s' % audioDev)
+    runWithProtocol(klass, audioDev)
 
 if __name__ == '__main__':
     main()
