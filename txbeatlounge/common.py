@@ -176,6 +176,7 @@ class ProgressionGenerator(BaseGenerator):
         self.chords = kwargs.get('chords') or [('C', 'E', 'G'), ('A', 'C', 'E')]
         self.gen = kwargs.get('gen') or random_chords_gen
 
+    @property
     def notes(self):
         notes = []
         for c in self.chords:
@@ -264,66 +265,89 @@ from txosc import async
 def wii_gen(self):
     while True:
         for i in range(self.num):
-            print 'yo'
             print self.pitch, self.roll, self.yaw
             r = random.random()
-            if r < self.pitch:
-                print 'we up in this'
-                self.e.playnote(random.randrange(60, 80), 127) #min([int(self.yaw)*200, 127]))
+            if r < self.yaw:
+                self.e.playnote(random.randrange(0, int(self.pitch*127) or 1), random.randrange(0, int(self.roll*127)))
 
-
-            self.e.playnote(60, 127)
-
+            if r > self.pitch:
+                self.e.stopnote(random.randrange(0,127))
 
             yield
 
 
 
-
-class WiiGenerator(BaseGenerator):
+class WiiMixin(object):
     '''receives messages on localhost:port from the wiimote
 
     sets the parameters as values on the instance for use in writing generator functions'''
 
-
-    def __init__(self, instrument, *args, **kwargs):
-        super(WiiGenerator, self).__init__(instrument, **kwargs)
-        self.e = instrument
-        self.gen = kwargs.get('gen') or wii_gen
-
-        self.port = kwargs.get('port') or 8005
+    def wii_mix(self, port=8005):
+        self.port = port
         self.receiver = dispatch.Receiver()
         self._server_port = reactor.listenUDP(self.port, async.DatagramServerProtocol(self.receiver))
         print("Listening on osc.udp://localhost:%s" % (self.port))
 
-        self.receiver.addCallback("/wii/1/accel/pry/0", self.set_pitch)
-        self.receiver.addCallback("/wii/1/accel/pry/1", self.set_roll)
-        self.receiver.addCallback("/wii/1/accel/pry/2", self.set_yaw)
-        self.receiver.addCallback("/wii/1/accel/pry/3", self.set_accel)
+        self.receiver.addCallback("/wii/1/accel/pry/0", self.wii_set_pitch)
+        self.receiver.addCallback("/wii/1/accel/pry/1", self.wii_set_roll)
+        self.receiver.addCallback("/wii/1/accel/pry/2", self.wii_set_yaw)
+        self.receiver.addCallback("/wii/1/accel/pry/3", self.wii_set_accel)
         self.pitch = 0
         self.roll = 0
         self.yaw = 0
         self.accel = 0
 
-        self.receiver.fallback = self.fallback
+        self.receiver.fallback = self.wii_fallback
 
-
-    def set_pitch(self, message, address):
-        print message
+    def wii_set_pitch(self, message, address):
         self.pitch = message.arguments[0].value
 
-    def set_roll(self, message, address):
-        print message
+    def wii_set_roll(self, message, address):
         self.roll = message.arguments[0].value
 
-    def set_yaw(self, message, address):
-        print message
+    def wii_set_yaw(self, message, address):
         self.yaw = message.arguments[0].value
 
-    def set_accel(self, message, address):
-        print message
+    def wii_set_accel(self, message, address):
         self.accel = message.arguments[0].value
 
-    def fallback(self, message, address):
+    def wii_fallback(self, message, address):
         print message
+
+
+class WiiGenerator(BaseGenerator, WiiMixin):
+
+    def __init__(self, *args, **kwargs):
+        super(WiiGenerator, self).__init__(*args, **kwargs)
+        self.get = kwargs.get('gen') or wii_gen
+        self.wii_mix()
+
+
+def wii_progen(self):
+    chord_gen = self.chord_gen()
+    while True:
+        for i in range(256):
+            if i in range(256)[::16]:
+                chord = chord_gen.next()
+            r = random.random()
+            print self.pitch, self.roll, self.yaw
+
+            if self.pitch > r:
+                self.e.stopall()
+                self.e.playchord(self.chord_to_midi(chord)[0:int(self.roll*20)], self.get_volume(int(self.pitch*127)))
+
+            self.e.playnote(int(round(len(self.all_midi_notes)*self.roll)), self.get_volume(int(self.pitch*127)))
+
+            yield
+
+
+class WiiProgressionGenerator(ProgressionGenerator, WiiMixin):
+
+    def __init__(self, *args, **kwargs):
+        super(WiiProgressionGenerator, self).__init__(*args, **kwargs)
+        self.gen = kwargs.get('gen') or wii_progen
+        print self.gen
+        self.wii_mix()
+
+
 
