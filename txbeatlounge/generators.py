@@ -54,14 +54,14 @@ def pattern1_gen(self):
 class BaseGenerator(object):
 
     def __init__(self, instrument, number=128, ones=(128, 64, 32, 16, 8, 4),
-                 gen=None, volume=50, humanize=10, **kw):
+                 gen=None, volume=50, humanize=10, wiimote=None, **kw):
         self.e = instrument
-        #self.e.select_program()
         self.num = number
         self.ones = ones
         self.gen = gen or kick_gen
         self.volume = volume
         self.humanize = humanize # between 0 and 30
+        self.wiimote = wiimote
 
     def __str__(self):
         return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.gen)
