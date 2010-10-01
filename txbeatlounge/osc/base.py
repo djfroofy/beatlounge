@@ -10,17 +10,13 @@ class AbstractDispatcher(object):
     def __init__(self, address=None):
         self._listeners = []
         self.address = address or self.address
-        self.node = dispatch.AddressNode(address)
-        self.node.addCallback("*", self.handle)
     
     def listen(self, handler):
         self._listeners.append(handler)
-        return len(self._listeners) - 1
 
-    def unlisten(self, handler, index=None):
-        if index is None:
-            while handler in self._listeners:
-                self._listeners.remove(handler)
+    def unlisten(self, handler):
+        while handler in self._listeners:
+            self._listeners.remove(handler)
 
     def dispatch(self, *a, **k):
         for handler in self._listeners:
@@ -34,12 +30,21 @@ class TouchDispatcher(AbstractDispatcher):
     address = "touch"
 
     def handle(self, message, address):
-        log('[TouchDispatcher.handle] %s, %s, %s' % (message, message.arguments, address))
+        log.msg('[TouchDispatcher.handle] %s, %s, %s' % (message, message.arguments, address))
         try:
             x, y = message.arguments
             self.dispatch(float(x), float(y))
         except Exception, e:
-            log('[TouchDispatcher.handle] error', e)
+            log.msg('[TouchDispatcher.handle] error', e)
+
+class FloatDispatcher(AbstractDispatcher):
+
+    def handle(self, message, address):
+        try:
+            (v,) = message.arguments
+            self.dispatch(float(v))
+        except Exception, e:
+            log.msg('[FloatDispatcher.handle] error', e)
 
       
 class DispatcherHub(object):
@@ -55,7 +60,7 @@ class DispatcherHub(object):
         if dispatcher.address in self._addresses:
             raise ValueError('Dispatcher with address %s already added' % dispatcher.address)
         self._addresses[dispatcher.address] = dispatcher
-        self.receiver.addNode('/' + dispatcher.address, dispatcher.node)  
+        self.receiver.addCallback('/' + dispatcher.address, dispatcher.handle)  
 
     def fallback(self, message, address):
         log.msg('[fallback] %s %s' % (message, address))
