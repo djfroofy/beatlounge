@@ -1,5 +1,6 @@
 import random
 import logging
+from copy import copy
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -207,6 +208,19 @@ class BassLineGenerator(BeatGenerator):
     def random_note_gen(self):
         while True:
             yield windex(self.midi_noteweights)
+
+    def get_random_note(self):
+        return windex(self.midi_noteweights)
+
+    @property
+    def notes(self):
+        notes = []
+        for x,y in self.midi_noteweights:
+            for n in constants.NOTES:
+                if x in getattr(constants, n):
+                    notes.append(n)
+
+        return notes
 
 
 class KickGenerator(BaseGenerator):
