@@ -3,6 +3,13 @@ import random
 from txbeatlounge import constants
 
 
+
+def percindex(r, lst):
+    '''Given 0<=r=<1, get the item of the list'''
+
+    return lst[int(len(lst)*r)]
+
+
 def windex(lst):
     '''an attempt to make a random.choose() function that makes weighted choices
 
@@ -24,9 +31,9 @@ def midi_to_letter(midi):
 
 
 spaces = {
-    '8trip': 1/12.,
-    '16th': 1/8.,
-    '8th': 1/4.,
+    '8trip': 1/6.,
+    '16th': 1/4.,
+    '8th': 1/2,
     'qtrup': 1/3.,
     'quarter': 1,
     'half': 2,

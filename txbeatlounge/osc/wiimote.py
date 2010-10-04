@@ -39,7 +39,7 @@ class AccelDispatcher(FloatDispatcher):
 
 def wiimoteHub():
     """
-    Returns a DispatcherHub with a the wiimote thay is updated with
+    Returns a DispatcherHub with a the wiimote that is updated with
     pitch, roll, yaw and accel.
     
     An example of attaching the hub's receiver to listen on udp:

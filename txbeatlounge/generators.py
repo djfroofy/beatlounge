@@ -50,6 +50,48 @@ def pattern1_gen(self):
             yield
 
 
+class OscFluidGenerator(object):
+    '''All of the FooGenerator classes below should be deprecated in favor of this abstraction
+
+    accepts osc objects and musical parameters as kwargs and provides a unified interface for gen funcs
+    first arg is an instrument that will presumably play notes and chords'''
+
+    def __init__(self, instrument, generator, beats=7, ones=[0,2,4], volume=50, humanize=10, osc=None,
+            notes=['C', 'E', 'G', 'A'],
+            chords=[('C', 'E', 'G'), ('A', 'C', 'E')],
+            noteweights=[('C', 20), ('E', 15), ('G', 17), ('A', 12)],
+            midi_noteweights=[(45,2),(48,5),(52,1),(53,3),(55,4),(60,5),(64,1),(65,2),(67,3),(72,2),(79,1),],
+            midi_notes=[33,36,40,41,43,48,52,53,55,60,64,65,67,72,76,77,79,84],
+            **kw):
+
+
+        self.e = instrument
+        self.beats = beats
+        self.ones = ones
+        self.gen = generator
+        self.volume = volume
+        self.humanize = humanize
+        self.osc = osc
+        self.notes = notes
+        self.chords = chords
+        self.midi_noteweights = midi_noteweights
+
+    def __str__(self):
+        return '%s, %s, %s, %s' % (self.e, self.number, self.ones, self.gen)
+
+    def __call__(self):
+        return iter(self)
+
+    def __iter__(self):
+        return self.gen(self)
+
+    def get_volume(self, offset=0):
+        guess = random.randrange(self.volume-self.humanize, self.volume + self.humanize)
+        return max([0, min([127, guess+offset])])
+
+
+
+
 
 class BaseGenerator(object):
 
@@ -86,7 +128,6 @@ class BaseGenerator(object):
     @property
     def notes(self):
         return NotImplementedError('subclasses must provide, self.notes, a list of A/B/C/Df')
-
 
 
 class PatternGenerator(BaseGenerator):
