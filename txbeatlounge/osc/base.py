@@ -68,4 +68,41 @@ class DispatcherHub(object):
     def __getitem__(self, address):
         return self._addresses[address]
 
+# Some generic device representations
+
+class Device(object):
+    pass
+
+class Accelerometer(Device):
+
+    pitch = 0
+    roll = 0
+    yaw = 0
+
+    def on_pitch(self, v):
+        self.pitch = v
+
+    def on_roll(self, v):
+        self.roll = v
+
+    def on_yaw(self, v):
+        self.yaw = v
+
+
+class TouchPad(Device):
+
+    max_x = 640
+    max_y = 480
+    
+    x = 0
+    y = 0
+    
+    def on_x(self, v):
+        self.x = v
+
+    def on_y(self, v):
+        self.y = v
+
+
+
 
