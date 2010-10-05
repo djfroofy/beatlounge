@@ -43,3 +43,16 @@ spaces = {
 def clock_converter(bpm, space):
     return (60./bpm) * spaces[space]
 
+
+def random_onoff(event, likelihood=[1,0], frequency=0.125):
+    if not hasattr(event, 'playing'):
+        event.playing = True
+    if random.choice(likelihood):
+        if event.playing:
+            event.stop_at_interval(0)
+            event.playing = False
+        else:
+            event.start(frequency)
+            event.playing = True
+
+
