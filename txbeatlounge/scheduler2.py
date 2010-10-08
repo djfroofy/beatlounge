@@ -62,7 +62,7 @@ class Meter(object):
 
 class SynthControllerMixin(object):
     synthAudioDevice = 'coreaudio'
-    synth = Synth(1.0)
+    synth = Synth(0.2)
 
 
 class BeatClock(SelectReactor, SynthControllerMixin):
@@ -82,6 +82,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def run(self):
         self.synth.start(self.synthAudioDevice)
+        import time
+        time.sleep(10)
         self.task = LoopingCall(self.tick)
         self.on_stop = self.task.start(self._tick_interval, True)
         if not self.reactor.running:
@@ -100,6 +102,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def callWhenRunning(self, *a, **kw):
         return self.reactor.callWhenRunning(*a, **kw)
+
 
 class ScheduledEvent(object):
     
@@ -139,4 +142,7 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_stop)
         return self
 
+
+BPM = 130
+clock = BeatClock(BPM)
 

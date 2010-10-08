@@ -7,9 +7,10 @@ class AbstractDispatcher(object):
     
     address = None
 
-    def __init__(self, address=None):
+    def __init__(self, address=None, transform=lambda v : v):
         self._listeners = []
         self.address = address or self.address
+        self._transform = transform
     
     def listen(self, handler):
         self._listeners.append(handler)
@@ -33,19 +34,41 @@ class TouchDispatcher(AbstractDispatcher):
         log.msg('[TouchDispatcher.handle] %s, %s, %s' % (message, message.arguments, address))
         try:
             x, y = message.arguments
-            self.dispatch(float(x), float(y))
+            self.dispatch(self_transform(float(x)), self._transform(float(y)))
         except Exception, e:
             log.msg('[TouchDispatcher.handle] error', e)
+
 
 class FloatDispatcher(AbstractDispatcher):
 
     def handle(self, message, address):
         try:
             (v,) = message.arguments
-            self.dispatch(float(v))
+            self.dispatch(self._transform(float(v)))
         except Exception, e:
             log.msg('[FloatDispatcher.handle] error', e)
 
+
+class Float2Dispatcher(AbstractDispatcher):
+
+    def handle(self, message, address):
+        try:
+            (v1, v2) = message.arguments
+            self.dispatch(self._transform(float(v1)), self._transform(float(v2)))
+        except Exception, e:
+            log.msg('[Float2Dispatcher.handle] error', e)
+      
+class Float3Dispatcher(AbstractDispatcher):
+
+    def handle(self, message, address):
+        try:
+            (v1, v2, v3) = message.arguments
+            self.dispatch(
+                self._transform(float(v1)),
+                self._transform(float(v2)),
+                self._transform(sloat(v3)))
+        except Exception, e:
+            log.msg('[Float3Dispatcher.handle] error', e)
       
 class DispatcherHub(object):
 

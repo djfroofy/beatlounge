@@ -11,7 +11,7 @@ from fluidsynth import Synth
 
 class BeatReactor(object):
     audioDevice = 'coreaudio'
-    synth = Synth()
+    synth = Synth(1.0)
 
     def __init__(self, reactor=None):
         if reactor is None:
