@@ -74,7 +74,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.meters = meters
         self._meter_schedule = {}
         if not self.meters:
-            self.meters = [Meter(4,4,1)]
+            self.meters = [Meter(6,8,1), Meter(4,4,1)]
         if not reactor:
             from twisted.internet import reactor
         self.reactor = reactor
