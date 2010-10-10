@@ -1,3 +1,4 @@
+from collections import namedtuple
 from functools import wraps
 
 from zope.interface import implements
@@ -11,23 +12,15 @@ from twisted.internet.task import LoopingCall
 
 from fluidsynth import Synth
 
-class Beat(tuple):
 
-    def __init__(self, measure, quarter=0, eighth=0, sixteenth=0, remainder=0):
-        self.measure = measure
-        self.quarter = quarter
-        self.eighth = eighth
-        self.sixteenth = sixteenth
-        self.remainder = remainder
-        a = (measure, quarter, eighth, sixteenth, remainder)
-        tuple.__init__(self, *a)
- 
-    def n_eighth(self):
-        return self.quarter * 2 + self.eighth
+_BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
 
-    def n_sixteenth(self):
-        return self.quarter * 4 + self.eighth * 2 + self.sixteenth
+class Beat(_BeatBase):
 
+    def __repr__(self):
+        return ('Beat(measure=%s, quarter=%s, eighth=%s, sixteenth=%s, '
+                'remainder=%s)' % (self.measure, self.quarter, self.eighth,
+                self.sixteenth, self.remainder))
 
 class Meter(object):
 
@@ -35,21 +28,24 @@ class Meter(object):
         self.length = length
         self.division = division
         self.number = number
+        self._quarters_per_measure = self.length * self.number / (self.division / 4.)
+        #print 'quarters per measure', self.length, self.number, self.division, self._quarters_per_measure
         self._hash = hash((self.length, self.division, self.number))
-        self.ticks_per_measure = int(24 * (self.length / 4.) * 4 * (4. / self.division) *  self.number)
+        self.ticks_per_measure = int(24 * self.length * 4. / self.division * self.number)
+        #print '%r, ticks per measure = %s' % (self, self.ticks_per_measure)
 
     def beat(self, ticks):
         measure, ticks = divmod(ticks, self.ticks_per_measure)
         if not ticks:
-            return Beat(measure)
-        quarter, ticks = divmod(ticks, self.ticks_per_measure / 4) 
+            return Beat(measure, 0, 0, 0, 0)
+        quarter, ticks = divmod(ticks, self.ticks_per_measure / self._quarters_per_measure) 
         if not ticks:
-            return Beat(measure, quarter)
-        eighth, ticks = divmod(ticks, self.ticks_per_measure / 8)     
+            return Beat(measure, int(quarter), 0, 0, 0)
+        eighth, ticks = divmod(ticks, self.ticks_per_measure / (self._quarters_per_measure * 2)) 
         if not ticks:
-            return Beat(measure, quarter, eighth)
-        sixteenth, ticks = divmod(ticks, self.ticks_per_measure / 16)
-        return Beat(measure, quarter, eighth, sixteenth, ticks)
+            return Beat(measure, int(quarter), int(eighth), 0, 0)
+        sixteenth, ticks = divmod(ticks, self.ticks_per_measure / (self._quarters_per_measure * 4))
+        return Beat(measure, int(quarter), int(eighth), int(sixteenth), int(ticks))
 
     def ticks(self, ticks):
         return ticks % self.ticks_per_measure
@@ -57,8 +53,12 @@ class Meter(object):
     def measure(self, ticks):
         return divmod(ticks, self.ticks_per_measure)[0]
 
+    def __repr__(self):
+        return 'Meter(length=%s, division=%s, number=%s)' % (self.length, self.division, self.number)
+
     def __hash__(self):
         return self._hash
+
 
 class SynthControllerMixin(object):
     synthAudioDevice = 'coreaudio'
@@ -111,21 +111,23 @@ class ScheduledEvent(object):
         self.call = (_f, args, kwargs)
 
     def startLater(self, measures=1, frequency=0.25, ticks=None, meter=None):
-        if measures < 1:
-            raise ValueError("measures should be a non-zero positive integer")
+        if measures < 0:
+            raise ValueError("measures must be greater than zero")
         if meter is None:
             meter = self.clock.meters[0]
         if ticks is None:
-            ticks = frequency * meter.ticks_per_measure
+            ticks = frequency * 96
         def _start_later():
             current_measure = meter.measure(self.clock.ticks)
-            tick = int(current_measure + meter.ticks_per_measure * measures)
+            tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
             seconds = tick - self.clock.seconds()
+            if seconds < 0:
+                seconds += meter.ticks_per_measure
             self.clock.callLater(seconds, self.start, ticks, True)
         self.clock.callWhenRunning(_start_later)
         return self
 
-    def start(self, ticks, now=True):
+    def start(self, ticks=None, now=True):
         def _start():
             self.task = LoopingCall(self.call[0], *self.call[1], **self.call[2])
             self.task.clock = self.clock
@@ -136,8 +138,10 @@ class ScheduledEvent(object):
     def stopLater(self, measures=1):
         def _stop():
             current_measure = meter.measure(self.ticks)
-            tick = int(current_measure + meter.ticks_per_measure * measures)
+            tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
             seconds = tick - self.clock.seconds()
+            if seconds < 0:
+                seconds += meter.ticks_per_measure
             self.clock.callLater(seconds, self.task.stop)
         self.clock.callWhenRunning(_stop)
         return self
