@@ -104,7 +104,9 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
 
 class ScheduledEvent(object):
-    
+   
+    meter = None
+ 
     def __init__(self, clock, _f, *args, **kwargs):
         self.clock = clock
         self.call = (_f, args, kwargs)
@@ -112,8 +114,7 @@ class ScheduledEvent(object):
     def startLater(self, measures=1, frequency=0.25, ticks=None, meter=None):
         if measures < 0:
             raise ValueError("measures must be greater than zero")
-        if meter is None:
-            meter = self.clock.meters[0]
+        meter = meter or self.meter or self.clock.meters[0]
         if ticks is None:
             ticks = frequency * 96
         def _start_later():
@@ -131,7 +132,7 @@ class ScheduledEvent(object):
         return self
 
     def stopLater(self, measures=1, meter=None, ticksLater=None):
-        meter = meter or self.clock.meters[0]
+        meter = meter or self.meter or self.clock.meters[0]
         def _scheduleStop():
             ticks = ticksLater
             if ticks is None:
@@ -143,6 +144,11 @@ class ScheduledEvent(object):
                     log.msg('Tried to stop an event that has not yet started')
             self.clock.callLater(ticks, _stop)
         self.clock.callWhenRunning(_scheduleStop)
+        return self
+
+
+    def bindMeter(self, meter):
+        self.meter = meter
         return self
 
     def _ticks(self, measures, meter):

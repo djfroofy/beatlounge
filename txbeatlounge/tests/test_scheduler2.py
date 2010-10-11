@@ -155,7 +155,6 @@ class ClockTests(TestCase, ClockRunner):
         self.assertEquals(len(called), len(expected))
         self.assertEquals(called, expected)
 
-
         called[:] = []
        
         self.clock.schedule(instr2).startLater(0, 0.25, meter=self.meter34).stopLater(2 + 2/3., meter=self.meter34)
@@ -163,3 +162,33 @@ class ClockTests(TestCase, ClockRunner):
         expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
         self.assertEquals(called, expected)
         
+    def test_bindMeter(self):
+        called = []
+
+        instr1 = TestInstrument('f1', self.clock, called)
+        instr2 = TestInstrument('f2', self.clock, called)
+        
+        self.clock.schedule(instr1).bindMeter(self.meterStandard).startLater(1.0, 0.25).stopLater(3.5)
+        self._runTicks(96 * 5)
+        expected = [
+            (96,  'f1'),
+            (120, 'f1'),
+            (144, 'f1'),
+            (168, 'f1'),
+            (192, 'f1'),
+            (216, 'f1'),
+            (240, 'f1'),
+            (264, 'f1'),
+            (288, 'f1'),
+            (312, 'f1')]
+
+
+        self.assertEquals(len(called), len(expected))
+        self.assertEquals(called, expected)
+
+        called[:] = []
+       
+        self.clock.schedule(instr2).bindMeter(self.meter34).startLater(0, 0.25).stopLater(2 + 2/3.)
+        self._runTicks(96 * 5)
+        expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
+        self.assertEquals(called, expected)
