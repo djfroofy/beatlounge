@@ -3,6 +3,7 @@ from functools import wraps
 
 from zope.interface import implements
 
+from twisted.python import log
 from twisted.python.components import proxyForInterface
 from twisted.internet.interfaces import IReactorTime
 from twisted.internet.base import ReactorBase
@@ -135,16 +136,28 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_start)
         return self
 
-    def stopLater(self, measures=1):
-        def _stop():
-            current_measure = meter.measure(self.ticks)
-            tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
-            seconds = tick - self.clock.seconds()
-            if seconds < 0:
-                seconds += meter.ticks_per_measure
-            self.clock.callLater(seconds, self.task.stop)
-        self.clock.callWhenRunning(_stop)
+    def stopLater(self, measures=1, meter=None, ticksLater=None):
+        meter = meter or self.clock.meters[0]
+        def _scheduleStop():
+            ticks = ticksLater
+            if ticks is None:
+                ticks = self._ticks(measures, meter)
+            def _stop():
+                if hasattr(self, 'task'):
+                    self.task.stop()
+                else:
+                    log.msg('Tried to stop an event that has not yet started')
+            self.clock.callLater(ticks, _stop)
+        self.clock.callWhenRunning(_scheduleStop)
         return self
+
+    def _ticks(self, measures, meter):
+        current_measure = meter.measure(self.clock.ticks)
+        tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
+        ticks = tick - self.clock.seconds()
+        if ticks < 0:
+            ticks += meter.ticks_per_measure
+        return ticks
 
 
 BPM = 130
