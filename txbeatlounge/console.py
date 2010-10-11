@@ -22,7 +22,6 @@ def runWithProtocol(klass, audioDev):
         termios.tcsetattr(fd, termios.TCSANOW, oldSettings)
         os.write(fd, "\r\x1bc\r")
 
-from comps.scheduler2demo import start
 
 def main(argv=None, reactor=None):
     log.startLogging(file('child.log', 'w'))
@@ -43,6 +42,5 @@ def main(argv=None, reactor=None):
 
 if __name__ == '__main__':
     import time
-    main_program = start()
     main()
  
