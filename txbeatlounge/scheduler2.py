@@ -30,10 +30,8 @@ class Meter(object):
         self.division = division
         self.number = number
         self._quarters_per_measure = self.length * self.number / (self.division / 4.)
-        #print 'quarters per measure', self.length, self.number, self.division, self._quarters_per_measure
         self._hash = hash((self.length, self.division, self.number))
         self.ticks_per_measure = int(24 * self.length * 4. / self.division * self.number)
-        #print '%r, ticks per measure = %s' % (self, self.ticks_per_measure)
 
     def beat(self, ticks):
         measure, ticks = divmod(ticks, self.ticks_per_measure)
@@ -119,12 +117,8 @@ class ScheduledEvent(object):
         if ticks is None:
             ticks = frequency * 96
         def _start_later():
-            current_measure = meter.measure(self.clock.ticks)
-            tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
-            seconds = tick - self.clock.seconds()
-            if seconds < 0:
-                seconds += meter.ticks_per_measure
-            self.clock.callLater(seconds, self.start, ticks, True)
+            ticksLater = self._ticks(measures, meter)
+            self.clock.callLater(ticksLater, self.start, ticks, True)
         self.clock.callWhenRunning(_start_later)
         return self
 
