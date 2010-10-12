@@ -24,12 +24,10 @@ just_5th = Decimal(3)/Decimal(2)
 octave = 2
 
 def well_tempered_major_pure(freq):
-    return [freq*i for i range(1,8) if i not in [6,7]]
+    return [freq*i for i in range(1,8) if i not in [6,7]]
 
 def just_major(freq, offset=0):
-    
-
-
+    pass
 
 
 def all_equal():
