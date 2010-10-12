@@ -146,6 +146,11 @@ class SndObjInstrument(object):
         self.env.Restart()
 
 
+class MultiOscillator(object):
+
+    pass
+
+
 
 def slider(osc):
     while True:

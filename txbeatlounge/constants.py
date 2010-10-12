@@ -1,5 +1,6 @@
 NOTES = ['C', 'Df', 'D', 'Ef', 'E', 'F', 'Gf', 'G', 'Af', 'A', 'Bf', 'B']
 
+# Midi
 C=[0, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
 Df=[1, 13, 25, 37, 49, 61, 73, 85, 97, 109, 121]
 D=[2, 14, 26, 38, 50, 62, 74, 86, 98, 110, 122]
@@ -12,6 +13,23 @@ Af=[8, 20, 32, 44, 56, 68, 80, 92, 104, 116]
 A=[9, 21, 33, 45, 57, 69, 81, 93, 105, 117]
 Bf=[10, 22, 34, 46, 58, 70, 82, 94, 106, 118]
 B=[11, 23, 35, 47, 59, 71, 83, 95, 107, 119]
+MIDI_NOTES = [C, Df, D, Ef, E, F, Gf, G, Af, A, Bf, B]
+
+
+from decimal import Decimal
+twelve_tone_equal_440 = [440*(2**(1/Decimal(12)))**i for i in range(-60,68)]
+
+just_3rd = Decimal(5)/Decimal(4)
+just_5th = Decimal(3)/Decimal(2)
+octave = 2
+
+def well_tempered_major_pure(freq):
+    return [freq*i for i range(1,8) if i not in [6,7]]
+
+def just_major(freq, offset=0):
+    
+
+
 
 
 def all_equal():
