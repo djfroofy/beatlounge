@@ -15,6 +15,7 @@ class ClockRunner:
 
 
 class TestReactor(object):
+    running = False
 
     def __init__(self):
         from twisted.internet import reactor
@@ -130,7 +131,6 @@ class ClockTests(TestCase, ClockRunner):
         self.assertEquals(len(called), len(expected))
         self.assertEquals(set(called), set(expected))
 
-
     def test_stopLater(self):
         called = []
 
@@ -192,3 +192,18 @@ class ClockTests(TestCase, ClockRunner):
         self._runTicks(96 * 5)
         expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
         self.assertEquals(called, expected)
+
+
+    def test_setTempo(self):
+        self.clock.setTempo(60)
+        interval_before = self.clock._tick_interval
+        called = []
+        self.clock.startTicking()
+        self.clock.reactor.running = True
+        self.clock.on_stop.addCallback(called.append)
+        self.clock.setTempo(120)
+        self.assertEquals(len(called), 1)
+        self.assertEquals(self.clock._tick_interval, interval_before / 2.)
+        self.clock.task.stop()
+
+        

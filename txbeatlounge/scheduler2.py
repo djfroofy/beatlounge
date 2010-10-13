@@ -73,7 +73,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.meters = meters
         self._meter_schedule = {}
         if not self.meters:
-            self.meters = [Meter(6,8,1), Meter(4,4,1)]
+            self.meters = [Meter(4,4,1)]
         if not reactor:
             from twisted.internet import reactor
         self.reactor = reactor
@@ -87,12 +87,13 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         
     def run(self):
         self.synth.start(self.synthAudioDevice)
-        import time
-        time.sleep(10)
-        self.task = LoopingCall(self.tick)
-        self.on_stop = self.task.start(self._tick_interval, True)
+        self.startTicking()
         if not self.reactor.running:
             self.reactor.run()
+
+    def startTicking(self):
+        self.task = LoopingCall(self.tick)
+        self.on_stop = self.task.start(self._tick_interval, True)
 
     def tick(self):
         self.ticks += 1
