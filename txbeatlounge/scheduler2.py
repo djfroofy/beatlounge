@@ -81,7 +81,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def setTempo(self, tempo):
         self._tick_interval = (60. / tempo) * (1./24)
-        if self.reactor.running:
+        if hasattr(self, 'task'):
             self.task.stop()
             self.task.start(self._tick_interval, True)
         
@@ -108,6 +108,12 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def callWhenRunning(self, *a, **kw):
         return self.reactor.callWhenRunning(*a, **kw)
+
+    def nudge(self, pause=0.1):
+        if not hasattr(self, 'task'):
+            raise ValueError("Cannot nudge a clock that hasn't started")
+        self.task.stop()
+        self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
 
 
 class ScheduledEvent(object):
