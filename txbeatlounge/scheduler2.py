@@ -69,6 +69,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
     def __init__(self, tempo=130, meters=(), reactor=None):
         self.tempo = tempo
         self.ticks = 0
+        #self.setTempo(tempo)
         self._tick_interval = (60. / tempo) * (1./24)
         self.meters = meters
         self._meter_schedule = {}
@@ -84,6 +85,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         if hasattr(self, 'task'):
             self.task.stop()
             self.task.start(self._tick_interval, True)
+        self.tempo = tempo
         
     def run(self):
         self.synth.start(self.synthAudioDevice)
