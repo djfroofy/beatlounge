@@ -32,7 +32,9 @@ class BasePlayer(object):
 
     def play(self):
         v, o = self.velocity(110, 110)
-        n = self._next()()
+        n = self._next()
+        if callable(n):
+            n = n()
         if n is None:
             return
         self._on_method(n, v)
@@ -66,7 +68,12 @@ class ChordPlayer(BasePlayer):
         return self.chord
 
 def generateSounds(g):
-    return lambda : g.next()()
+    def f():
+        s = g.next()
+        if callable(s):
+            return s()
+        return s
+    return f
 
 
 def N():
