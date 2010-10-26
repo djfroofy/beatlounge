@@ -26,6 +26,9 @@ class AbstractDispatcher(object):
             except Exception, e:
                 log.err('[%r.dispatch] error' % self.__class__, e)
 
+    def __call__(self):
+        return self
+
 class TouchDispatcher(AbstractDispatcher):
     
     address = "touch"
@@ -34,9 +37,14 @@ class TouchDispatcher(AbstractDispatcher):
         log.msg('[TouchDispatcher.handle] %s, %s, %s' % (message, message.arguments, address))
         try:
             x, y = message.arguments
-            self.dispatch(self_transform(float(x)), self._transform(float(y)))
+            self.dispatch(self._transform(float(x)), self._transform(float(y)))
         except Exception, e:
             log.msg('[TouchDispatcher.handle] error', e)
+
+
+class BoolDispatcher(AbstractDispatcher):
+    def handle(self, message, address):
+        self.dispatch(message.arguments[0].value)
 
 
 class FloatDispatcher(AbstractDispatcher):
