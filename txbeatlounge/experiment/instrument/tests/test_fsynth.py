@@ -7,10 +7,9 @@ from txbeatlounge.experiment.instrument import fsynth
 import synthmodule
 
 Synth = synthmodule.Synth
-
 SynthRouter = fsynth.SynthRouter
 SynthPool = fsynth.SynthPool
-
+Instrument = fsynth.Instrument
 
 class SynthRouterTests(TestCase):
 
@@ -28,8 +27,9 @@ class TestInstrument:
     def __init__(self):
         self.sfid = None
 
-    def registerId(self, id):
+    def registerSoundfont(self, id, channel):
         self.sfid = id
+        self.channel = channel
 
 
 class SynthPoolTests(TestCase):
@@ -74,16 +74,65 @@ class SynthPoolTests(TestCase):
         instr = TestInstrument()
         self.pool.connectInstrument(synth, instr)
         self.assertEquals(instr.sfid, 0)
+        self.assertEquals(instr.channel, 0)
         instr2 = TestInstrument()
         self.pool.connectInstrument(synth, instr2)
         self.assertEquals(instr2.sfid, 1)
+        self.assertEquals(instr2.channel, 1)
 
     def test_connectInstrumentWithSoundFontId(self):
         synth = self.pool.synthObject()
         instr = TestInstrument()
         self.pool.connectInstrument(synth, instr, sfid=99)
         self.assertEquals(instr.sfid, 99)
+        self.assertEquals(instr.channel, 0)
+
+    def test_connectInstrumentWithChannel(self):
+        synth = self.pool.synthObject()
+        instr = TestInstrument()
+        self.pool.connectInstrument(synth, instr, sfid=99, channel=7)
+        self.assertEquals(instr.sfid, 99)
+        self.assertEquals(instr.channel, 7)
+
+        instr = TestInstrument()
+        self.pool.connectInstrument(synth, instr, channel=7)
+        self.assertEquals(instr.sfid, 0)
+        self.assertEquals(instr.channel, 7)
 
 
 
+class InstrumentTests(TestCase):
+
+
+    def setUp(self):
+        self.patch(fsynth, 'Synth', Synth)
+        defaultPool = fsynth.defaultPool
+        self.addCleanup(fsynth.suggestDefaultPool, defaultPool)
+        fsynth.suggestDefaultPool(fsynth.StereoPool())
+    
+    def tearDown(self):
+        synthmodule.nextid = synthmodule._nextid(0)
+
+    def test_instrumentsAreLoaded(self):
+        instr1 = Instrument('sf2/instrument.sf2')
+        self.assertEquals(instr1.sfid, 0)
+        self.assertEquals(instr1.channel, 0)
+        instr1 = Instrument('sf2/instrument2.sf2')
+        self.assertEquals(instr1.sfid, 1)
+        self.assertEquals(instr1.channel, 1)
+        
+    def test_instrumentIsConnectedCorrectly(self):
+
+        fsynth.defaultPool.bindSettings('mono', gain=0.2)
+        fsynth.defaultPool.bindSettings('left', gain=0.3)
+        fsynth.defaultPool.bindSettings('right', gain=0.4)
+
+        instr_mono = Instrument('sf2/instrument2.sf2')
+        self.assertEquals(instr_mono.synth.gain, 0.2)
+        instr_left = Instrument('sf2/instrument2.sf2', connection='left')
+        self.assertEquals(instr_left.synth.gain, 0.3)
+        instr_right = Instrument('sf2/instrument2.sf2', connection='right')
+        self.assertEquals(instr_right.synth.gain, 0.4)
+
+   
 

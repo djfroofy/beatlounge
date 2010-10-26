@@ -8,13 +8,17 @@ class SynthRouter:
         self.connections = cx = {}
         cx.update(synth_factories)
 
+    def __getitem__(self, key):
+        return self.connections[key]
+
+
 class SynthPool:
 
     def __init__(self, router):
         self.router = router
         self.pool = {}
         self.settings = {}
-
+        self._channel_gen = {}
 
     def bindSettings(self, connection, gain=0.5, samplerate=44100):
         self.settings[connection] = (gain, samplerate)
@@ -23,38 +27,99 @@ class SynthPool:
         if connection not in self.router.connections:
             raise ValueError('No connection \'%s\' in router' % connection)
         if connection in self.pool:
-            fs, seq = self.pool[connection]
-            nom = seq.next()
+            fs = self.pool[connection]
         else:
             gain, samplerate = self.settings.get(connection, (0.5, 44100))
             fs = self.router.connections[connection](gain=gain, samplerate=samplerate)
-            nom = 0
             def seq():
-                curr = 1
+                curr = 0
                 while 1:
                     yield curr
                     curr += 1
-            self.pool[connection] = (fs, seq())
+            self._channel_gen[fs] = seq()
+            self.pool[connection] = fs
         return fs
 
+    def prime(self):
+        for connection in self.router.connections:
+            self.synthObject(connection=connection)
 
-    def loadSoundFont(self, synth, sf2path, channel=0, bank=0, preset=0):
+    def loadSoundFont(self, synth, sf2path, channel=None, bank=0, preset=0):
+        if channel is None:
+            channel = self._channel_gen[synth].next()
         sfid = synth.sfload(sf2path)
         synth.program_select(channel, sfid, bank, preset)
-        return sfid
+        return sfid, channel
  
 
-    def connectInstrument(self, synth, instr, sfpath=None, channel=0, bank=0, preset=0, sfid=None):
+    def connectInstrument(self, synth, instr, sfpath=None,
+                         channel=None, bank=0, preset=0, sfid=None):
         if sfid is not None:
-            return instr.registerId(sfid)
-        sfid = self.loadSoundFont(synth, sfpath, channel, bank, preset)
-        instr.registerId(sfid)
+            return instr.registerSoundfont(sfid, channel or 0)
+        sfid, channel = self.loadSoundFont(synth, sfpath, channel, bank, preset)
+        instr.registerSoundfont(sfid, channel)
+
+
+
+def StereoPool():
+    router = SynthRouter(left=Synth, right=Synth, mono=Synth)
+    return SynthPool(router)
+
+
+def QuadPool():
+    router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth, mono=Synth)
+    return SynthPool(router)
+
+def NConnectionPoool(**synth_factories):
+    router = SynthRouter(**synth_factories)
+    return SynthPool(router)
+
+
+defaultPool = StereoPool()
 
 class Instrument(object):
     
-    def __init__(self, sf2path, synthObject=None, preset=0, bank=0, reactor=None):
-        if reactor is None:
-            from txbeatlounge.scheduler2 import clock as reactor
-        self.reactor = reactor
+    def __init__(self, sfpath, synth=None, connection='mono',
+                 channel=None, bank=0, preset=0, pool=None):
+        if pool is None:
+            pool = defaultPool 
+        if synth is None:
+            synth = pool.synthObject(connection=connection)
+        self.synth = synth
+        pool.connectInstrument(self.synth, self, sfpath, channel=channel,
+                               bank=bank, preset=preset)
+        self._max_velocity = 127     
+
+    def registerSoundfont(self, sfid, channel):
+        self.sfid = sfid
+        self.channel = channel
+
+    
+    def cap(self, maxVelocity):
+        self._max_velocity = maxVelocity
+
+    def playnote(self, note, velocity):
+        velocity = min(velocity, self._max_velocity)
+        self.synth.noteon(self.channel, note, velocity)
+
+    def stopnote(self, note):
+        self.synth.noteoff(self.channel, note)
+
+    def playchord(self, notes, velocity):
+        for note in notes:
+            self.playnote(note, velocity)
+
+    def stopchord(self, notes):
+        for note in notes:
+            self.stopnote(note)
+
+    def stopall(self):
+        for note in range(128):
+            self.stopnote(note)
+
+
+def suggestDefaultPool(pool):
+    global defaultPool
+    defaultPool = pool
 
 
