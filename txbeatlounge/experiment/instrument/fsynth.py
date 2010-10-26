@@ -14,14 +14,26 @@ class SynthRouter:
 
 class SynthPool:
 
-    def __init__(self, router):
+    def __init__(self, router, reactor=None, audiodev=None):
         self.router = router
         self.pool = {}
         self.settings = {}
         self._channel_gen = {}
+        if reactor is None:
+            from txbeatlounge.scheduler2 import clock as reactor
+        self.reactor = reactor
+        if audiodev is None:
+            self.audiodev = reactor.synthAudioDevice
+        self.reactor.callWhenRunning(self.startSynths)
 
     def bindSettings(self, connection, gain=0.5, samplerate=44100):
         self.settings[connection] = (gain, samplerate)
+
+    def startSynths(self):
+        for connection in self.pool:
+            fs = self.pool[connection]
+            #print 'starting synth %s with device %s' % (fs, self.audiodev)
+            fs.start(self.audiodev)
 
     def synthObject(self, connection='mono'):
         if connection not in self.router.connections:
@@ -38,6 +50,10 @@ class SynthPool:
                     curr += 1
             self._channel_gen[fs] = seq()
             self.pool[connection] = fs
+            if self.reactor.running:
+                #print 'premptively starting synth object %r with audio dev %s' % (
+                #    fs, self.audiodev)
+                fs.start(self.audiodev)
         return fs
 
     def prime(self):
@@ -91,6 +107,7 @@ class Instrument(object):
         self._max_velocity = 127     
 
     def registerSoundfont(self, sfid, channel):
+        #print 'registered sound font', self.synth, sfid, channel
         self.sfid = sfid
         self.channel = channel
 
@@ -100,9 +117,11 @@ class Instrument(object):
 
     def playnote(self, note, velocity):
         velocity = min(velocity, self._max_velocity)
+        #print 'playing note', self.synth, self.channel, note, velocity
         self.synth.noteon(self.channel, note, velocity)
 
     def stopnote(self, note):
+        #print 'stopping note', self.synth, self.channel, note
         self.synth.noteoff(self.channel, note)
 
     def playchord(self, notes, velocity):

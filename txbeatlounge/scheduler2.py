@@ -91,6 +91,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.synth.start(self.synthAudioDevice)
         self.startTicking()
         if not self.reactor.running:
+            self.running = True
             self.reactor.run()
 
     def startTicking(self):

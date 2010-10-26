@@ -55,6 +55,9 @@ class NotePlayer(BasePlayer):
     def _next(self):
         return self.note
 
+
+Player = NotePlayer
+
 class ChordPlayer(BasePlayer):
     implements(IChordPlayer)
     
