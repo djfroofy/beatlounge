@@ -19,6 +19,7 @@ class FiltersTests(TestCase):
         self.sustainer = Sustainer(120)
         self.passthru = PassThru()
         self.ducker = StandardDucker(10, clock=self.clock)
+        self.fadein = FadeIn(20, 120, tickrate=7)
         self.chain = Chain(Sustainer(100), StandardDucker(20, clock=self.clock))
 
     def test_sustainer(self):
