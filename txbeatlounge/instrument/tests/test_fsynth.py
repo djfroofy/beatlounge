@@ -1,8 +1,7 @@
 
 from twisted.trial.unittest import TestCase
 
-
-from txbeatlounge.experiment.instrument import fsynth
+from txbeatlounge.instrument import fsynth
 
 import synthmodule
 
