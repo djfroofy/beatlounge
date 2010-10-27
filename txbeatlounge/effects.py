@@ -1,3 +1,7 @@
+import warnings
+
+warnings.warn('txbeatlounge.effects is deprecated, use txbeatlounge.filters instead')
+
 
 class Effect(object):
 
