@@ -1,5 +1,6 @@
 import random
 import logging
+import warnings
 from copy import copy
 
 logging.basicConfig(level=logging.DEBUG)
@@ -23,6 +24,8 @@ class Instrument(object):
     '''A fluidsynth instrument from an sf2path'''
 
     def __init__(self, sf2path=None, reactor=None, channel=None, preset=0, **kw):
+        warnings.warn('txbeatlounge.common.Instrument is deprecated; '
+                      'use txbeatlounge.instrument.fsynth.Instrument instead')
         if reactor is None:
             from txbeatlounge.internet import reactor
         self.reactor = reactor

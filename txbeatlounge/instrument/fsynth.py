@@ -22,14 +22,15 @@ class SynthPool:
         if reactor is None:
             from txbeatlounge.scheduler2 import clock as reactor
         self.reactor = reactor
-        if audiodev is None:
-            self.audiodev = reactor.synthAudioDevice
+        self.audiodev = audiodev
         self.reactor.callWhenRunning(self.startSynths)
 
     def bindSettings(self, connection, gain=0.5, samplerate=44100):
         self.settings[connection] = (gain, samplerate)
 
     def startSynths(self):
+        if self.audiodev is None:
+            self.audiodev = self.reactor.synthAudioDevice
         for connection in self.pool:
             fs = self.pool[connection]
             #print 'starting synth %s with device %s' % (fs, self.audiodev)
