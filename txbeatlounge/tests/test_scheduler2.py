@@ -2,7 +2,7 @@ from functools import partial
 
 from twisted.trial.unittest import TestCase
 
-from txbeatlounge.scheduler2 import BeatClock, Meter
+from txbeatlounge.scheduler2 import BeatClock, Meter, measuresToTicks
 
 import data
 
@@ -51,7 +51,6 @@ class MeterTests(TestCase):
         self.meter54 = Meter(5,4)
         self.meter98 = Meter(9,8) 
 
-
     def test_beat(self):
         beats = []
         for i in range(96 * 2):
@@ -73,8 +72,18 @@ class MeterTests(TestCase):
             beats.append(self.meter98.beat(i))
         self.assertEquals(beats, data.measure_98_beats)
 
-        
-        
+
+class UtilityTests(TestCase):
+
+    def test_measuresToTicks(self):
+        ticks = measuresToTicks(0.25)
+        self.assertEquals(ticks, 24)
+        ticks = measuresToTicks(0.125)
+        self.assertEquals(ticks, 12)
+        ticks = measuresToTicks(1)
+        self.assertEquals(ticks, 96)
+       
+ 
 class ClockTests(TestCase, ClockRunner):
 
 

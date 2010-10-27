@@ -59,6 +59,8 @@ class Meter(object):
         return self._hash
 
 
+standardMeter = Meter(4,4)
+
 class SynthControllerMixin(object):
     synthAudioDevice = 'coreaudio'
     synth = Synth(0.2)
@@ -119,6 +121,10 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
 
 
+def measuresToTicks(measures):
+    return measures * standardMeter.ticks_per_measure
+
+
 class ScheduledEvent(object):
    
     meter = None
@@ -132,7 +138,12 @@ class ScheduledEvent(object):
             raise ValueError("measures must be greater than zero")
         meter = meter or self.meter or self.clock.meters[0]
         if ticks is None:
-            ticks = frequency * 96
+            # XXX
+            # I'm a little torn between whether this should be absolute to a 
+            # a standard meter (as current), or relative to any given meter.
+            # The advantage of the former is that 0.25 always means quarter note
+            # etc.
+            ticks = frequency * standardMeter.ticks_per_measure
         def _start_later():
             ticksLater = self._ticks(measures, meter)
             self.clock.callLater(ticksLater, self.start, ticks, True)
