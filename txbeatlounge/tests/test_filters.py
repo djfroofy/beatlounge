@@ -19,7 +19,7 @@ class FiltersTests(TestCase):
         self.sustainer = Sustainer(120)
         self.passthru = PassThru()
         self.ducker = StandardDucker(10, clock=self.clock)
-        self.fadein = FadeIn(20, 120, tickrate=7)
+        self.fadein = FadeIn(20, 30, step=5, tickrate=10, clock=self.clock)
         self.chain = Chain(Sustainer(100), StandardDucker(20, clock=self.clock))
 
     def test_sustainer(self):
@@ -67,5 +67,25 @@ class FiltersTests(TestCase):
         velocity, original = self.passthru.filter(60, 70)
         self.assertEquals(velocity, 60)
         self.assertEquals(original, 70)
-    
+   
 
+    def test_fadein(self):
+        self.clock.ticks = 0
+
+        for i in range(10):
+            velocity, original = self.fadein.filter(127)
+            self.assertEquals(velocity, 20)
+            self.assertEquals(original, 30)
+            self.clock.ticks += 1
+
+        for tick in range(10):
+            velocity, original = self.fadein.filter(127)
+            self.assertEquals(velocity, 25)
+            self.assertEquals(original, 30)
+            self.clock.ticks += 1
+
+        for tick in range(11):
+            velocity, original = self.fadein.filter(127)
+            self.assertEquals(velocity, 30)
+            self.assertEquals(original, 30)
+            self.clock.ticks += 1

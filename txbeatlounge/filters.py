@@ -118,8 +118,6 @@ class FadeIn(FadeX):
     implements(IFilter)
 
     def filter(self, velocity, original=None):
-        if original is None:
-            original = velocity
         if self.current == self.max:
             return self.current, self.max
         self._currenttick = self.clock.ticks
