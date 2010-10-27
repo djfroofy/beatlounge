@@ -56,10 +56,6 @@ class SynthPool:
                 fs.start(self.audiodev)
         return fs
 
-    def prime(self):
-        for connection in self.router.connections:
-            self.synthObject(connection=connection)
-
     def loadSoundFont(self, synth, sf2path, channel=None, bank=0, preset=0):
         if channel is None:
             channel = self._channel_gen[synth].next()
