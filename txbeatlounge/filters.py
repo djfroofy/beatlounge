@@ -5,9 +5,10 @@ class IFilter(Interface):
 
     clock = Attribute("""A L{IBeatClock}""")
 
-    def filter(value, original):
+    def filter(value, original=None):
         """
-        Optionally filter value and return tuple (filtered value, original)
+        Optionally filter value and return tuple (filtered value, original).
+        If original is None, a filter should generally instead return (filtered value, value).
         """
 
 
@@ -24,7 +25,9 @@ class Sustainer(object):
     def __init__(self, velocity):
         self.velocity = velocity
 
-    def filter(self, velocity, original):
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = self.velocity
         return self.velocity, original
 
 
@@ -40,13 +43,15 @@ class Ducker(object):
         self.peaks = peaks or self.peaks
         self.duckLevel = duckLevel is None and self.duckLevel or duckLevel
 
-    def filter(self, velocity, original):
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = velocity
         duckLevel = self.duckLevel
         if velocity != original:
-            duckLevel = int((float(velocity) / original) * duckLevel)
+            duckLevel = (float(velocity) / original) * duckLevel
         beat = self.meter.beat(self.clock.ticks)
         if beat[1:] not in self.peaks:
-            velocity = velocity - duckLevel
+            velocity = int(velocity - duckLevel)
         return velocity, original
 
 
@@ -57,9 +62,10 @@ class Chain(object):
         self.filters = filters
 
     def filter(self, velocity, original=None):
-        original = original is None and velocity or original
         for filter in self.filters:
-            velocity, _ = filter.filter(velocity, original)
+            velocity, o = filter.filter(velocity, original)
+            if original is None:
+                original = o
         return velocity, original
 
 
@@ -111,7 +117,9 @@ class FadeX(object):
 class FadeIn(FadeX):
     implements(IFilter)
 
-    def filter(self, velocity, original):
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = velocity
         if self.current == self.max:
             return self.current, self.max
         self._currenttick = self.clock.ticks

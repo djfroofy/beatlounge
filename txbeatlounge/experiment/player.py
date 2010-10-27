@@ -31,7 +31,7 @@ class BasePlayer(object):
         self.clock = clock
 
     def play(self):
-        v, o = self.velocity(110, 110)
+        v, o = self.velocity(110, None)
         n = self._next()
         if callable(n):
             n = n()
