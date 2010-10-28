@@ -14,6 +14,7 @@ Chain = filters.Chain
 StandardDucker = filters.StandardDucker
 Sinusoid = filters.Sinusoid
 Sawtooth = filters.Sawtooth
+Triangle = filters.Triangle
 
 class FiltersTests(TestCase):
 
@@ -27,6 +28,7 @@ class FiltersTests(TestCase):
         self.chain = Chain(Sustainer(100), StandardDucker(20, clock=self.clock))
         self.sinusoid = Sinusoid(20, 50, 0, 50, clock=self.clock)
         self.sawtooth = Sawtooth(20, 20, 50, clock=self.clock)
+        self.triangle = Triangle(30, 20, 70, clock=self.clock)
 
     def test_sustainer(self):
         velocity, original = self.sustainer.filter(127, 127)
@@ -141,3 +143,14 @@ class FiltersTests(TestCase):
 
         self.assertEquals(velocities, data.sawtooth_velocities)
 
+    def test_triangle(self):
+
+        velocities = []
+
+        for i in range(40):
+            velocity, original = self.triangle.filter(127)
+            velocities.append(velocity)
+            self.assertEquals(original, 127)
+            self.clock.ticks += 1
+
+        self.assertEquals(velocities, data.triangle_velocities)

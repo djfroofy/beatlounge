@@ -192,6 +192,17 @@ class Sawtooth(object):
         velocity = _sawtooth(self.period, self.clock.ticks + self.phase)
         return int(self.center + self.amplitude * velocity), original
 
+class Triangle(Sawtooth):
+
+    def __init__(self, amplitude, *p, **kw):
+        super(Triangle, self).__init__(amplitude, *p, **kw)
+        self._bump = self.amplitude / 2.
+
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = velocity
+        velocity = abs(_sawtooth(self.period, self.clock.ticks + self.phase))
+        return int(self.center + self.amplitude * velocity - self._bump), original
 
 def _getclock(clock):
     if clock is None:
