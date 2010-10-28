@@ -4,13 +4,15 @@ from twisted.trial.unittest import TestCase
 from txbeatlounge import filters
 from txbeatlounge.scheduler2 import Meter, BeatClock
 from txbeatlounge.testlib import TestReactor
+from txbeatlounge.tests import data
 
 Sustainer = filters.Sustainer
 PassThru = filters.PassThru
 FadeIn = filters.FadeIn
+FadeOut = filters.FadeOut
 Chain = filters.Chain
 StandardDucker = filters.StandardDucker
-
+Sinusoid = filters.Sinusoid
 
 class FiltersTests(TestCase):
 
@@ -20,7 +22,9 @@ class FiltersTests(TestCase):
         self.passthru = PassThru()
         self.ducker = StandardDucker(10, clock=self.clock)
         self.fadein = FadeIn(20, 30, step=5, tickrate=10, clock=self.clock)
+        self.fadeout = FadeOut(30, 20, step=5, tickrate=10, clock=self.clock)
         self.chain = Chain(Sustainer(100), StandardDucker(20, clock=self.clock))
+        self.sinusoid = Sinusoid(20, 50, 0, 50, clock=self.clock)
 
     def test_sustainer(self):
         velocity, original = self.sustainer.filter(127, 127)
@@ -89,3 +93,36 @@ class FiltersTests(TestCase):
             self.assertEquals(velocity, 30)
             self.assertEquals(original, 30)
             self.clock.ticks += 1
+    
+    def test_fadeout(self):
+        self.clock.ticks = 0
+
+        for i in range(10):
+            velocity, original = self.fadeout.filter(127)
+            self.assertEquals(velocity, 30)
+            self.assertEquals(original, 30)
+            self.clock.ticks += 1
+
+        for tick in range(10):
+            velocity, original = self.fadeout.filter(127)
+            self.assertEquals(velocity, 25)
+            self.assertEquals(original, 30)
+            self.clock.ticks += 1
+
+        for tick in range(11):
+            velocity, original = self.fadeout.filter(127)
+            self.assertEquals(velocity, 20)
+            self.assertEquals(original, 30)
+            self.clock.ticks += 1
+
+    def test_sinusoid(self):
+
+        velocities = []
+
+        for i in range(100):
+            velocity, original = self.sinusoid.filter(127)
+            velocities.append(velocity)
+            self.assertEquals(original, 127)
+            self.clock.ticks += 1
+
+        self.assertEquals(velocities, data.sinusoid_velocities)

@@ -1,3 +1,5 @@
+import math
+
 from zope.interface import implements, Interface, Attribute
 
 
@@ -123,10 +125,50 @@ class FadeIn(FadeX):
         self._currenttick = self.clock.ticks
         if self._currenttick - self._laststep >= self.tickrate:
             self.current += self.step
-            self.current = min(max, self.current)
+            self.current = min(self.max, self.current)
             self._laststep = self._currenttick
         return self.current, self.max
 
+
+class FadeOut(FadeX):
+    implements(IFilter)
+
+    def __init__(self, max=127, min=0, **kw):
+        super(FadeOut, self).__init__(min, max, **kw)
+        self.current = self.max
+
+    def filter(self, velocity, original=None):
+        if self.current == self.min:
+            return self.current, self.max
+        self._currenttick = self.clock.ticks
+        if self._currenttick - self._laststep >= self.tickrate:
+            self.current -= self.step
+            self.current = max(self.min, self.current)
+            self._laststep = self._currenttick
+        return self.current, self.max
+
+
+
+class Sinusoid(object):
+    implements(IFilter)
+
+    min = 0
+    max = 127
+
+    def __init__(self, amplitude, period, phase=0, center=63, clock=None):
+        self.amplitude = amplitude
+        self.frequency = math.pi * 2 / period
+        self.phase = phase
+        self.center = center
+        self.clock = _getclock(clock)
+
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = velocity
+        velocity = self.center + self.amplitude * math.sin(self.frequency * self.clock.ticks + self.phase)
+        velocity = max(self.min, int(velocity))
+        velocity = min(velocity, self.max)
+        return velocity, original
 
 
 def _getclock(clock):
