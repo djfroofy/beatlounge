@@ -171,6 +171,28 @@ class Sinusoid(object):
         return velocity, original
 
 
+def _sawtooth(period, t):
+    ft = float(t)
+    return 2 * (ft / period - math.floor(ft / period + 0.5))    
+
+
+class Sawtooth(object):
+    implements(IFilter)
+
+    def __init__(self, amplitude, period, center=63, phase=0, clock=None):
+        self.period = period
+        self.amplitude = amplitude
+        self.center = center
+        self.phase = phase
+        self.clock = _getclock(clock)
+
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = velocity
+        velocity = _sawtooth(self.period, self.clock.ticks + self.phase)
+        return int(self.center + self.amplitude * velocity), original
+
+
 def _getclock(clock):
     if clock is None:
         from txbeatlounge.scheduler2 import clock
