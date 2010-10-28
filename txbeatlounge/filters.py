@@ -14,15 +14,20 @@ class IFilter(Interface):
         """
 
 
-class PassThru(object):
+class BaseFilter(object):
     implements(IFilter)
-
+    
     def filter(self, velocity, original):
         return velocity, original
 
+    def __call__(self, velocity=None, original=None):
+        if velocity is None:
+            velocity = 127
+        return self.filter(velocity, original)        
 
-class Sustainer(object):
-    implements(IFilter)
+PassThru = BaseFilter
+
+class Sustainer(BaseFilter):
 
     def __init__(self, velocity):
         self.velocity = velocity
@@ -33,9 +38,7 @@ class Sustainer(object):
         return self.velocity, original
 
 
-class Ducker(object):
-    implements(IFilter)
-
+class Ducker(BaseFilter):
     peaks = None
     duckLevel = 0
 
@@ -57,8 +60,7 @@ class Ducker(object):
         return velocity, original
 
 
-class Chain(object):
-    implements(IFilter)
+class Chain(BaseFilter):
 
     def __init__(self, *filters):
         self.filters = filters
@@ -103,7 +105,7 @@ duck34 = lambda peak, duckamount : Chain(Sustainer(peak), M78Ducker(duckamount))
 duck78 = duck34
 
 
-class FadeX(object):
+class FadeX(BaseFilter):
     
     def __init__(self, min=0, max=127, step=1, tickrate=12, clock=None):
         self.clock = _getclock(clock)
@@ -117,7 +119,6 @@ class FadeX(object):
 
 
 class FadeIn(FadeX):
-    implements(IFilter)
 
     def filter(self, velocity, original=None):
         if self.current == self.max:
@@ -131,7 +132,6 @@ class FadeIn(FadeX):
 
 
 class FadeOut(FadeX):
-    implements(IFilter)
 
     def __init__(self, max=127, min=0, **kw):
         super(FadeOut, self).__init__(min, max, **kw)
@@ -149,8 +149,7 @@ class FadeOut(FadeX):
 
 
 
-class Sinusoid(object):
-    implements(IFilter)
+class Sinusoid(BaseFilter):
 
     min = 0
     max = 127
@@ -176,8 +175,7 @@ def _sawtooth(period, t):
     return 2 * (ft / period - math.floor(ft / period + 0.5))    
 
 
-class Sawtooth(object):
-    implements(IFilter)
+class Sawtooth(BaseFilter):
 
     def __init__(self, amplitude, period, center=63, phase=0, clock=None):
         self.period = period
