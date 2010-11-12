@@ -42,9 +42,11 @@ class Ducker(BaseFilter):
     peaks = None
     duckLevel = 0
 
-    def __init__(self, duckLevel=None, peaks=None, clock=None):
+    def __init__(self, duckLevel=None, peaks=None, clock=None, meter=None):
         self.clock = _getclock(clock)
-        self.meter = self.clock.meters[0]
+        if meter is None:
+            meter = self.clock.meters[0]
+        self.meter = meter
         self.peaks = peaks or self.peaks
         self.duckLevel = duckLevel is None and self.duckLevel or duckLevel
 

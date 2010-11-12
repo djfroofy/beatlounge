@@ -35,6 +35,7 @@ class BasePlayer(object):
         self._scheduledEvent = None
         if meter is None:
             meter = self.clock.meters[0]
+        self.meter = meter
 
     def startPlaying(self):
         self._scheduledEvent = self.clock.schedule(self.play).startLater(
@@ -55,7 +56,7 @@ class BasePlayer(object):
         if n is None:
             return
         if DEBUG:
-            print self.clock.ticks, n, self.clock.meters[0].beat(self.clock.ticks)
+            print self.instr, n, self.clock.meters[0].beat(self.clock.ticks)
         self._on_method(n, v)
         stop = self.stop()
         if stop is not None:

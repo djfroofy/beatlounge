@@ -1,4 +1,4 @@
-
+import os
 from fluidsynth import Synth
 
 
@@ -99,9 +99,13 @@ class Instrument(object):
         if synth is None:
             synth = pool.synthObject(connection=connection)
         self.synth = synth
+        self._file = os.path.basename(sfpath)
         pool.connectInstrument(self.synth, self, sfpath, channel=channel,
                                bank=bank, preset=preset)
         self._max_velocity = 127     
+
+    def __str__(self):
+        return self._file
 
     def registerSoundfont(self, sfid, channel):
         #print 'registered sound font', self.synth, sfid, channel

@@ -1,5 +1,8 @@
 import random
 
+
+DEBUG = False
+
 class Conductor(object):
 
 
@@ -17,6 +20,8 @@ class Conductor(object):
         if node is None:
             node = random.choice(self.currentNode['transitions'])
         next = self.scoreGraph[node]
+        if DEBUG:
+            print 'transitioning', next
         duration = next["duration"]
         for musician in self.currentNode.get('musicians', ()):
             musician.stop(node)
