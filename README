@@ -10,9 +10,7 @@ txBeatLounge is an experiment in computer music. At its core txBeatLounge is:
    to virtual instruments.
 
 The project is still under active development and there are lots of half-baked
-parts as well total garbage that will likely go away in the near future; one
-example of total garbage is txbeatlouge.scheduler (which will be replaced by
-txbeatlounge.scheduler2).
+parts as well total garbage that will likely go away in the near future.
 
 Installation:
 
