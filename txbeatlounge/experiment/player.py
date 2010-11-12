@@ -1,3 +1,5 @@
+import random
+
 from zope.interface import Interface, Attribute, implements
 
 
@@ -6,7 +8,7 @@ __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'N', 'F', 'Num', 'generateSounds' ]
 
 
-DEBUG = False
+DEBUG = True
 
 class IPlayer(Interface):
     instr = Attribute('Instrument that provides playnote(note, velocity)')
@@ -60,7 +62,7 @@ class BasePlayer(object):
         if n is None:
             return
         if DEBUG:
-            print self.instr, n, self.clock.meters[0].beat(self.clock.ticks)
+            print self.instr, n, self.clock.meters[0].beat(self.clock.ticks), v
         self._on_method(n, v)
         stop = self.stop()
         if stop is not None:
@@ -115,6 +117,12 @@ def F(numerator, denominator):
 def Num(n):
     def f():
         return n
+    return f
+
+
+def R(*c):
+    def f():
+        return random.choice(c)
     return f
 
 def _numberwang():

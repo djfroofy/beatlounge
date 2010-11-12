@@ -1,5 +1,6 @@
-import random
+from zope.interface import Interface, implements
 
+import random
 
 DEBUG = False
 
