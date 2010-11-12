@@ -114,6 +114,11 @@ class BeatClock(SelectReactor, SynthControllerMixin):
     def callWhenRunning(self, *a, **kw):
         return self.reactor.callWhenRunning(*a, **kw)
 
+    def callAfterMeasures(self, measures, f, *a, **kw):
+        meter = self.meters[0]
+        ticks = _ticks(measures, meter, self) #meter.ticks_per_measure * measures
+        self.callLater(ticks, f, *a, **kw)    
+
     def nudge(self, pause=0.1):
         if not hasattr(self, 'task'):
             raise ValueError("Cannot nudge a clock that hasn't started")
@@ -124,6 +129,13 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 def measuresToTicks(measures):
     return measures * standardMeter.ticks_per_measure
 
+def _ticks(measures, meter, clock):
+    current_measure = meter.measure(clock.ticks)
+    tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
+    ticks = tick - clock.seconds()
+    if ticks < 0:
+        ticks += meter.ticks_per_measure
+    return ticks
 
 class ScheduledEvent(object):
    
@@ -173,6 +185,9 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_scheduleStop)
         return self
 
+    def stop(self):
+        if hasattr(self, 'task') and self.task.running:
+            self.task.stop()
 
     def bindMeter(self, meter):
         self.meter = meter

@@ -22,13 +22,29 @@ class IChordPlayer(Interface):
 class BasePlayer(object):
     implements(IPlayer)
 
-    def __init__(self, instr, velocity, stop, clock=None):
+    def __init__(self, instr, velocity, stop, clock=None, interval=None):
         self.instr = instr
         self.velocity = velocity
         self.stop = stop
         if clock is None:
             from txbeatlounge.scheduler2 import clock
         self.clock = clock
+        self.interval = interval
+        self._scheduledEvent = None
+
+    def setSchedule(self, measures, interval):
+        self.schedule = Schedule(measures, interval)
+        
+    def start(self):
+        if self._scheduledEvent:
+            self.clock.callAfterMeasures(1, self._scheduledEvent.stop)
+        self._scheduledEvent = self.clock.schedule(self.play).startLater(
+            1, self.interval)
+   
+    # XXX - the stop function passed to __init__ should really have a more
+    # apt name and this should be renamed to just stop - word 
+    def stopPlaying(self):
+        self.clock.callAfterMeasures(1, self._scheduledEvent.stop)
 
     def play(self):
         v, o = self.velocity(110, None)
@@ -46,8 +62,8 @@ class BasePlayer(object):
 class NotePlayer(BasePlayer):
     implements(INotePlayer)
 
-    def __init__(self, instr, note, velocity, stop=lambda : None, clock=None):
-        super(NotePlayer, self).__init__(instr, velocity, stop, clock)
+    def __init__(self, instr, note, velocity, stop=lambda : None, clock=None, interval=None):
+        super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.note = note
         self._on_method = self.instr.playnote
         self._off_method = self.instr.stopnote
@@ -61,8 +77,8 @@ Player = NotePlayer
 class ChordPlayer(BasePlayer):
     implements(IChordPlayer)
     
-    def __init__(self, instr, note, velocity, stop=lambda : None, clock=None):
-        super(ChordPlayer, self).__init__(instr, velocity, stop, clock)
+    def __init__(self, instr, note, velocity, stop=lambda : None, clock=None, interval=None):
+        super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.chord = chord
         self._on_method = self.instr.playchord
         self._off_method = self.instr.stopchord
