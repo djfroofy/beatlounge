@@ -1,0 +1,9 @@
+syntax: glob
+
+*.pyc
+.git
+*.swp
+*egg-info*
+build
+*.egg
+_trial_temp
