@@ -73,5 +73,5 @@ Musician = PlayerMusician
 
 def _getclock(clock):
     if clock is None:
-        from txbeatlounge.scheduler2 import clock
+        from txbeatlounge.scheduler import clock
     return clock 

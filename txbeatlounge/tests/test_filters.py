@@ -2,7 +2,7 @@
 from twisted.trial.unittest import TestCase
 
 from txbeatlounge import filters
-from txbeatlounge.scheduler2 import Meter, BeatClock
+from txbeatlounge.scheduler import Meter, BeatClock
 from txbeatlounge.testlib import TestReactor
 from txbeatlounge.tests import data
 

@@ -31,7 +31,7 @@ class BasePlayer(object):
         self.velocity = velocity
         self.stop = stop
         if clock is None:
-            from txbeatlounge.scheduler2 import clock
+            from txbeatlounge.scheduler import clock
         self.clock = clock
         self.interval = interval
         self._scheduledEvent = None

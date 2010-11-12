@@ -5,7 +5,7 @@ import optparse
 
 from txbeatlounge.internet import reactor
 
-from txbeatlounge.scheduler2 import clock, measuresToTicks
+from txbeatlounge.scheduler import clock, measuresToTicks
 from txbeatlounge.experiment.player import Player, generateSounds
 from txbeatlounge.filters import Sustainer
 from txbeatlounge.instrument.fsynth import Instrument

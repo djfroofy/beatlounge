@@ -2,7 +2,7 @@ from functools import partial
 
 from twisted.trial.unittest import TestCase
 
-from txbeatlounge.scheduler2 import BeatClock, Meter, measuresToTicks
+from txbeatlounge.scheduler import BeatClock, Meter, measuresToTicks
 
 import data
 

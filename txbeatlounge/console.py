@@ -6,7 +6,7 @@ from twisted.internet import stdio, protocol, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
 from twisted.python import failure, reflect, log
 
-from txbeatlounge.scheduler2 import clock as reactor
+from txbeatlounge.scheduler import clock as reactor
 
 
 def runWithProtocol(klass, audioDev):

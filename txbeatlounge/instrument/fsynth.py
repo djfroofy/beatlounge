@@ -20,7 +20,7 @@ class SynthPool:
         self.settings = {}
         self._channel_gen = {}
         if reactor is None:
-            from txbeatlounge.scheduler2 import clock as reactor
+            from txbeatlounge.scheduler import clock as reactor
         self.reactor = reactor
         self.audiodev = audiodev
         self.reactor.callWhenRunning(self.startSynths)
