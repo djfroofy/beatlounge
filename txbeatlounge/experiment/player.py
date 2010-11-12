@@ -6,6 +6,8 @@ __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'N', 'F', 'Num', 'generateSounds' ]
 
 
+DEBUG = False
+
 class IPlayer(Interface):
     instr = Attribute('Instrument that provides playnote(note, velocity)')
     velocity = Attribute('IFilter to get current velocity')
@@ -22,7 +24,7 @@ class IChordPlayer(Interface):
 class BasePlayer(object):
     implements(IPlayer)
 
-    def __init__(self, instr, velocity, stop, clock=None, interval=None):
+    def __init__(self, instr, velocity, stop, clock=None, interval=None, meter=None):
         self.instr = instr
         self.velocity = velocity
         self.stop = stop
@@ -31,20 +33,19 @@ class BasePlayer(object):
         self.clock = clock
         self.interval = interval
         self._scheduledEvent = None
+        if meter is None:
+            meter = self.clock.meters[0]
 
-    def setSchedule(self, measures, interval):
-        self.schedule = Schedule(measures, interval)
-        
-    def start(self):
-        if self._scheduledEvent:
-            self.clock.callAfterMeasures(1, self._scheduledEvent.stop)
+    def startPlaying(self):
         self._scheduledEvent = self.clock.schedule(self.play).startLater(
             1, self.interval)
    
-    # XXX - the stop function passed to __init__ should really have a more
-    # apt name and this should be renamed to just stop - word 
     def stopPlaying(self):
-        self.clock.callAfterMeasures(1, self._scheduledEvent.stop)
+        se = self._scheduledEvent
+        # Stop one tick before the next measure
+        ticks = self.meter.ticksPerMeasure - 1
+        self.clock.callLater(ticks, se.stop)
+        self._scheduledEvent = None
 
     def play(self):
         v, o = self.velocity(110, None)
@@ -53,6 +54,8 @@ class BasePlayer(object):
             n = n()
         if n is None:
             return
+        if DEBUG:
+            print self.clock.ticks, n, self.clock.meters[0].beat(self.clock.ticks)
         self._on_method(n, v)
         stop = self.stop()
         if stop is not None:

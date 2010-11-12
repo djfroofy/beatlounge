@@ -43,26 +43,13 @@ class PlayerMusician(object):
 
     def start(self, node):
         self.player = self.players[node]
-        self.player.start()
+        self.player.startPlaying()
 
     def stop(self, node):
         self.player.stopPlaying()
 
 Musician = PlayerMusician
 
-example_score = {
-    None: 'a',
-    'a': {
-        'musicians': [],
-        'duration': 8,
-        'transitions': weight([('a', 1), ('b', 1)]),
-     },
-    'b': {
-        'musicians': [],
-        'duration': 3,
-        'transitions': weight([('a', 3), ('b', 5)]),
-     }
-}
 
 def _getclock(clock):
     if clock is None:

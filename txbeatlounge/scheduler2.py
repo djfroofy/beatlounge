@@ -31,26 +31,27 @@ class Meter(object):
         self.number = number
         self._quarters_per_measure = self.length * self.number / (self.division / 4.)
         self._hash = hash((self.length, self.division, self.number))
-        self.ticks_per_measure = int(24 * self.length * 4. / self.division * self.number)
+        self.ticksPerMeasure = int(24 * self.length * 4. / self.division * self.number)
+        
 
     def beat(self, ticks):
-        measure, ticks = divmod(ticks, self.ticks_per_measure)
+        measure, ticks = divmod(ticks, self.ticksPerMeasure)
         if not ticks:
             return Beat(measure, 0, 0, 0, 0)
-        quarter, ticks = divmod(ticks, self.ticks_per_measure / self._quarters_per_measure) 
+        quarter, ticks = divmod(ticks, self.ticksPerMeasure / self._quarters_per_measure) 
         if not ticks:
             return Beat(measure, int(quarter), 0, 0, 0)
-        eighth, ticks = divmod(ticks, self.ticks_per_measure / (self._quarters_per_measure * 2)) 
+        eighth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 2)) 
         if not ticks:
             return Beat(measure, int(quarter), int(eighth), 0, 0)
-        sixteenth, ticks = divmod(ticks, self.ticks_per_measure / (self._quarters_per_measure * 4))
+        sixteenth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 4))
         return Beat(measure, int(quarter), int(eighth), int(sixteenth), int(ticks))
 
     def ticks(self, ticks):
-        return ticks % self.ticks_per_measure
+        return ticks % self.ticksPerMeasure
 
     def measure(self, ticks):
-        return divmod(ticks, self.ticks_per_measure)[0]
+        return divmod(ticks, self.ticksPerMeasure)[0]
 
     def __repr__(self):
         return 'Meter(length=%s, division=%s, number=%s)' % (self.length, self.division, self.number)
@@ -113,7 +114,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def callAfterMeasures(self, measures, f, *a, **kw):
         meter = self.meters[0]
-        ticks = _ticks(measures, meter, self) #meter.ticks_per_measure * measures
+        ticks = _ticks(measures, meter, self) #meter.ticksPerMeasure * measures
         self.callLater(ticks, f, *a, **kw)    
 
     def nudge(self, pause=0.1):
@@ -124,14 +125,14 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
 
 def measuresToTicks(measures):
-    return measures * standardMeter.ticks_per_measure
+    return measures * standardMeter.ticksPerMeasure
 
 def _ticks(measures, meter, clock):
     current_measure = meter.measure(clock.ticks)
-    tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
+    tick = int(current_measure * meter.ticksPerMeasure + measures * meter.ticksPerMeasure)
     ticks = tick - clock.seconds()
     if ticks < 0:
-        ticks += meter.ticks_per_measure
+        ticks += meter.ticksPerMeasure
     return ticks
 
 class ScheduledEvent(object):
@@ -152,7 +153,7 @@ class ScheduledEvent(object):
             # a standard meter (as current), or relative to any given meter.
             # The advantage of the former is that 0.25 always means quarter note
             # etc.
-            ticks = frequency * standardMeter.ticks_per_measure
+            ticks = frequency * standardMeter.ticksPerMeasure
         def _start_later():
             ticksLater = self._ticks(measures, meter)
             self.clock.callLater(ticksLater, self.start, ticks, True)
@@ -192,10 +193,10 @@ class ScheduledEvent(object):
 
     def _ticks(self, measures, meter):
         current_measure = meter.measure(self.clock.ticks)
-        tick = int(current_measure * meter.ticks_per_measure + measures * meter.ticks_per_measure)
+        tick = int(current_measure * meter.ticksPerMeasure + measures * meter.ticksPerMeasure)
         ticks = tick - self.clock.seconds()
         if ticks < 0:
-            ticks += meter.ticks_per_measure
+            ticks += meter.ticksPerMeasure
         return ticks
 
 
