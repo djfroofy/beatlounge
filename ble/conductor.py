@@ -24,9 +24,9 @@ class Conductor(object):
             print 'transitioning', next
         duration = next["duration"]
         for musician in self.currentNode.get('musicians', ()):
-            musician.stop(node)
+            musician.stopPlaying(node)
         for musician in next["musicians"]:
-            musician.start(node)
+            musician.startPlaying(node)
         self.currentNode = next
         self.clock.callAfterMeasures(duration, self._resume, None) 
         
@@ -40,17 +40,31 @@ def weight(edges):
     return l
 
 
+
+class IMusician(Interface):
+    
+    def startPlaying(node):
+        """
+        Schedule play events based on current node in score.
+        """
+
+    def stopPlaying(node):
+        """
+        Stop play events based on current node in score.
+        """
+
 class PlayerMusician(object):
+    implements(IMusician)
 
     def __init__(self, players):
         self.players = players
         self.player = None
 
-    def start(self, node):
+    def startPlaying(self, node):
         self.player = self.players[node]
         self.player.startPlaying()
 
-    def stop(self, node):
+    def stopPlaying(self, node):
         self.player.stopPlaying()
 
 Musician = PlayerMusician

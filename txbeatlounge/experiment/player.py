@@ -37,13 +37,17 @@ class BasePlayer(object):
             meter = self.clock.meters[0]
         self.meter = meter
 
-    def startPlaying(self):
+    def startPlaying(self, node):
         self._scheduledEvent = self.clock.schedule(self.play).startLater(
             1, self.interval)
    
-    def stopPlaying(self):
+    def stopPlaying(self, node):
         se = self._scheduledEvent
-        # Stop one tick before the next measure
+        # Stop one tick before the next measure -
+        # This means if you try to schedule something at a granularity of 1
+        # you're kind of screwed - though I'm not sure of a nicer way to prevent
+        # the non-determinism on something stopping before it starts again when
+        # the stop and start are scheduled for the same tick
         ticks = self.meter.ticksPerMeasure - 1
         self.clock.callLater(ticks, se.stop)
         self._scheduledEvent = None
