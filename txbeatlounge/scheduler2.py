@@ -11,7 +11,7 @@ from twisted.internet.selectreactor import SelectReactor
 from twisted.internet.defer import Deferred, succeed
 from twisted.internet.task import LoopingCall
 
-from fluidsynth import Synth
+#from fluidsynth import Synth
 
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
@@ -63,8 +63,6 @@ standardMeter = Meter(4,4)
 
 class SynthControllerMixin(object):
     synthAudioDevice = 'coreaudio'
-    synth = Synth(0.2)
-
 
 class BeatClock(SelectReactor, SynthControllerMixin):
 
@@ -90,7 +88,6 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.tempo = tempo
         
     def run(self):
-        self.synth.start(self.synthAudioDevice)
         self.startTicking()
         if not self.reactor.running:
             self.running = True

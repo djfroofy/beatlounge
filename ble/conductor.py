@@ -3,7 +3,7 @@ import random
 class Conductor(object):
 
 
-    def __init__(self, clock=None, scoreGraph=None):
+    def __init__(self, scoreGraph, clock=None):
         self.clock = _getclock(clock)
         self.scoreGraph = scoreGraph
         self.currentNode = {'musicians':()}
