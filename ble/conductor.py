@@ -63,10 +63,10 @@ class PlayerMusician(object):
 
     def startPlaying(self, node):
         self.player = self.players[node]
-        self.player.startPlaying()
+        self.player.startPlaying(node)
 
     def stopPlaying(self, node):
-        self.player.stopPlaying()
+        self.player.stopPlaying(node)
 
 Musician = PlayerMusician
 
