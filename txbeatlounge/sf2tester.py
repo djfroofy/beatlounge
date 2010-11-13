@@ -3,7 +3,6 @@ import sys
 
 import optparse
 
-from txbeatlounge.internet import reactor
 
 from txbeatlounge.scheduler import clock, measuresToTicks
 from txbeatlounge.experiment.player import Player, generateSounds
