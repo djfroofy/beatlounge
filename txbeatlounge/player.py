@@ -4,22 +4,22 @@ from zope.interface import Interface, Attribute, implements
 
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
-            'BasePlayer', 'NotePlayer', 'ChordPlayer',
-            'N', 'F', 'Num', 'generateSounds' ]
+            'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
+            'N', 'R', 'generateSounds' ]
 
 
-DEBUG = True
+DEBUG = False
 
 class IPlayer(Interface):
     instr = Attribute('Instrument that provides playnote(note, velocity)')
     velocity = Attribute('IFilter to get current velocity')
     stop = Attribute('Callable to get stop time on current note/chord, or None for non-stop')
 
-class INotePlayer(Interface):
-    note = Attribute('Callable to get the current note to play')
+class INotePlayer(IPlayer):
+    noteFactory = Attribute('Callable to get the current note to play')
 
-class IChordPlayer(Interface):
-    chord = Attribute('Callable to get the current chord to play')   
+class IChordPlayer(IPlayer):
+    chordFactory = Attribute('Callable to get the current chord to play')   
  
 
 
@@ -29,6 +29,9 @@ class BasePlayer(object):
     def __init__(self, instr, velocity, stop, clock=None, interval=None, meter=None):
         self.instr = instr
         self.velocity = velocity
+        if isinstance(stop, int):
+            s = stop
+            stop = lambda : s
         self.stop = stop
         if clock is None:
             from txbeatlounge.scheduler import clock
@@ -72,14 +75,14 @@ class BasePlayer(object):
 class NotePlayer(BasePlayer):
     implements(INotePlayer)
 
-    def __init__(self, instr, note, velocity, stop=lambda : None, clock=None, interval=None):
+    def __init__(self, instr, noteFactory, velocity, stop=lambda : None, clock=None, interval=None):
         super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
-        self.note = note
+        self.noteFactory = noteFactory
         self._on_method = self.instr.playnote
         self._off_method = self.instr.stopnote
 
     def _next(self):
-        return self.note
+        return self.noteFactory
 
 
 Player = NotePlayer
@@ -87,14 +90,14 @@ Player = NotePlayer
 class ChordPlayer(BasePlayer):
     implements(IChordPlayer)
     
-    def __init__(self, instr, note, velocity, stop=lambda : None, clock=None, interval=None):
+    def __init__(self, instr, chordFactory, velocity, stop=lambda : None, clock=None, interval=None):
         super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
-        self.chord = chord
+        self.chordFactory = chordFactory
         self._on_method = self.instr.playchord
         self._off_method = self.instr.stopchord
 
     def _next(self):
-        return self.chord
+        return self.chordFactory
 
 def generateSounds(g):
     def f():
@@ -108,28 +111,11 @@ def generateSounds(g):
 def N():
     return None
 
-def F(numerator, denominator):
-    _result = numerator / float(denominator)
-    def f():
-        return _result
-    return f
-
-def Num(n):
-    def f():
-        return n
-    return f
-
 
 def R(*c):
     def f():
         return random.choice(c)
     return f
 
-def _numberwang():
-    g = globals()
-    for i in range(128):
-        g['n%s' % i] = Num(i)
-        __all__.append('n%s' % i)
-_numberwang()
 
 
