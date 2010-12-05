@@ -1,8 +1,11 @@
-from zope.interface import Interface, implements
-
 import random
 
-DEBUG = False
+from zope.interface import Interface, implements
+
+from twisted.python import log
+
+from txbeatlounge.debug import DEBUG
+
 
 class Conductor(object):
 
@@ -22,7 +25,7 @@ class Conductor(object):
             node = random.choice(self.currentNode['transitions'])
         next = self.scoreGraph[node]
         if DEBUG:
-            print 'transitioning', next
+            log.msg('[Conductor] transitioning %s' % next)
         duration = next["duration"]
         for musician in self.currentNode.get('musicians', ()):
             musician.stopPlaying(node)

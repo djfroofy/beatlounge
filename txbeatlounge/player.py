@@ -2,25 +2,28 @@ import random
 
 from zope.interface import Interface, Attribute, implements
 
+from twisted.python import log
+
+from txbeatlounge.debug import DEBUG
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
             'N', 'R', 'generateSounds' ]
 
 
-DEBUG = False
-
 class IPlayer(Interface):
     instr = Attribute('Instrument that provides playnote(note, velocity)')
     velocity = Attribute('IFilter to get current velocity')
-    stop = Attribute('Callable to get stop time on current note/chord, or None for non-stop')
+    stop = Attribute('Callable to get stop time on current note/chord, or None '
+                     'for non-stop')
+
 
 class INotePlayer(IPlayer):
     noteFactory = Attribute('Callable to get the current note to play')
 
+
 class IChordPlayer(IPlayer):
     chordFactory = Attribute('Callable to get the current chord to play')   
- 
 
 
 class BasePlayer(object):
@@ -65,7 +68,8 @@ class BasePlayer(object):
         if n is None:
             return
         if DEBUG:
-            print self.instr, n, self.clock.meters[0].beat(self.clock.ticks), v
+            log.msg('%s %s %s %s' % (self.instr, n,
+                    self.clock.meters[0].beat(self.clock.ticks), v))
         self._on_method(n, v)
         stop = self.stop()
         if stop is not None:
@@ -75,7 +79,8 @@ class BasePlayer(object):
 class NotePlayer(BasePlayer):
     implements(INotePlayer)
 
-    def __init__(self, instr, noteFactory, velocity, stop=lambda : None, clock=None, interval=None):
+    def __init__(self, instr, noteFactory, velocity, stop=lambda : None,
+                 clock=None, interval=None):
         super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.noteFactory = noteFactory
         self._on_method = self.instr.playnote
@@ -90,7 +95,8 @@ Player = NotePlayer
 class ChordPlayer(BasePlayer):
     implements(IChordPlayer)
     
-    def __init__(self, instr, chordFactory, velocity, stop=lambda : None, clock=None, interval=None):
+    def __init__(self, instr, chordFactory, velocity, stop=lambda : None, clock=None,
+                 interval=None):
         super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.chordFactory = chordFactory
         self._on_method = self.instr.playchord
