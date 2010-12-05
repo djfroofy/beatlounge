@@ -1,5 +1,8 @@
 import random
 
+from warnings import warn
+
+warn('itertulz is deprecated - for randomCycleCycle use player.randomPhrase')
 
 def cycleCycle(cycles):
    for cycle in cycles:

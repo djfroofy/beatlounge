@@ -106,7 +106,7 @@ def generateSounds(g):
             return s()
         return s
     return f
-
+snd = generateSounds
 
 def N():
     return None
@@ -116,6 +116,27 @@ def R(*c):
     def f():
         return random.choice(c)
     return f
+
+
+
+def _randomPhraseGen(phrases):
+    while 1:
+        phrase = random.choice(phrases)
+        for next in phrase:
+            yield next
+
+def randomPhrase(*phrases):
+    length = 0
+    if phrases and type(phrases[0]) is int:
+        length = phrases[0]
+        phrases = phrases[1:]
+    if length:
+        for phrase in phrases:
+            if len(phrase) != length:
+                raise ValueError('Phrase %s is not of specified length: %s' %
+                                (phrase, length))
+    return _randomPhraseGen(phrases)
+rp = randomPhrase
 
 
 

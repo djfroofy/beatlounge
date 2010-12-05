@@ -1,4 +1,5 @@
 from twisted.python import log
+from twisted.python.failure import Failure
 
 from txosc import osc
 from txosc import dispatch
@@ -24,7 +25,11 @@ class AbstractDispatcher(object):
             try:
                 handler(*a, **k)
             except Exception, e:
-                log.err('[%r.dispatch] error' % self.__class__, e)
+                f = Failure(e)
+                f.printTraceback()
+                cn = self.__class__.__name__
+                log.err(e)
+                #'[%s.dispatch] error' % cn, e)
 
     def __call__(self):
         return self
@@ -54,6 +59,8 @@ class FloatDispatcher(AbstractDispatcher):
             (v,) = message.arguments
             self.dispatch(self._transform(float(v)))
         except Exception, e:
+            f = Failure(e)
+            f.printTraceback()
             log.msg('[FloatDispatcher.handle] error', e)
 
 
@@ -91,7 +98,10 @@ class DispatcherHub(object):
         if dispatcher.address in self._addresses:
             raise ValueError('Dispatcher with address %s already added' % dispatcher.address)
         self._addresses[dispatcher.address] = dispatcher
-        self.receiver.addCallback('/' + dispatcher.address, dispatcher.handle)  
+        prefix = ''
+        if dispatcher.address[0] != '/':
+            prefix = '/'
+        self.receiver.addCallback(prefix + dispatcher.address, dispatcher.handle)  
 
     def fallback(self, message, address):
         log.msg('[fallback] %s %s' % (message, address))

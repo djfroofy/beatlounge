@@ -1,3 +1,5 @@
+import random
+
 from itertools import cycle
 
 from zope.interface.verify import verifyClass, verifyObject
@@ -5,7 +7,7 @@ from zope.interface.verify import verifyClass, verifyObject
 from twisted.trial.unittest import TestCase
 
 from txbeatlounge.player import NotePlayer, ChordPlayer, Player, generateSounds, N, R
-from txbeatlounge.player import INotePlayer, IChordPlayer
+from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase
 from txbeatlounge.scheduler import BeatClock, Meter
 from txbeatlounge.filters import BaseFilter
 from txbeatlounge.testlib import TestReactor, ClockRunner
@@ -174,4 +176,38 @@ class UtilityTests(TestCase):
     def test_miscFactories(self):
         self.assertEquals(N(), None)
         self.assert_(R(1,2,3)() in [1,2,3])
- 
+
+    def test_randomPhrases(self):
+
+        phrases = [(1,2,3),(4,5,6),(7,8,9)]
+        chosen = [phrases[0]]
+        def choose(phrases):
+            self.assertIn(chosen[0], phrases)
+            return chosen[0]
+
+        self.patch(random, 'choice', choose)
+        
+        g = randomPhrase(*phrases)
+        self.assertEquals(g.next(), 1)
+        self.assertEquals(g.next(), 2)
+        chosen[0] = phrases[2]
+        self.assertEquals(g.next(), 3)
+        self.assertEquals(g.next(), 7)
+        self.assertEquals(g.next(), 8)
+        self.assertEquals(g.next(), 9)
+        self.assertEquals(g.next(), 7)
+        self.assertEquals(g.next(), 8)
+
+
+    def test_randomPhrasesLength(self):
+        g = randomPhrase(3, (1,2,3), (4,5,6))
+        
+        self.assertRaises(ValueError, randomPhrase, 4, (1,2,3,4), (5,6,7,8,9))
+
+        def choose(phrases):
+            self.assertEquals(phrases, ((1,2,3), (4,5,6)))
+            return (1,2,3)
+        self.patch(random, 'choice', choose)
+        g.next()
+
+
