@@ -1,14 +1,50 @@
+from warnings import warn
+
 from twisted.python import log
 from twisted.python.failure import Failure
 
+from txosc import async
 from txosc import osc
 from txosc import dispatch
+
+
+from txbeatlounge.debug import DEBUG
+
+
+def fallback(message, address):
+    log.msg('[fallback] %s %s' % (message, address))
+
+class MessageSender(object):
+
+    def __init__(self, client, host='127.0.0.1', port=17779):
+        self.client = client
+        self.host = host
+        self.port = port
+        if isinstance(client, async.ClientFactory):
+            self._send = self._tcp_send
+        if isinstance(client, async.DatagramClientProtocol):
+            self._send = self._udp_send
+
+    def send(self, address, *args):
+        message = osc.Message(address, *args)
+        self._send(message)
+
+    def _udp_send(self, element):
+        self.client.send(element, (self.host, self.port))
+
+    def _tcp_send(self, element):
+        self.client.send(element)
+
+###########################################
+# NOTE
+# Everything under this note is deprecated.
 
 class AbstractDispatcher(object):
     
     address = None
 
     def __init__(self, address=None, transform=lambda v : v):
+        warn('AbstractDispatcher is deprecated for rilz')
         self._listeners = []
         self.address = address or self.address
         self._transform = transform
@@ -108,6 +144,7 @@ class DispatcherHub(object):
 
     def __getitem__(self, address):
         return self._addresses[address]
+
 
 # Some generic device representations
 
