@@ -90,6 +90,14 @@ def NConnectionPoool(**synth_factories):
 
 defaultPool = StereoPool()
 
+CC_VIBRATO = 1
+CC_VOLUME = 7
+CC_PAN = 10
+CC_EXPRESSION = 11
+CC_SUSTAIN = 64
+CC_REVERB = 91
+CC_CHORUS = 93
+
 class Instrument(object):
     
     def __init__(self, sfpath, synth=None, connection='mono',
@@ -100,6 +108,9 @@ class Instrument(object):
             synth = pool.synthObject(connection=connection)
         self.synth = synth
         self._file = os.path.basename(sfpath)
+        self.sfpath = sfpath
+        self._options = dict( sfpath=sfpath, connection=connection,
+                              channel=channel, bank=bank, preset=preset )
         pool.connectInstrument(self.synth, self, sfpath, channel=channel,
                                bank=bank, preset=preset)
         self._max_velocity = 127     
@@ -136,6 +147,24 @@ class Instrument(object):
     def stopall(self):
         for note in range(128):
             self.stopnote(note)
+
+    def controlChange(self, vibrato=None, volume=None, pan=None, expression=None,
+                      sustain=None, reverb=None, chorus=None):
+        if vibrato is not None:
+            self.synth.cc(self.channel, CC_VIBRATO, vibrato)
+        if pan is not None:
+            self.synth.cc(self.channel, CC_PAN, pan)
+        if expression is not None:
+            self.synth.cc(self.channel, CC_EXPRESSION, expression) 
+        if sustain is not None:
+            self.synth.cc(self.channel, CC_SUSTAIN, sustain)
+        if reverb is not None:
+            self.synth.cc(self.channel, CC_REVERB, reverb)
+        if chorus is not None:
+            self.synth.cc(self.channel, CC_CHORUS, chorus)
+    
+    def pitchBend(self, value):
+        self.synth.pitch_bend(self.channel, value)
 
 
 def suggestDefaultPool(pool):
