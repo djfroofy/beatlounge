@@ -13,6 +13,7 @@ from twisted.internet.task import LoopingCall
 
 #from fluidsynth import Synth
 
+__all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'ScheduledEvent', 'clock' ]
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
 

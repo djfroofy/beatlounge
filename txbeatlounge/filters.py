@@ -3,6 +3,11 @@ import math
 from zope.interface import implements, Interface, Attribute
 
 
+__all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
+           'Chain', 'Standard8Ducker', 'Standard16Ducker', 'Standard32Ducker',
+           'Sin', 'Sinusoid', 'Sawtooth', 'Triangle', 'FadeIn', 'FadeOut',
+           'M34Ducker', 'M78Ducker']
+
 class IFilter(Interface):
 
     clock = Attribute("""A L{IBeatClock}""")
@@ -37,6 +42,8 @@ class Sustainer(BaseFilter):
             original = self.velocity
         return self.velocity, original
 
+
+# TODO - should deprecate Ducker and make something nicer - Histogram?
 
 class Ducker(BaseFilter):
     peaks = None
@@ -151,7 +158,7 @@ class FadeOut(FadeX):
 
 
 
-class Sinusoid(BaseFilter):
+class Sin(BaseFilter):
 
     min = 0
     max = 127
@@ -171,6 +178,8 @@ class Sinusoid(BaseFilter):
         velocity = min(velocity, self.max)
         return velocity, original
 
+# for backwards compat
+Sinusoid = Sin
 
 def _sawtooth(period, t):
     ft = float(t)

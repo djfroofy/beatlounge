@@ -116,7 +116,7 @@ class Instrument(object):
         self._max_velocity = 127     
 
     def __str__(self):
-        return self._file
+        return 'Instrument path=%s sfid=%s channel=%s' % (self._file, self.sfid, self.channel)
 
     def registerSoundfont(self, sfid, channel):
         #print 'registered sound font', self.synth, sfid, channel

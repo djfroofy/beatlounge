@@ -8,7 +8,8 @@ from txbeatlounge.debug import DEBUG
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
-            'N', 'R', 'generateSounds' ]
+            'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
+            'randomWalk', 'rw' ]
 
 
 class IPlayer(Interface):
@@ -143,6 +144,25 @@ def randomPhrase(*phrases):
                                 (phrase, length))
     return _randomPhraseGen(phrases)
 rp = randomPhrase
+
+
+def randomWalk(sounds):
+    ct = len(sounds)
+    index = random.randint(0, ct - 1)
+    direction = 1
+    while 1:
+        yield sounds[index]
+        if index == 0:
+            direction = 1
+        elif index == ct - 1:
+            direction = -1
+        else:
+            if random.randint(0, 1):
+                direction *= -1
+        index += direction
+rw = randomWalk 
+            
+
 
 
 
