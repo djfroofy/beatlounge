@@ -9,7 +9,7 @@ from txbeatlounge.debug import DEBUG
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
             'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
-            'randomWalk', 'rw' ]
+            'randomWalk', 'rw', 'StepSequencer']
 
 
 class IPlayer(Interface):
@@ -27,7 +27,35 @@ class IChordPlayer(IPlayer):
     chordFactory = Attribute('Callable to get the current chord to play')   
 
 
-class BasePlayer(object):
+class IPlayable(Interface):
+    
+    def startPlaying(node=None):
+        pasobjects
+
+    def stopPlayering(node=None):
+        pass
+
+    
+class PlayableMixin(object):
+    implements(IPlayable)
+
+    def startPlaying(self, node=None):
+        self._playSchedule = self.clock.schedule(self.play).startLater(
+            1, self.interval)
+   
+    def stopPlaying(self, node=None):
+        se = self._playSchedule
+        # Stop one tick before the next measure -
+        # This means if you try to schedule something at a granularity of 1
+        # you're kind of screwed - though I'm not sure of a nicer way to prevent
+        # the non-determinism on something stopping before it starts again when
+        # the stop and start are scheduled for the same tick
+        ticks = self.meter.ticksPerMeasure - 1
+        self.clock.callLater(ticks, se.stop)
+        self._playSchedule = None
+
+
+class BasePlayer(PlayableMixin):
     implements(IPlayer)
 
     def __init__(self, instr, velocity, stop, clock=None, interval=None, meter=None):
@@ -46,20 +74,6 @@ class BasePlayer(object):
             meter = self.clock.meters[0]
         self.meter = meter
 
-    def startPlaying(self, node):
-        self._scheduledEvent = self.clock.schedule(self.play).startLater(
-            1, self.interval)
-   
-    def stopPlaying(self, node):
-        se = self._scheduledEvent
-        # Stop one tick before the next measure -
-        # This means if you try to schedule something at a granularity of 1
-        # you're kind of screwed - though I'm not sure of a nicer way to prevent
-        # the non-determinism on something stopping before it starts again when
-        # the stop and start are scheduled for the same tick
-        ticks = self.meter.ticksPerMeasure - 1
-        self.clock.callLater(ticks, se.stop)
-        self._scheduledEvent = None
 
     def play(self):
         v, o = self.velocity(110, None)
@@ -89,7 +103,6 @@ class NotePlayer(BasePlayer):
 
     def _next(self):
         return self.noteFactory
-
 
 Player = NotePlayer
 
@@ -161,8 +174,51 @@ def randomWalk(sounds):
                 direction *= -1
         index += direction
 rw = randomWalk 
-            
 
+
+class StepSequencer(PlayableMixin):
+    """
+    A step sequencer allows you to pass an instr (typically a drum kit)
+    and a set of notes of chords (representing the rows in a step sequencer graph).
+    """
+
+    def __init__(self, instr, notes, beats=16, clock=None, meter=None):
+        if clock is None:
+            from txbeatlounge.scheduler import clock
+        if meter is None:
+            meter = clock.meters[0]
+        self.clock = clock
+        self.meter = meter
+        self.instr = instr
+        self.notes = notes
+        self._play = self.instr.playnote
+        if type(notes[0]) in (list, tuple):
+            self.play = self.instr.playchord
+        self.velocity = [60] * beats
+        self.beats = beats
+        self.interval = 1. / beats
+        self.step = 0
+        self.on_off = [([0] * len(notes)) for i in range(beats)]
+
+    def setVelocity(self, beat, velocity):
+        if DEBUG:
+            log.msg('[StepSequencer.setVelocity] setting velocity at beat=%d to %d' %
+                    (beat, velocity))
+        self.velocity[beat] = velocity
+
+    def setStep(self, beat, note, on_off):
+        if DEBUG:
+            log.msg('[StepSequencer.setStep] setting %dx%d=%d' % (beat, note, on_off))
+        self.on_off[beat][note] = on_off    
+
+    def play(self):
+        v = self.velocity[self.step]
+        index = 0
+        for note in self.notes:
+            if self.on_off[self.step][index]:
+                self._play(note, v)
+            index += 1
+        self.step = (self.step + 1) % self.beats
 
 
 

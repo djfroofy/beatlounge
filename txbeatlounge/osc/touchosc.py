@@ -6,7 +6,8 @@ from txosc import dispatch
 from txosc.async import DatagramClientProtocol, ClientFactory
 
 from txbeatlounge.debug import DEBUG
-from txbeatlounge.osc.base import fallback #DispatcherHub, FloatDispatcher
+from txbeatlounge.player import StepSequencer
+from txbeatlounge.osc.base import fallback 
 
 
 
@@ -109,48 +110,39 @@ class XY(object):
 
 
 
-class StepSequencer(object):
+class TouchOSCStepSequencer:
 
     ledAddressPattern = '/%d/led%d'
 
-    def __init__(self, receiver, send, players, page=1, beats=16, clock=None):
-        if clock is None:
-            from txbeatlounge.scheduler import clock
-        self.clock = clock
+    def __init__(self, receiver, send, stepSequencer, page=1):
+        self.stepSequencer = ss = stepSequencer
         self.receiver = receiver
         self.send = send
-        self.players = players
         self.page = page
-        instruments = len(players)
-        self.velocity = [0] * beats
-        self.on_off = []
-        self.beats = beats
-        self.step = 0
-        for i in range(beats):
-            self.on_off.append([0] * instruments)
         # Listeners for multifader and toggle widgets
         self._multifader = MultiFader(receiver,
-            [ partial(self.setVolume, idx) for idx in range(beats) ], page) 
+            [ partial(self.setVelocity, idx) for idx in range(ss.beats) ], page) 
         self._multitoggle = MultiToggle(receiver,
-            [ [ partial(self.setStep, c, r) for c in range(beats) ]
-               for r in range(instruments) ], page)
-        self._play_schedule = clock.schedule(self.play).startLater(1, 1. / beats)
+            [ [ partial(ss.setStep, c, r) for c in range(ss.beats) ]
+               for r in range(len(ss.notes)) ], page)
 
     def attach(self):
-        clock = self.clock
-        beats = self.beats
-        players = self.players
-        self.step = 0
+        ss = self.stepSequencer
+        clock = ss.clock
+        beats = ss.beats
+        #players = self.players
+        #self.step = 0
+        ss.step = 0
 
         # Clear out the multifader and toggle widgets
-        for beat in range(beats):
-            for instr in range(len(players)):
+        for beat in range(1, beats + 1):
+            for index in range(1, len(ss.notes) + 1):
                 self.send(MultiToggle.addressPattern % (
-                          self.page, instr + 1, beat + 1),
-                          self.on_off[beat][instr])
-        for beat in range(beats):
-            self.send(MultiFader.addressPattern % (self.page, beat + 1),
-                      self.velocity[beat] / 127.)
+                          self.page, index, beat),
+                          ss.on_off[beat - 1][index - 1])
+        for beat in range(1, beats + 1):
+            self.send(MultiFader.addressPattern % (self.page, beat),
+                      ss.velocity[beat - 1] / 127.)
 
         self._multifader.attach()
         self._multitoggle.attach()
@@ -167,42 +159,30 @@ class StepSequencer(object):
         self._multitoggle.detach()
 
     def updateLEDs(self):
-        on = self.step + 1
+        ss = self.stepSequencer
+        on = ss.step + 1
         off = on - 1
-        off = off or self.beats
+        off = off or ss.beats
         self.send(self.ledAddressPattern % (self.page, on), 1.0)
         self.send(self.ledAddressPattern % (self.page, off), 0.0)
         # really only want this for udp, but alas
         self.send(self.ledAddressPattern % (self.page, on), 1.0)
         self.send(self.ledAddressPattern % (self.page, off), 0.0)
-            
+        log.msg('[TouchOSCStepSequencer.updateLEDs] sent off=%s, on=%s [%d]' % (off, on, ss.clock.ticks))            
 
-    def setVolume(self, idx, v):
+    def setVelocity(self, idx, v):
         nv = int(v * 127)
-        if DEBUG:
-            log.msg('[StepSequencer.setVolume] setting volume at beat=%d to %d' %
-                    (idx, nv))
-        self.velocity[idx] = nv
-
-    def setStep(self, c, r, on_off):
-        if DEBUG:
-            log.msg('[StepSequencer.setStep] setting %dx%d=%d' % (c,r,on_off))
-        self.on_off[c][r] = on_off    
+        self.stepSequencer.setVelocity(idx, nv)
 
     def refreshUI(self):
-        col = self.on_off[self._refresh_col]
-        for (instr, on_off) in enumerate(col):
+        ss = self.stepSequencer
+        col = ss.on_off[self._refresh_col]
+        for (index, on_off) in enumerate(col):
             self.send(MultiToggle.addressPattern %
-                      (self.page, instr + 1, self._refresh_col + 1), on_off)
-        for beat in range(self.beats):
-            self.send(MultiFader.addressPattern % (self.page, beat+1),
-                      self.velocity[beat] / 127.)
-        self._refresh_col = (self._refresh_col + 1) % self.beats 
+                      (self.page, index + 1, self._refresh_col + 1), on_off)
+        for beat in range(ss.beats):
+            self.send(MultiFader.addressPattern % (self.page, beat + 1),
+                      ss.velocity[beat] / 127.)
+        self._refresh_col = (self._refresh_col + 1) % ss.beats 
 
-    def play(self):
-        v = self.velocity[self.step]
-        for (idx, player) in enumerate(self.players):
-            if self.on_off[self.step][idx]:
-                player(v)
-        self.step = (self.step + 1) % self.beats
 
