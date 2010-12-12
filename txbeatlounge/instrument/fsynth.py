@@ -63,7 +63,7 @@ class SynthPool:
         sfid = synth.sfload(sf2path)
         synth.program_select(channel, sfid, bank, preset)
         return sfid, channel
- 
+
 
     def connectInstrument(self, synth, instr, sfpath=None,
                          channel=None, bank=0, preset=0, sfid=None):
@@ -99,11 +99,11 @@ CC_REVERB = 91
 CC_CHORUS = 93
 
 class Instrument(object):
-    
+
     def __init__(self, sfpath, synth=None, connection='mono',
                  channel=None, bank=0, preset=0, pool=None):
         if pool is None:
-            pool = defaultPool 
+            pool = defaultPool
         if synth is None:
             synth = pool.synthObject(connection=connection)
         self.synth = synth
@@ -113,7 +113,7 @@ class Instrument(object):
                               channel=channel, bank=bank, preset=preset )
         pool.connectInstrument(self.synth, self, sfpath, channel=channel,
                                bank=bank, preset=preset)
-        self._max_velocity = 127     
+        self._max_velocity = 127
 
     def __str__(self):
         return self._file
@@ -123,11 +123,10 @@ class Instrument(object):
         self.sfid = sfid
         self.channel = channel
 
-    
     def cap(self, maxVelocity):
         self._max_velocity = maxVelocity
 
-    def playnote(self, note, velocity):
+    def playnote(self, note, velocity=80):
         velocity = min(velocity, self._max_velocity)
         #print 'playing note', self.synth, self.channel, note, velocity
         self.synth.noteon(self.channel, note, velocity)
@@ -136,7 +135,7 @@ class Instrument(object):
         #print 'stopping note', self.synth, self.channel, note
         self.synth.noteoff(self.channel, note)
 
-    def playchord(self, notes, velocity):
+    def playchord(self, notes, velocity=80):
         for note in notes:
             self.playnote(note, velocity)
 
@@ -162,7 +161,7 @@ class Instrument(object):
             self.synth.cc(self.channel, CC_REVERB, reverb)
         if chorus is not None:
             self.synth.cc(self.channel, CC_CHORUS, chorus)
-    
+
     def pitchBend(self, value):
         self.synth.pitch_bend(self.channel, value)
 

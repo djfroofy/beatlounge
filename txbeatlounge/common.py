@@ -20,81 +20,6 @@ def channels():
         channel += 1
 channels = channels()
 
-class Instrument(object):
-    '''A fluidsynth instrument from an sf2path'''
-
-    def __init__(self, sf2path=None, reactor=None, channel=None, preset=0, **kw):
-        warnings.warn('txbeatlounge.common.Instrument is deprecated; '
-                      'use txbeatlounge.instrument.fsynth.Instrument instead')
-        if reactor is None:
-            from txbeatlounge.internet import reactor
-        self.reactor = reactor
-        self.sf2 = sf2path
-        if channel is None:
-            channel = channels.next()
-        self.channel = channel
-        self.preset = preset
-        reactor.callWhenRunning(self.start)
-
-    def start(self):
-        self.fs = self.reactor.synth
-        self.sfid = self.fs.sfload(self.sf2)
-        self.select_program()
-
-    def __str__(self, *args, **kwargs):
-        if not hasattr(self, 'fs'):
-            return '%s instrument (stopped)' % self.sf2
-        return '%s instrument on channel %s, sfid: %s' % (self.sf2, self.channel, self.sfid)
-
-    def select_program(self, bank=0, preset=None):
-        if preset is None:
-            preset = self.preset
-        self.fs.program_select(self.channel, self.sfid, bank, preset)
-
-    def stopall(self):
-        for n in range(128):
-            self.fs.noteoff(self.channel, n)
-
-    def playchord(self, notes, vol=50):
-        for n in notes:
-            self.playnote(n, vol)
-
-    def stopchord(self, notes):
-        for n in notes:
-            self.fs.noteoff(self.channel, n)
-
-    def playnote(self, n, vol=50):
-        self.fs.noteon(self.channel, n, vol)
-
-    def stopnote(self, n):
-        self.fs.noteoff(self.channel, n)
-
-    def on_octaves(self, note, vol=30, up=0):
-        '''Turns on 60, 48... for note=60'''
-
-        if up:
-            while note <= 127:
-                self.fs.noteon(self.channel, note, vol)
-                note += 12
-
-        else:
-            while note >= 0:
-                self.fs.noteon(self.channel, note, vol)
-                note -= 12
-
-    def off_octaves(self, note, up=1):
-        '''Turns of 60, 72... for note=60'''
-
-        if up:
-            while note <= 127:
-                self.fs.noteoff(self.channel, note)
-                note += 12
-
-        else:
-            while note >= 0:
-                self.fs.noteoff(self.channel, note)
-                note -= 12
-
 import sndobj
 import math
 import uuid
@@ -147,11 +72,6 @@ class SndObjInstrument(object):
         self.env.SetCurve(self.amp, 0)
         self.osc.SetAmp(0, self.env)
         self.env.Restart()
-
-
-class MultiOscillator(object):
-
-    pass
 
 
 
