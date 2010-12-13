@@ -12,21 +12,37 @@ txBeatLounge is an experiment in computer music. At its core txBeatLounge is:
 The project is still under active development and there are lots of half-baked
 parts as well total garbage that will likely go away in the near future.
 
-Installation:
+Installation
+------------
 
-  python setup.py install
+The module can be installed with all of it's python dependencies with:
 
-Installing just dependencies (with pip):
+    python setup.py install
 
-  pip install -r requirements.txt
+Installing just python dependencies (with pip):
+
+    pip install -r requirements.txt
 
 You can run unit tests with trial:
 
-  trial txbeatlounge
+    trial txbeatlounge
+
+
+Additional dependencies for certain parts of txBeatLounge, from other languages,
+may include fluidsynth, sndobj, supercollider, osculator, touchosc, puredata, 
+cwiid and other software and hardware, proprietary and open source,
+in the past, present and future.  They are, of course, not provided and must be installed
+on the users machine and configured.  The authors primarily use OS X 10.6 with JACK
+and homebrew installed packages where possible.
+
+
+Future
+------
 
 There is some experimental stuff in ble package (ble = beatlounge experiment).
 We hope to graduate good experiments to the stable package txbeatlounge
 and of course cleanup and adequately test this dog before too long.
 
 For rilz.
+
 

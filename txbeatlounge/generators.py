@@ -4,9 +4,10 @@ from copy import copy
 
 logging.basicConfig(level=logging.DEBUG)
 
+from twisted.internet import reactor
+
 from txbeatlounge import constants
 from txbeatlounge.utils import windex
-from txbeatlounge.internet import reactor
 
 
 def rising_gen(gen):
