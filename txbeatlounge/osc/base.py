@@ -1,3 +1,4 @@
+from functools import partial
 from warnings import warn
 
 from twisted.python import log
@@ -9,6 +10,8 @@ from txosc import dispatch
 
 
 from txbeatlounge.debug import DEBUG
+
+from txbeatlounge.player import Player, snd
 
 
 def fallback(message, address):
@@ -34,6 +37,31 @@ class MessageSender(object):
 
     def _tcp_send(self, element):
         self.client.send(element)
+
+
+class Play(object):
+
+    def __init__(self, instr, notes, velocity, stop=lambda : None, clock=None):
+        self.notes = notes
+        self.player = Player(instr, snd(self._iternotes()), velocity=velocity,
+            stop=stop, clock=clock)
+    
+    def _iternotes(self):
+        while 1:
+            yield self.notes[self.index]    
+
+    def play(self, index, on_off):
+        if on_off:
+            self.index = index
+            print 'playing'
+            self.player.play()
+
+    def callbacks(self):
+        cbs = []
+        for index in range(len(self.notes)):
+            cbs.append(partial(self.play, index))
+        return cbs
+
 
 ###########################################
 # NOTE

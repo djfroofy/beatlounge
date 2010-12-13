@@ -109,7 +109,6 @@ class XY(object):
         cb(x, y)
 
 
-
 class TouchOSCStepSequencer:
 
     ledAddressPattern = '/%d/led%d'
