@@ -1,4 +1,7 @@
+from itertools import cycle
+
 import math
+from warnings import warn
 
 from zope.interface import implements, Interface, Attribute
 
@@ -50,6 +53,7 @@ class Ducker(BaseFilter):
     duckLevel = 0
 
     def __init__(self, duckLevel=None, peaks=None, clock=None, meter=None):
+        warn('Ducker is deprecated - use Stepper instead which is simpler')
         self.clock = _getclock(clock)
         if meter is None:
             meter = self.clock.meters[0]
@@ -67,6 +71,36 @@ class Ducker(BaseFilter):
         if beat[1:] not in self.peaks:
             velocity = int(velocity - duckLevel)
         return velocity, original
+
+
+class Stepper(BaseFilter):
+
+    def __init__(self, steps):
+        self._current_step = 0
+        self._count = len(steps)
+        self.steps = steps
+
+    def _get_steps(self):
+        return self._steps
+
+    def _set_steps(self, steps):
+        count = len(steps)
+        factor = float(count) / self._count
+        self._steps = steps
+        self._stepcycle = cycle(steps)
+        for i in range(int(factor * self._current_step)):
+            self._stepcycle.next()
+        self._count = count
+        
+    steps = property(_get_steps, _set_steps)
+
+    def filter(self, velocity, original=None):
+        if original is None:
+            original = velocity
+        v = self._stepcycle.next()
+        self._current_step += 1
+        self._current_step %= self._count
+        return v, original
 
 
 class Chain(BaseFilter):

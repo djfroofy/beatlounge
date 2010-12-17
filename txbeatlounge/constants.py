@@ -1,5 +1,14 @@
 NOTES = ['C', 'Df', 'D', 'Ef', 'E', 'F', 'Gf', 'G', 'Af', 'A', 'Bf', 'B']
 
+
+#
+whole = 1
+half = 0.5
+quarter = half * 0.5
+eighth = _8th = quarter * 0.5
+sixteenth = _16th = eighth * 0.5
+thirtysecond = _32nd = sixteenth * 0.5
+
 # Midi
 C=[0, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
 Df=[1, 13, 25, 37, 49, 61, 73, 85, 97, 109, 121]

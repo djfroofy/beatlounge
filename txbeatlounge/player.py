@@ -9,7 +9,7 @@ from txbeatlounge.debug import DEBUG
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
             'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
-            'randomWalk', 'rw', 'StepSequencer']
+            'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter']
 
 
 class IPlayer(Interface):
@@ -174,6 +174,37 @@ def randomWalk(sounds):
                 direction *= -1
         index += direction
 rw = randomWalk 
+
+
+def weighted(*notes):
+    ws = []
+    for (note, weight) in notes:
+        ws.extend([note for w in range(weight)])
+    random.shuffle(ws)
+    return ws 
+w = weighted
+
+
+class Shifter(object):
+
+    def __init__(self, gen=None):
+        self.gen = gen
+        self.amount = 0
+    
+    def shift(self, gen=None):
+        self.gen = gen or self.gen
+        return iter(self)
+
+    def __iter__(self):
+        while 1:
+            next = self.gen.next()
+            n = next
+            if callable(next):
+                n = next()
+            if n is None:
+                yield next
+            else:
+                yield n + self.amount
 
 
 class StepSequencer(PlayableMixin):
