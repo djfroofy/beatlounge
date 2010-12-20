@@ -4,12 +4,14 @@ from zope.interface import Interface, Attribute, implements
 
 from twisted.python import log
 
+from txbeatlounge.utils import getClock
 from txbeatlounge.debug import DEBUG
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
             'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
-            'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter']
+            'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter',
+            'Delay']
 
 
 class IPlayer(Interface):
@@ -76,12 +78,12 @@ class BasePlayer(PlayableMixin):
 
 
     def play(self):
-        v, o = self.velocity(110, None)
         n = self._next()
         if callable(n):
             n = n()
         if n is None:
             return
+        v, o = self.velocity(110, None)
         if DEBUG:
             log.msg('%s %s %s %s' % (self.instr, n,
                     self.clock.meters[0].beat(self.clock.ticks), v))
@@ -98,8 +100,8 @@ class NotePlayer(BasePlayer):
                  clock=None, interval=None):
         super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.noteFactory = noteFactory
-        self._on_method = self.instr.playnote
-        self._off_method = self.instr.stopnote
+        self._on_method = lambda n, v : self.instr.playnote(n, v)
+        self._off_method = lambda n : self.instr.stopnote(n)
 
     def _next(self):
         return self.noteFactory
@@ -113,15 +115,18 @@ class ChordPlayer(BasePlayer):
                  interval=None):
         super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.chordFactory = chordFactory
-        self._on_method = self.instr.playchord
-        self._off_method = self.instr.stopchord
+        self._on_method = lambda c, v : self.instr.playchord(c, v)
+        self._off_method = lambda  c : self.instr.stopchord(c)
 
     def _next(self):
         return self.chordFactory
 
-def generateSounds(g):
+def generateSounds(g, velocity=(lambda v, o : (v,o))):
     def f():
         s = g.next()
+        if IPlayOverride.providedBy(s):
+            v, o = velocity(110, None)
+            return s(v)
         if callable(s):
             return s()
         return s
@@ -205,6 +210,39 @@ class Shifter(object):
                 yield next
             else:
                 yield n + self.amount
+
+
+class IPlayOverride(Interface):
+
+    def __call__(velocity):
+
+        raise NotImplementedError('subclass must implement')
+
+class Delay(object):
+    implements(IPlayOverride)
+
+    def __init__(self, instr, ticks, noteFactory, stop=lambda : None, clock=None):
+        self.instr = instr
+        self.ticks = ticks
+        self.noteFactory = noteFactory
+        self.stop = stop
+        self.clock = getClock(clock)
+
+    def __call__(self, velocity):
+        playnote = getattr(self.instr, 'playnote') or self.instr.playchord
+
+        n = self.noteFactory()
+
+        self.clock.callLater(self.ticks, playnote, n, velocity)
+        if callable(self.stop):
+            stop = self.stop()
+        else:
+            step = self.stop
+        if stop:
+            stopnote = getattr(self.instr, 'stopnote') or self.instr.stopchord
+            self.clock.callLater(stopnote, n)
+        return None
+
 
 
 class StepSequencer(PlayableMixin):

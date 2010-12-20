@@ -55,4 +55,8 @@ def random_onoff(event, likelihood=[1,0], frequency=0.125):
             event.start(frequency)
             event.playing = True
 
+def getClock(self, clock=None):
+    if clock is None:
+        from txbeatlounge.scheduler import clock
+    return clock
 

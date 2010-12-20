@@ -13,7 +13,7 @@ from twisted.internet.task import LoopingCall
 
 #from fluidsynth import Synth
 
-__all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'ScheduledEvent', 'clock' ]
+__all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt', 'ScheduledEvent', 'clock' ]
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
 
@@ -115,7 +115,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def callAfterMeasures(self, measures, f, *a, **kw):
         meter = self.meters[0]
-        ticks = _ticks(measures, meter, self) #meter.ticksPerMeasure * measures
+        ticks = _ticks(measures, meter, self) 
         self.callLater(ticks, f, *a, **kw)    
 
     def nudge(self, pause=0.1):
@@ -125,8 +125,10 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
 
 
-def measuresToTicks(measures):
-    return measures * standardMeter.ticksPerMeasure
+def measuresToTicks(measures, meter=standardMeter):
+    return measures * meter.ticksPerMeasure
+
+mtt = measuresToTicks
 
 def _ticks(measures, meter, clock):
     current_measure = meter.measure(clock.ticks)

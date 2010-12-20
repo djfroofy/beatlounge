@@ -9,7 +9,7 @@ from zope.interface import implements, Interface, Attribute
 __all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
            'Chain', 'Standard8Ducker', 'Standard16Ducker', 'Standard32Ducker',
            'Sin', 'Sinusoid', 'Sawtooth', 'Triangle', 'FadeIn', 'FadeOut',
-           'M34Ducker', 'M78Ducker']
+           'M34Ducker', 'M78Ducker', 'Stepper']
 
 class IFilter(Interface):
 
