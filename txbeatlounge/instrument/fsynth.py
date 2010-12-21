@@ -1,4 +1,6 @@
 import os
+from warnings import warn
+
 from fluidsynth import Synth
 
 
@@ -98,7 +100,23 @@ CC_SUSTAIN = 64
 CC_REVERB = 91
 CC_CHORUS = 93
 
-class Instrument(object):
+
+class ChordPlayerMixin(object):
+
+    def playchord(self, notes, velocity=80):
+        for note in notes:
+            self.playnote(note, velocity)
+
+    def stopchord(self, notes):
+        for note in notes:
+            self.stopnote(note)
+
+    def stopall(self):
+        for note in range(128):
+            self.stopnote(note)
+
+
+class Instrument(ChordPlayerMixin):
 
     def __init__(self, sfpath, synth=None, connection='mono',
                  channel=None, bank=0, preset=0, pool=None):
@@ -135,17 +153,6 @@ class Instrument(object):
         #print 'stopping note', self.synth, self.channel, note
         self.synth.noteoff(self.channel, note)
 
-    def playchord(self, notes, velocity=80):
-        for note in notes:
-            self.playnote(note, velocity)
-
-    def stopchord(self, notes):
-        for note in notes:
-            self.stopnote(note)
-
-    def stopall(self):
-        for note in range(128):
-            self.stopnote(note)
 
     def controlChange(self, vibrato=None, volume=None, pan=None, expression=None,
                       sustain=None, reverb=None, chorus=None):
@@ -164,6 +171,37 @@ class Instrument(object):
 
     def pitchBend(self, value):
         self.synth.pitch_bend(self.channel, value)
+
+
+class MultiInstrument(ChordPlayerMixin):
+
+    def __init__(self, instrumentMapping, strict=True):
+        self._mapping = {}
+        self.instruments = []
+        for (instrument, noteMapping) in instrumentMapping:
+            self.instruments.append(instrument)
+            for (to, from_) in noteMapping:
+                if self._mapping.has_key(to):
+                    msg = 'Reduant entry in instrumentMapping: %s' % to
+                    if strict:
+                        raise ValueError(msg)
+                    else:
+                        warn(msg)
+                else:
+                    self._mapping[to] = (instrument, from_)
+        
+
+    def playnote(self, note, velocity=80):
+        instr, realNote = self._mapping.get(note, (None, None))
+        if instr is None:
+            return
+        instr.playnote(realNote, velocity)
+
+    def stopnote(self, note):
+        instr, realNote = self._mapping.get(note, (None, None))
+        if instr is None:
+            return
+        instr.stopnote(realNote)
 
 
 def suggestDefaultPool(pool):
