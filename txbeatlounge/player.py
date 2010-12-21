@@ -6,12 +6,15 @@ from twisted.python import log
 
 from txbeatlounge.utils import getClock
 from txbeatlounge.debug import DEBUG
+from txbeatlounge.scheduler import mtt
+
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
             'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
             'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter',
-            'Delay']
+            'Delay', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
+            'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq']
 
 
 class IPlayer(Interface):
@@ -244,6 +247,38 @@ class Delay(object):
         return None
 
 
+
+def quarter(n=0):
+    return mtt(n * 0.25)
+Q = quarter
+
+def eighth(n=0):
+    return mtt(n * 0.125)
+E = quaver = eighth
+
+def sixteenth(n=0):
+    return mtt(n * 0.0625)
+S = semiquaver = sixteenth
+
+def thirtysecond(n=0):
+    return mtt(n * 0.03125)
+T = demisemiquaver = thirtysecond
+
+
+def sequence(schedule, length=8):
+    filler = [ N ] 
+    notes = [ ]
+    last = 0
+    for (note, when) in schedule:
+        fill = ( when - last )
+        notes.extend(filler * fill)
+        notes.append(note)
+        last = when + 1
+    if last != length :
+        notes.extend(filler * (length - last))
+    return notes
+
+seq = sequence
 
 class StepSequencer(PlayableMixin):
     """

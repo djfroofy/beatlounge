@@ -126,7 +126,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
 
 def measuresToTicks(measures, meter=standardMeter):
-    return measures * meter.ticksPerMeasure
+    return int(measures * meter.ticksPerMeasure)
 
 mtt = measuresToTicks
 

@@ -7,8 +7,8 @@ from zope.interface.verify import verifyClass, verifyObject
 from twisted.trial.unittest import TestCase
 
 from txbeatlounge.player import NotePlayer, ChordPlayer, Player, generateSounds, N, R
-from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase
-from txbeatlounge.scheduler import BeatClock, Meter
+from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase, sequence, Q
+from txbeatlounge.scheduler import BeatClock, Meter, mtt
 from txbeatlounge.filters import BaseFilter
 from txbeatlounge.testlib import TestReactor, ClockRunner
 
@@ -210,4 +210,21 @@ class UtilityTests(TestCase):
         self.patch(random, 'choice', choose)
         g.next()
 
+
+    def test_sequence(self):
+        notes = sequence([(1, 0),(2, 2),(3, 4),(4, 6)], 8)
+        self.assertEquals(notes, [1,N,2,N,3,N,4,N])
+        notes = sequence([(3, 4)], 8)
+        self.assertEquals(notes, [N,N,N,N,3,N,N,N])
+
+        chords = sequence([((1,2,3),2),([4,5],4)], 8)
+        self.assertEquals(chords, [N,N,(1,2,3),N,[4,5],N,N,N])
+
+        # semiquaver triplet
+        notes = sequence([(4,3),(5,5),(1,21),(2,22),(3,23)], 24)
+        self.assertEquals(notes,
+            [N,N,N, 4,N,5,
+             N,N,N, N,N,N,
+             N,N,N, N,N,N,
+             N,N,N, 1,2,3])
 
