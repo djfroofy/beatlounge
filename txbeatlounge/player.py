@@ -136,8 +136,19 @@ def generateSounds(g, velocity=(lambda v, o : (v,o))):
     return f
 snd = generateSounds
 
-def N():
-    return None
+
+class _Nothing(object):
+
+    def __str__(self):
+        return 'N'
+
+    def __repr__(self):
+        return 'N'
+
+    def __call__(self):
+        return None
+
+N = _Nothing()
 
 
 def R(*c):
@@ -283,14 +294,77 @@ def sequence(schedule, length=8):
 
 seq = sequence
 
-#class blowup(notes, factor=2):
-#    notes2 = []
-#    f = factor+1
-#    for note in notes:
-#        for i in range(f):
-#            notes2.append(N)
-#    return notes2
+def explode(notes, factor=2):
+    notes2 = []
+    f = factor-1
+    for note in notes:
+        notes2.append(note)
+        for i in range(f):
+            notes2.append(N)
+    return notes2
 
+
+
+def cut(notes, aprob=0.25, bprob=0.25):
+    size = len(notes)
+    m = size / 2
+    if random.random() <= bprob:
+        #print 'cutting right'
+        if random.random() <= 0.5: # half chop
+            #print 'cutting middleway'
+            slice = _cut(notes[m:])
+            notes = notes[:m] + slice
+        else: # quarter chop
+            #print 'cutting quarter way'
+            if random.random() <= bprob:
+                slice = _cut(notes[m+m/2:])
+                notes = notes[:m+m/2] + slice 
+            else:
+                slice = _cut(notes[m:m+m/2])
+                notes = notes[:m] + slice + notes[m+m/2:]
+    if random.random() <= aprob:
+        #print 'cutting left', len(notes)
+        if random.random() <= 0.5:
+            #print 'cutting midway'
+            slice = _cut(notes[:m])
+            #print '%d %d' % (len(slice), len(notes[m:]))
+            notes = slice + notes[m:]
+        else:
+            #print 'cutting quarter way'
+            if random.random() <= bprob:
+                slice = _cut(notes[:m/2])
+                notes = slice + notes[m/2:] 
+            else:
+                slice = _cut(notes[m/2:m])
+                notes = notes[:m/2] + slice + notes[m:]
+    return notes
+
+
+
+def _cut(notes):
+    #print 'cutting', notes
+    size = len(notes)
+    #print 'size', size
+    if notes[0] == N:
+        for (first, note) in enumerate(notes):
+            if note != N:
+                break
+        repeat = size / (first+1)
+        notes = (notes[:first+1] * repeat)[:size]
+        notes.extend([N] * (size - len(notes)))
+        #print '1.', notes
+        return notes
+    if size >= 8 and random.random() <= 0.10:
+        rv = notes[:4] * (size / 4)
+        #print '2.', rv
+        return rv
+    if size >= 4 and random.random() <= 0.75:
+        rv = notes[:2] * (size / 2)
+        #print '3.', rv
+        return rv
+    rv = [notes[0]] * size
+    #print '4.', rv
+    return rv
 
 class StepSequencer(PlayableMixin):
     """
