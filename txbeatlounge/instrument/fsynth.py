@@ -1,8 +1,10 @@
 import os
+import random
 from warnings import warn
 
 from fluidsynth import Synth
 
+from txbeatlounge.utils import getClock
 
 class SynthRouter:
 
@@ -103,7 +105,21 @@ CC_CHORUS = 93
 
 class ChordPlayerMixin(object):
 
+    clock = None
+    strumming = False
+
+    def strum(self, notes, velocity=80):
+        v = lambda : velocity
+        if callable(velocity):
+            v = lambda : velocity()
+        for (i, note) in enumerate(notes):
+            later = 1
+            self.clock.callLater(i*later, self.playnote, note, v())
+
+
     def playchord(self, notes, velocity=80):
+        if self.strumming:
+            return self.strum(notes, velocity)
         for note in notes:
             self.playnote(note, velocity)
 
@@ -119,11 +135,12 @@ class ChordPlayerMixin(object):
 class Instrument(ChordPlayerMixin):
 
     def __init__(self, sfpath, synth=None, connection='mono',
-                 channel=None, bank=0, preset=0, pool=None):
+                 channel=None, bank=0, preset=0, pool=None, clock=None):
         if pool is None:
             pool = defaultPool
         if synth is None:
             synth = pool.synthObject(connection=connection)
+        self.clock = getClock(clock)
         self.synth = synth
         self._file = os.path.basename(sfpath)
         self.sfpath = sfpath

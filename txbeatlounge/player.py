@@ -211,6 +211,8 @@ class Shifter(object):
                 n = next()
             if n is None:
                 yield next
+            elif type(n) in (list, tuple):
+                yield [ i + self.amount for i in n ]
             else:
                 yield n + self.amount
 
@@ -225,6 +227,7 @@ class Delay(object):
     implements(IPlayOverride)
 
     def __init__(self, instr, ticks, noteFactory, stop=lambda : None, clock=None):
+        warn('probably going to toss Delay in the shit can - sequence is much nicer')
         self.instr = instr
         self.ticks = ticks
         self.noteFactory = noteFactory
@@ -279,6 +282,15 @@ def sequence(schedule, length=8):
     return notes
 
 seq = sequence
+
+#class blowup(notes, factor=2):
+#    notes2 = []
+#    f = factor+1
+#    for note in notes:
+#        for i in range(f):
+#            notes2.append(N)
+#    return notes2
+
 
 class StepSequencer(PlayableMixin):
     """
