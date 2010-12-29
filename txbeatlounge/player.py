@@ -1,4 +1,5 @@
 import random
+from itertools import cycle
 
 from zope.interface import Interface, Attribute, implements
 
@@ -14,7 +15,8 @@ __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
             'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
             'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter',
             'Delay', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
-            'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq']
+            'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq',
+            'cut', 'explode', 'lcycle']
 
 
 class IPlayer(Interface):
@@ -365,6 +367,13 @@ def _cut(notes):
     rv = [notes[0]] * size
     #print '4.', rv
     return rv
+
+
+def lcycle(length, list):
+    if len(list) != length:
+        raise ValueError('Cycle %s not of length %s' % (list, length))
+    return cycle(list)
+
 
 class StepSequencer(PlayableMixin):
     """

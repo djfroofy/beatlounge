@@ -17,7 +17,7 @@ class Conductor(object):
 
     def start(self):
         node = self.scoreGraph[None]
-        self._resume(node)
+        self.clock.callAfterMeasures(1, self._resume, node)
 
     def _resume(self, node):
         schedule = self.clock.schedule

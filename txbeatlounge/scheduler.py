@@ -115,7 +115,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def callAfterMeasures(self, measures, f, *a, **kw):
         meter = self.meters[0]
-        ticks = _ticks(measures, meter, self) 
+        ticks = _ticks(measures, meter, self)
         self.callLater(ticks, f, *a, **kw)    
 
     def nudge(self, pause=0.1):
