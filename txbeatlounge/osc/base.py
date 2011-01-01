@@ -23,7 +23,6 @@ from twisted.internet import reactor
 from txosc.async import DatagramClientProtocol
 from txbeatlounge.scheduler import secs
 from txbeatlounge.osc.base import MessageSender
-from txbeatlounge.osc.base import MessageSender
 client = DatagramClientProtocol()
 clientPort = reactor.listenUDP(0, client)
 sender = MessageSender(client, '192.168.2.3', 17779)
