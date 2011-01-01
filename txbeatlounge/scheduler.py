@@ -142,26 +142,38 @@ clock.receiveTime(interface='192.168.2.3')
             receiver = Receiver()
 
         def _sync(message, address):
-            if self.running: return
+            args = message.arguments
+
+            tempo = int(args[3].value)
+            beats, duration = [int(a) for a in str(args[2].value).split('/')]
+            meter = Meter(beats, duration, 1)
+
+            if self.running:
+                if tempo == self.tempo:
+                    return
+                else:
+                    log.msg('received clock tempo change')
+                    self.task.stop()
 
             log.msg(message)
-            ticks = int(message.arguments[0].value)
-            time_of_last_one = float(message.arguments[1].value)
-            beats, duration = str(message.arguments[2].value).split('/')
-            beats = int(beats)
-            duration = int(duration)
-            tempo = int(message.arguments[3].value)
+            ticks = int(args[0].value)
+            time_of_last_one = float(args[1].value)
 
             ticks_per = 96/duration
             ticks_per_measure = ticks_per * beats
             ticks_per_second = tempo * 0.4
             seconds_per_measure = ticks_per_measure/ticks_per_second
 
-            self.setTempo(tempo)
+            self.tempo = tempo
+            self._tick_interval = (60. / tempo) * (1./24)
             self.meters = [Meter(beats, duration, 1)]
             self.ticks = ticks + ticks_per_measure
             delta = (time_of_last_one + seconds_per_measure) - secs()
-            self.reactor.callLater(delta, self.run)
+
+            if self.running:
+                self.reactor.callLater(delta, self.startTicking)
+            else:
+                self.reactor.callLater(delta, self.run)
 
         receiver.addCallback('/clock', _sync)
 
