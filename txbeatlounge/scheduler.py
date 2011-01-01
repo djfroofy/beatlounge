@@ -1,6 +1,7 @@
+import time
+
 from collections import namedtuple
 from functools import wraps
-
 from zope.interface import implements
 
 from twisted.python import log
@@ -16,6 +17,8 @@ from twisted.internet.task import LoopingCall
 __all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt', 'ScheduledEvent', 'clock' ]
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
+
+secs = lambda : time.time() % 86400
 
 class Beat(_BeatBase):
 
@@ -91,8 +94,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def run(self):
         self.startTicking()
+        self.running = True
         if not self.reactor.running:
-            self.running = True
             self.reactor.run()
 
     def startTicking(self):
@@ -125,7 +128,12 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
 
     def receiveTime(self, receiver=None, port=17779, interface='192.168.2.3', listen_now=True):
-        """Receives time from a master and starts the clock with the next "one""""
+        """Receives time from a master and starts the clock with the next "one"
+
+from txbeatlounge.scheduler import BeatClock
+clock = BeatClock()
+clock.receiveTime(interface='192.168.2.3')
+        """
 
         if self.running: raise ValueError('clock is already running')
 
@@ -133,26 +141,27 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             from txosc.dispatch import Receiver
             receiver = Receiver()
 
-        secs = lambda : time.time() % 86400
         def _sync(message, address):
             if self.running: return
 
-            ticks = message.args[0]
-            time_of_last_one = message.args[1]
-            beats, duration = message.args[2].split('/')
+            log.msg(message)
+            ticks = int(message.arguments[0].value)
+            time_of_last_one = float(message.arguments[1].value)
+            beats, duration = str(message.arguments[2].value).split('/')
             beats = int(beats)
             duration = int(duration)
-            tempo = message.args[3]
+            tempo = int(message.arguments[3].value)
 
             ticks_per = 96/duration
             ticks_per_measure = ticks_per * beats
-            ticks_per_second = tempo*0.4
+            ticks_per_second = tempo * 0.4
             seconds_per_measure = ticks_per_measure/ticks_per_second
 
             self.setTempo(tempo)
+            self.meters = [Meter(beats, duration, 1)]
             self.ticks = ticks + ticks_per_measure
             delta = (time_of_last_one + seconds_per_measure) - secs()
-            reactor.callLater(self.run, delta)
+            self.reactor.callLater(delta, self.run)
 
         receiver.addCallback('/clock', _sync)
 

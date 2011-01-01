@@ -18,6 +18,17 @@ def fallback(message, address):
     log.msg('[fallback] %s %s' % (message, address))
 
 class MessageSender(object):
+    """
+from twisted.internet import reactor
+from txosc.async import DatagramClientProtocol
+from txbeatlounge.scheduler import secs
+from txbeatlounge.osc.base import MessageSender
+from txbeatlounge.osc.base import MessageSender
+client = DatagramClientProtocol()
+clientPort = reactor.listenUDP(0, client)
+sender = MessageSender(client, '192.168.2.3', 17779)
+sender.send('/clock', 10000, secs(), '3/4', 180)
+    """
 
     def __init__(self, client, host='127.0.0.1', port=17779):
         self.client = client
