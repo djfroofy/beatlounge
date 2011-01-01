@@ -38,6 +38,20 @@ class MessageSender(object):
     def _tcp_send(self, element):
         self.client.send(element)
 
+"""
+class MessageReceiver(object):
+
+    def __init__(self);
+        from txosc.dispatch import Receiver
+        from txosc.async import DatagramServerProtocol
+        #from twisted.internet import reactor
+        self.receiver = Receiver()
+        receiver.fallback = fallback
+        reactor.listenUDP(17779, DatagramServerProtocol(receiver), interface='192.168.2.3')
+        #reactor.start()
+"""
+
+
 
 class Play(object):
 

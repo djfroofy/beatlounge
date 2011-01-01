@@ -88,7 +88,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             self.task.stop()
             self.task.start(self._tick_interval, True)
         self.tempo = tempo
-        
+
     def run(self):
         self.startTicking()
         if not self.reactor.running:
@@ -123,6 +123,42 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             raise ValueError("Cannot nudge a clock that hasn't started")
         self.task.stop()
         self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
+
+    def receiveTime(self, receiver=None, port=17779, interface='192.168.2.3', listen_now=True):
+        """Receives time from a master and starts the clock with the next "one""""
+
+        if self.running: raise ValueError('clock is already running')
+
+        if not receiver:
+            from txosc.dispatch import Receiver
+            receiver = Receiver()
+
+        secs = lambda : time.time() % 86400
+        def _sync(message, address):
+            if self.running: return
+
+            ticks = message.args[0]
+            time_of_last_one = message.args[1]
+            beats, duration = message.args[2].split('/')
+            beats = int(beats)
+            duration = int(duration)
+            tempo = message.args[3]
+
+            ticks_per = 96/duration
+            ticks_per_measure = ticks_per * beats
+            ticks_per_second = tempo*0.4
+            seconds_per_measure = ticks_per_measure/ticks_per_second
+
+            self.setTempo(tempo)
+            self.ticks = ticks + ticks_per_measure
+            delta = (time_of_last_one + seconds_per_measure) - secs()
+            reactor.callLater(self.run, delta)
+
+        receiver.addCallback('/clock', _sync)
+
+        if listen_now:
+            from txosc.async import DatagramServerProtocol
+            self.reactor.listenUDP(port, DatagramServerProtocol(receiver), interface=interface)
 
 
 def measuresToTicks(measures, meter=standardMeter):
