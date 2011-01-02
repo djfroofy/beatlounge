@@ -43,12 +43,13 @@ from comps.core import *
         print 'Connected to client.'
 
     def connectionLost(self, reason):
-        print 'Lost connection.'
-
+        print 'Lost connection.', reason
+        reason.printTraceback()
 
 if __name__ == "__main__":
     from twisted.internet import reactor
 
+    log.startLogging(sys.stdout)
     # run our websocket server
     # serve index.html from the local directory
     root = File('.')
