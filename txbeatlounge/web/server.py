@@ -18,6 +18,7 @@ from websocket import WebSocketHandler, WebSocketSite
 
 
 class CodeHandler(WebSocketHandler):
+
     def __init__(self, transport):
         WebSocketHandler.__init__(self, transport)
         self.interpreter = ManholeInterpreter(self)
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     root = File('.')
     site = WebSocketSite(root)
     site.addHandler('/code', CodeHandler)
-    reactor.listenTCP(8080, site)
+    reactor.listenTCP(8080, site, interface='127.0.0.1')
     # run policy file server
     #factory = Factory()
     #factory.protocol = FlashSocketPolicy
