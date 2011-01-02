@@ -9,3 +9,5 @@ build
 _trial_temp
 .coverage
 coverage.d
+*.log
+

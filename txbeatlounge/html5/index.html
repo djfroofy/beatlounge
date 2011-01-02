@@ -7,15 +7,24 @@
     <div id="conn_status">Not Connected</div>
     <div id="input"></div>
     <div id="output"></div>
-    <textarea id="input"></textarea>
+    <textarea id="input" rows=5 cols=80></textarea>
     <button id="inputButton">Input</button>
 
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
     <script language='javascript'>
+      function nl2br_js(myString) {
+        var regX = /\n/gi ;
+        s = new String(myString);
+        s = s.replace(regX, "<br /> \n");
+        return s;
+      }
+
       $(function(){
         var ws = new WebSocket("ws://localhost:8080/code");
         ws.onmessage = function(evt) {
-          $('#output').append('<p>' + evt.data + '</p>');
+          d = evt.data;
+          d = nl2br_js(d);
+          $('#output').append('<p>' + d + '</p>');
         }
         ws.onopen = function(evt) {
           $('#conn_status').html('<b>Connected</b>');
@@ -28,9 +37,12 @@
           $('#conn_status').html('<b>Closed</b>');
         }
         $('button#inputButton').click(function() {
+          $('#output').html('');
           var code = $('textarea#input').val();
           ws.send(code);
-          $('#input').append('<p>' + code + '</p>');
+          $('#input').append('<p>' + nl2br_js(code) + '</p>');
+          $('textarea#input').val('');
+          $('textarea#input').focus();
         });
       });
     </script>

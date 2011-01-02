@@ -21,6 +21,12 @@ class CodeHandler(WebSocketHandler):
     def __init__(self, transport):
         WebSocketHandler.__init__(self, transport)
         self.interpreter = ManholeInterpreter(self)
+        self.interpreter.runcode("""
+from txbeatlounge.scheduler import clock as reactor
+reactor.synthAudioDevice = "coreaudio"
+reactor.run()
+from comps.core import *
+""")
 
     def __del__(self):
         print 'Deleting handler'
