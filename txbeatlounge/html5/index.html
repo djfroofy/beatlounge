@@ -1,0 +1,37 @@
+<html>
+  <head>
+    <title>WebSocket Beatlounge</title>
+  </head>
+  <body>
+    <h1>Send Text to the Beatlounge</h1>
+    <div id="conn_status">Not Connected</div>
+    <div id="output"></div>
+    <textarea id="input"></textarea>
+    <button id="inputButton">Input</button>
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
+    <script language='javascript'>
+      $(function(){
+        var ws = new WebSocket("ws://localhost:8080/tcp");
+        ws.onmessage = function(evt) {
+          $('#output').text(evt.data);
+        }
+        ws.onopen = function(evt) {
+          $('#conn_status').html('<b>Connected</b>');
+          ws.send('Test data');
+        }
+        ws.onerror = function(evt) {
+          $('#conn_status').html('<b>Error</b>');
+        }
+        ws.onclose = function(evt) {
+          $('#conn_status').html('<b>Closed</b>');
+        }
+
+        $('button#inputButton').click(function() {
+          ws.send($('textarea#input').val());
+        });
+      });
+    </script>
+  </body>
+</html>
+
