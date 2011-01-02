@@ -3,30 +3,35 @@
 
 built on https://github.com/rlotun/txWebSocket
 """
+
+import StringIO, sys
 from datetime import datetime
 
 from twisted.internet.protocol import Protocol, Factory
+from twisted.python import log
 from twisted.web import resource
 from twisted.web.static import File
 from twisted.internet import task
+from twisted.conch.manhole import ManholeInterpreter
 
 from websocket import WebSocketHandler, WebSocketSite
 
-class Handler(WebSocketHandler):
+
+class CodeHandler(WebSocketHandler):
     def __init__(self, transport):
         WebSocketHandler.__init__(self, transport)
+        self.interpreter = ManholeInterpreter(self)
 
     def __del__(self):
         print 'Deleting handler'
 
-    def send_foo(self, foo="foo"):
-        self.transport.write(foo)
-
     def frameReceived(self, frame):
         """ """
         print 'Peer: ', self.transport.getPeer()
-        print frame
-        self.transport.write(frame)
+        self.interpreter.runcode(frame)
+
+    def addOutput(self, data, async=False):
+        self.transport.write(data)
 
     def connectionMade(self):
         print 'Connected to client.'
@@ -42,7 +47,7 @@ if __name__ == "__main__":
     # serve index.html from the local directory
     root = File('.')
     site = WebSocketSite(root)
-    site.addHandler('/tcp', Handler)
+    site.addHandler('/code', CodeHandler)
     reactor.listenTCP(8080, site)
     # run policy file server
     #factory = Factory()
