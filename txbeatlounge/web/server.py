@@ -39,7 +39,7 @@ reactor.run()
 
     def addOutput(self, data, async=False):
         self.transport.write(data)
-        log.msg(data)
+        #log.msg(data)
 
     def connectionMade(self):
         print 'Connected to client.'
