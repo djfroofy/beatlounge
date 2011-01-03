@@ -26,7 +26,7 @@ class CodeHandler(WebSocketHandler):
 from txbeatlounge.scheduler import clock as reactor
 reactor.synthAudioDevice = "coreaudio"
 reactor.run()
-from comps.core import *
+#from comps.core import *
 """)
 
     def __del__(self):
@@ -46,6 +46,8 @@ from comps.core import *
     def connectionLost(self, reason):
         print 'Lost connection.', reason
         reason.printTraceback()
+
+
 
 if __name__ == "__main__":
     from twisted.internet import reactor

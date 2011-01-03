@@ -1,26 +1,134 @@
 <html>
   <head>
     <title>WebSocket Beatlounge</title>
+    <style>
+      #inputRecordContainer {
+        width:600px; height:250px; margin: 0.5em 0;
+      }
+      #inputRecordContainerButtons {
+        height: 25px;
+      }
+      #inputDiv {
+        margin: 0.5em 0; height:180px; overflow: auto;
+      }
+      .restoreDelete {
+        width: 150px;
+        float: left;
+      }
+      #restore { width: 100%;}
+      .clear { clear: both; }
+      #textareaContainer {
+      }
+      #output { width: 600px; height: 150px; overflow: auto; margin: 0.5em 0;}
+    </style>
   </head>
   <body>
-    <h1>Send Text to the Beatlounge</h1>
-    <div id="conn_status">Not Connected</div>
-    <div id="input"></div>
-    <div id="output"></div>
-    <textarea id="input" rows=5 cols=80></textarea>
-    <button id="inputButton">Input</button>
+    <div id="body">
+      <h3>Send Text to the Beatlounge</h3>
+      <section>
+        <div id="conn_status">Not Connected</div>
+      </section>
+
+      <div id="inputRecordContainer">
+        <div id="inputRecordContainerButtons">
+          <button id="runInputDiv">Run</button>
+          <button id="editInputDiv">Edit</button>
+          <button id="clearCurrent">Clear the Current Code</button>
+        </div>
+        <div id="inputDiv"></div>
+        <div id="save">
+          <input type="text" id="saveAs">
+          <button id="saveAsButton">Save</button>
+        </div>
+      </div>
+  
+      <div id="restore"></div>
+      <div class="clear"></div>
+  
+      <div id="output"></div>
+  
+      <div id="textareaContainer">
+        <button id="inputButton">Run!</button><br>
+        <textarea id="input" rows=20 cols=80></textarea>
+      </div>
+    </div>
 
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
     <script language='javascript'>
-      function nl2br_js(myString) {
+      var db = localStorage;
+      var ws = new WebSocket("ws://localhost:8080/code");
+
+      function nl2br_js(str) {
         var regX = /\n/gi ;
-        s = new String(myString);
+        s = new String(str);
         s = s.replace(regX, "<br /> \n");
         return s;
       }
+      function br2nl_js(str) {
+        var regX = /<br \/>/gi;
+        var regX2 = /<br>/gi;
+        var regX3 = /<br\/>/gi;
+        var trailingWhitespace = /\s*\n/g;
+        var trailingNew = /\n*$/g;
+        s = new String(str);
+        s = s.replace(regX, "");
+        s = s.replace(regX2, "");
+        s = s.replace(regX3, "");
+        s = s.replace(trailingWhitespace, "\n");
+        s = s.replace(trailingNew, "\n");
+        return s;
+      }
+
+      function handle_storage(e) {
+        if (!e) { e = window.event; }
+        console.log('handle_storage');
+        console.log(e);
+      }
+
+      function show_saved() {
+        $('div#restore').html('');
+        if (db['___saved'] != undefined){
+          var arr = db['___saved'].split(':::');
+          for (var i=0; i < arr.length; i++) {
+            $('div#restore').append(
+'<div class="restoreDelete"><a href="#" class="restoreA">'+arr[i]+'</a> <a href="#" class="deleteA">X</a></div>'
+            );
+          }
+        }
+      }
+      function record_container_buttons() {
+        if ($('#inputDiv').html() == '') {
+          $('#inputRecordContainer button').hide();
+          $('#inputRecordContainer #save').hide();
+        } else {
+          $('#inputRecordContainer button').show();
+          $('#inputRecordContainer #save').show();
+        }
+      }
+      function text_area_buttons() {
+        if ($('textarea#input').val() == '') {
+          $('#textareaContainer button').hide();
+        } else {
+          $('#textareaContainer button').show();
+        }
+      }
+      function show_current() {
+        $('#inputDiv').html(nl2br_js(db['___current']));
+        record_container_buttons();
+      }
 
       $(function(){
-        var ws = new WebSocket("ws://localhost:8080/code");
+        db['___current'] = '';
+        show_current();
+        show_saved();
+        record_container_buttons();
+        
+        if (window.addEventListener) {
+          window.addEventListener("storage", handle_storage, false);
+        } else {
+          window.attachEvent("onstorage", handle_storage);
+        };
+
         ws.onmessage = function(evt) {
           d = evt.data;
           d = nl2br_js(d);
@@ -36,13 +144,72 @@
         ws.onclose = function(evt) {
           $('#conn_status').html('<b>Closed</b>');
         }
+
+        // USER EVENTS
         $('button#inputButton').click(function() {
           $('#output').html('');
           var code = $('textarea#input').val();
           ws.send(code);
-          $('#input').append('<p>' + nl2br_js(code) + '</p>');
+
+          db['___current'] = db['___current'] + code + '\n';
+          //console.log(db['___current']);
+
+          //$('#inputDiv').append(nl2br_js(code));
+          show_current();
           $('textarea#input').val('');
           $('textarea#input').focus();
+        });
+        $('button#runInputDiv').click(function() {
+          var code = br2nl_js($('#inputDiv').html());
+          ws.send(code);
+          //db['___current'] = db['___current'] + code + '\n';
+        });
+
+
+        $('button#saveAsButton').click(function() {
+          var save_as = $('input#saveAs').val();
+          db[save_as] = db['___current'];
+          var saved_string = db['___saved'];
+          if (saved_string.match(':::'+save_as) == null && saved_string.match(save_as+':::') == null) {
+            db['___saved'] = db['___saved'] + ':::' + save_as;
+          }
+          show_saved();
+        });
+
+        $('a.restoreA').live("click", function() {
+          var name = $(this).html();
+          $('input#saveAs').val(name);
+          db['___current'] = db[name];
+          $('#output').html('');
+          $('textarea#input').val('');
+          show_current();
+          return false;
+        });
+        $('a.deleteA').live("click", function() {
+          var name = $(this).prev().html();
+          var saved = db['___saved'];
+          //console.log(name);
+          saved = saved.replace(name+':::', '');
+          saved = saved.replace(':::'+name, '');
+          db['___saved'] = saved;
+          db[name] = '';
+          show_saved();
+          return false;
+        });
+
+        $('button#clearCurrent').click(function() {
+          db['___current'] = '';
+          $('#inputDiv').html('');
+          $('input#saveAs').val('');
+          show_current();
+        });
+
+        $('button#editInputDiv').click(function() {
+          var input_html = $('div#inputDiv').html();
+          $('textarea#input').val(br2nl_js(input_html));
+          $('#output').html(input_html)
+          db['___current'] = '';
+          show_current(); 
         });
       });
     </script>
