@@ -1,0 +1,24 @@
+body {min-width: 600px; }
+#right {width: 50%; float: left;}
+#output { white-space: pre; width: 100%; height: 90%; overflow: auto;}
+
+#left {width: 49%; float: left; padding-right: 1%}
+#inputRecordContainer {
+  width:100%; height: 38%; margin: 0.5em 0;
+}
+#inputRecordContainerButtons {
+  height: 25px;
+}
+#inputDiv {
+  white-space: pre;
+  margin: 0.5em 0; height:80%; overflow: auto;
+}
+.restoreDelete {
+  width: 150px;
+  float: left;
+}
+#restore { width: 100%; height: 12%; overflow: auto;}
+.clear { clear: both; }
+#textareaContainer { width: 100%;}
+textarea#input { width: 100%;}
+
