@@ -1,6 +1,6 @@
-body {min-width: 600px; }
+body {min-width: 920px; }
 #right {width: 50%; float: left;}
-#output { white-space: pre; width: 100%; height: 90%; overflow: auto;}
+#output { white-space: pre; width: 100%; height: 90%; overflow-x: auto;}
 
 #left {width: 49%; float: left; padding-right: 1%}
 #inputRecordContainer {
@@ -11,13 +11,13 @@ body {min-width: 600px; }
 }
 #inputDiv {
   white-space: pre;
-  margin: 0.5em 0; height:80%; overflow: auto;
+  margin: 0.5em 0; height:80%; overflow-x: auto; /*overflow-y:*/
 }
 .restoreDelete {
   width: 150px;
   float: left;
 }
-#restore { width: 100%; height: 12%; overflow: auto;}
+#restore { width: 100%; height: 12%; overflow-x: auto;}
 .clear { clear: both; }
 #textareaContainer { width: 100%;}
 textarea#input { width: 100%;}
