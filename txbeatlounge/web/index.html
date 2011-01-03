@@ -9,6 +9,7 @@
         height: 25px;
       }
       #inputDiv {
+        white-space: pre;
         margin: 0.5em 0; height:180px; overflow: auto;
       }
       .restoreDelete {
@@ -19,7 +20,7 @@
       .clear { clear: both; }
       #textareaContainer {
       }
-      #output { width: 600px; height: 150px; overflow: auto; margin: 0.5em 0;}
+      #output { white-space: pre; width: 600px; height: 150px; overflow: auto; margin: 0.5em 0;}
     </style>
   </head>
   <body>
@@ -48,7 +49,9 @@
       <div id="output"></div>
   
       <div id="textareaContainer">
-        <button id="inputButton">Run!</button><br>
+        <button id="inputButton">Run!</button>
+        <button id="inputReplace">Replace</button>
+        <br>
         <textarea id="input" rows=20 cols=80></textarea>
       </div>
     </div>
@@ -61,7 +64,7 @@
       function nl2br_js(str) {
         var regX = /\n/gi ;
         s = new String(str);
-        s = s.replace(regX, "<br /> \n");
+        s = s.replace(regX, "\n");
         return s;
       }
       function br2nl_js(str) {
@@ -116,7 +119,11 @@
         $('#inputDiv').html(nl2br_js(db['___current']));
         record_container_buttons();
       }
-
+      function clear_and_focus() {
+        $('#output').html('');
+        $('textarea#input').val('');
+        $('textarea#input').focus();
+      }
       $(function(){
         db['___current'] = '';
         show_current();
@@ -132,11 +139,10 @@
         ws.onmessage = function(evt) {
           d = evt.data;
           d = nl2br_js(d);
-          $('#output').append('<p>' + d + '</p>');
+          $('div#output').append('<p>'+d+'</p>');
         }
         ws.onopen = function(evt) {
           $('#conn_status').html('<b>Connected</b>');
-          ws.send('"foo"');
         }
         ws.onerror = function(evt) {
           $('#conn_status').html('<b>Error</b>');
@@ -147,22 +153,20 @@
 
         // USER EVENTS
         $('button#inputButton').click(function() {
-          $('#output').html('');
           var code = $('textarea#input').val();
           ws.send(code);
-
           db['___current'] = db['___current'] + code + '\n';
-          //console.log(db['___current']);
-
-          //$('#inputDiv').append(nl2br_js(code));
           show_current();
-          $('textarea#input').val('');
-          $('textarea#input').focus();
+          clear_and_focus();
+        });
+        $('button#inputReplace').click(function() {
+          db['___current'] = $('textarea#input').val();
+          show_current();
+          clear_and_focus();
         });
         $('button#runInputDiv').click(function() {
           var code = br2nl_js($('#inputDiv').html());
           ws.send(code);
-          //db['___current'] = db['___current'] + code + '\n';
         });
 
 
@@ -188,7 +192,6 @@
         $('a.deleteA').live("click", function() {
           var name = $(this).prev().html();
           var saved = db['___saved'];
-          //console.log(name);
           saved = saved.replace(name+':::', '');
           saved = saved.replace(':::'+name, '');
           db['___saved'] = saved;

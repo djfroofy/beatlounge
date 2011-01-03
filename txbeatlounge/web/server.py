@@ -39,6 +39,7 @@ reactor.run()
 
     def addOutput(self, data, async=False):
         self.transport.write(data)
+        log.msg(data)
 
     def connectionMade(self):
         print 'Connected to client.'
@@ -48,20 +49,13 @@ reactor.run()
         reason.printTraceback()
 
 
-
 if __name__ == "__main__":
     from twisted.internet import reactor
-
     log.startLogging(sys.stdout)
-    # run our websocket server
-    # serve index.html from the local directory
+
     root = File('.')
     site = WebSocketSite(root)
     site.addHandler('/code', CodeHandler)
     reactor.listenTCP(8080, site, interface='127.0.0.1')
-    # run policy file server
-    #factory = Factory()
-    #factory.protocol = FlashSocketPolicy
-    #reactor.listenTCP(843, factory)
     reactor.run()
 
