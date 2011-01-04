@@ -8,32 +8,34 @@
       <h3>Send Text to the Beatlounge</h3>
       <div id="conn_status">Not Connected</div>
 
+      <div id="textareaContainer">
+        <button id="runSaveButton">Run and update</button>
+        <button id="runOnly">Run without update</button>
+        <button id="inputReplace">Replace</button>
+        <br>
+        <textarea id="input" rows=20 cols=80></textarea>
+      </div>
+
+      <div id="restore"></div>
+      <div class="clear"></div>
+
       <div id="inputRecordContainer">
+        <div id="save">
+          <input type="text" id="saveAs">
+          <button id="saveAsButton">Save</button>
+        </div>
         <div id="inputRecordContainerButtons">
           <button id="runInputDiv">Run</button>
           <button id="editInputDiv">Edit</button>
           <button id="clearCurrent">Clear the Current Code</button>
         </div>
         <div id="inputDiv"></div>
-        <div id="save">
-          <input type="text" id="saveAs">
-          <button id="saveAsButton">Save</button>
-        </div>
       </div>
-  
-      <div id="restore"></div>
-      <div class="clear"></div>
-  
-      <div id="textareaContainer">
-        <button id="inputButton">Run!</button>
-        <button id="inputReplace">Replace</button>
-        <br>
-        <textarea id="input" rows=20 cols=80></textarea>
-      </div>
+
     </div>
 
     <div id="right">
-      <h3>Output</h3>
+      <strong>Output/Preview</strong><button id="clearOutput">Clear</button>
       <div id="output"></div>
     </div>
 
@@ -45,8 +47,7 @@
       function nl2br_js(str) {
         var regX = /\n/gi ;
         s = new String(str);
-        s = s.replace(regX, "\n");
-        return s;
+        return str;
       }
       function br2nl_js(str) {
         var regX = /<br \/>/gi;
@@ -60,6 +61,8 @@
         s = s.replace(regX3, "");
         s = s.replace(trailingWhitespace, "\n");
         s = s.replace(trailingNew, "\n");
+        s = s.replace(/&lt;/g, "<")
+        s = s.replace(/&gt;/g, ">");
         return s;
       }
 
@@ -133,17 +136,22 @@
         }
 
         // USER EVENTS
-        $('button#inputButton').click(function() {
+        $('button#runSaveButton').click(function() {
           var code = $('textarea#input').val();
           ws.send(code);
           db['___current'] = db['___current'] + code + '\n';
           show_current();
-          clear_and_focus();
+          //$('textarea#input').val('');
+        });
+        $('button#runOnly').click(function() {
+          var code = $('textarea#input').val();
+          ws.send(code);
+          //clear_and_focus();
         });
         $('button#inputReplace').click(function() {
           db['___current'] = $('textarea#input').val();
           show_current();
-          clear_and_focus();
+          //clear_and_focus();
         });
         $('button#runInputDiv').click(function() {
           var code = br2nl_js($('#inputDiv').html());
@@ -160,13 +168,12 @@
           }
           show_saved();
         });
-
         $('a.restoreA').live("click", function() {
           var name = $(this).html();
           $('input#saveAs').val(name);
           db['___current'] = db[name];
           $('#output').html('');
-          $('textarea#input').val('');
+          //$('textarea#input').val(db['___current']);
           show_current();
           return false;
         });
@@ -187,13 +194,16 @@
           $('input#saveAs').val('');
           show_current();
         });
-
         $('button#editInputDiv').click(function() {
           var input_html = $('div#inputDiv').html();
           $('textarea#input').val(br2nl_js(input_html));
-          $('#output').html(input_html)
+          $('#output').html(input_html);
           db['___current'] = '';
           show_current(); 
+        });
+
+        $('button#clearOutput').click(function() {
+          $('div#output').html('');
         });
       });
     </script>

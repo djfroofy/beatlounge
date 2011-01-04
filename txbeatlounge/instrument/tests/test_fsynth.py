@@ -31,6 +31,9 @@ class TestInstrument:
         self.sfid = id
         self.channel = channel
 
+    def stopall(self):
+        pass
+
 
 class SynthPoolTests(TestCase):
 

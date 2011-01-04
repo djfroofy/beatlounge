@@ -9,7 +9,7 @@ from zope.interface import implements, Interface, Attribute
 __all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
            'Chain', 'Standard8Ducker', 'Standard16Ducker', 'Standard32Ducker',
            'Sin', 'Sinusoid', 'Sawtooth', 'Triangle', 'FadeIn', 'FadeOut',
-           'M34Ducker', 'M78Ducker', 'Stepper']
+           'M34Ducker', 'M78Ducker', 'Stepper', 'Humanize']
 
 class IFilter(Interface):
 
@@ -45,6 +45,25 @@ class Sustainer(BaseFilter):
             original = self.velocity
         return self.velocity, original
 
+min_max = lambda num,low=0,high=127: min([high, max([low, num])])
+
+class Humanize(BaseFilter):
+    """
+    Takes a original and alters it within a certain amount
+    """
+
+    def __init__(self, amount):
+        self.amount = amount
+
+    def filter(self, velocity, original=None):
+        import random
+        h = random.randrange(self.amount)
+        if not velocity:
+            velocity = h
+        if original is None:
+            original = velocity
+        return min_max(velocity+random.choice([-1,1])*h), original
+
 
 # TODO - should deprecate Ducker and make something nicer - Histogram?
 
@@ -74,6 +93,9 @@ class Ducker(BaseFilter):
 
 
 class Stepper(BaseFilter):
+    """
+    TODO cycles through an iterable of integers between 0 and 127, velocity.
+    """
 
     def __init__(self, steps):
         self._current_step = 0

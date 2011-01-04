@@ -60,6 +60,7 @@ class PlayableMixin(object):
         ticks = self.meter.ticksPerMeasure - 1
         self.clock.callLater(ticks, se.stop)
         self._playSchedule = None
+        self.instr.stopall()
 
 
 class BasePlayer(PlayableMixin):
@@ -149,6 +150,9 @@ class _Nothing(object):
 
     def __call__(self):
         return None
+
+    def __bool__(self):
+        return False
 
 N = _Nothing()
 
