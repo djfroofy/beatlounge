@@ -10,7 +10,7 @@ from twisted.python.filepath import FilePath
 
 from txbeatlounge.scheduler import clock as reactor
 
-class PersistentConsoleManhole(ConsoleManhole):
+class FriendlyConsoleManhole(ConsoleManhole):
 
     historyFile = os.path.join(os.environ.get('HOME', ''), '.beatlounge.history')
     maxLines = 2**12
@@ -45,6 +45,23 @@ class PersistentConsoleManhole(ConsoleManhole):
             self._historyFd.write(line + '\n')
         return rv
 
+    def handle_UP(self):
+        lineToDeliver = None
+        if self.lineBuffer and self.historyPosition == len(self.historyLines):
+            current = ''.join(self.lineBuffer)
+            for line in reversed(self.historyLines):
+                if line[:len(current)] == current:
+                    lineToDeliver = line
+                    break
+        elif self.historyPosition > 0:
+            self.historyPosition -= 1
+            lineToDeliver = self.historyLines[self.historyPosition]
+        if lineToDeliver:
+            self.handle_HOME()
+            self.terminal.eraseToLineEnd()
+            self.lineBuffer = []
+            self._deliverBuffer(lineToDeliver)
+
 def runWithProtocol(klass, audioDev):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
@@ -72,7 +89,7 @@ def main(argv=None, reactor=None):
     if argv:
         klass = reflect.namedClass(argv[0])
     else:
-        klass = PersistentConsoleManhole
+        klass = FriendlyConsoleManhole
     log.msg('audio dev: %s' % audioDev)
     runWithProtocol(klass, audioDev)
 
