@@ -53,9 +53,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
                 if line[:len(current)] == current:
                     lineToDeliver = line
                     break
-            if not lineToDeliver:
-                self.historyLines.append(self.lineBuffer)
-        if not lineToDeliver and  self.historyPosition > 0:
+        elif self.historyPosition > 0:
             self.historyPosition -= 1
             lineToDeliver = self.historyLines[self.historyPosition]
         if lineToDeliver:
