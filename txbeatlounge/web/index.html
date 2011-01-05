@@ -74,7 +74,11 @@
 
       function show_saved() {
         $('div#restore').html('');
-        if (db['___saved'] != undefined){
+        var s = db['___saved'];
+        s = s.replace(/^:{3}/g, "");
+        s = s.replace(/:{3}$/g, "");
+        db['___saved'] = s;
+        if (db['___saved'] != undefined && db['___saved'] != ''){
           var arr = db['___saved'].split(':::');
           for (var i=0; i < arr.length; i++) {
             $('div#restore').append(
@@ -83,6 +87,7 @@
           }
         }
       }
+
       function record_container_buttons() {
         if ($('#inputDiv').html() == '') {
           $('#inputRecordContainer button').hide();
@@ -163,6 +168,7 @@
           var save_as = $('input#saveAs').val();
           db[save_as] = db['___current'];
           var saved_string = db['___saved'];
+          if (saved_string == undefined) { saved_string= new String('');}
           if (saved_string.match(':::'+save_as) == null && saved_string.match(save_as+':::') == null) {
             db['___saved'] = db['___saved'] + ':::' + save_as;
           }
