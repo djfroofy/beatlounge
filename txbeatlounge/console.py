@@ -23,14 +23,19 @@ consoleNamespace.update({'random': random})
 
 class FriendlyConsoleManhole(ConsoleManhole):
 
+    persistent = True
     historyFile = os.path.join(os.environ.get('HOME', ''), '.beatlounge.history')
     maxLines = 2**12
     namespace = consoleNamespace
 
     def connectionMade(self):
+        ConsoleManhole.connectionMade(self)
+        if self.persistent:
+            self._readHistoryFile()
+        
+    def _readHistoryFile(self):
         self._historySession = os.getpid()
         self._historyFd = open(self.historyFile + ('.%d' % self._historySession), 'w')
-        ConsoleManhole.connectionMade(self)
         if os.path.exists(self.historyFile):
             with open(self.historyFile) as fd:
                 lineCount = 0
@@ -45,15 +50,16 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.historyPosition = len(self.historyLines)
 
     def connectionLost(self, reason):
-        self._historyFd.close()
-        path = FilePath(self.historyFile + ('.%d' % self._historySession))
-        path.moveTo(FilePath(self.historyFile))
+        if self.persistent:
+            self._historyFd.close()
+            path = FilePath(self.historyFile + ('.%d' % self._historySession))
+            path.moveTo(FilePath(self.historyFile))
         ConsoleManhole.connectionLost(self, reason)
 
     def handle_RETURN(self):
         line = ''.join(self.lineBuffer)
         rv = ConsoleManhole.handle_RETURN(self)
-        if line:
+        if line and self.persistent:
             self._historyFd.write(line + '\n')
         return rv
 
