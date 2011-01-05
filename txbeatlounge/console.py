@@ -14,6 +14,8 @@ from twisted.python.filepath import FilePath
 from txbeatlounge.scheduler import clock as reactor
 from txbeatlounge.utils import buildNamespace
 
+__all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
+
 consoleNamespace = buildNamespace(
         'itertools', 'functools', 'collections', 'txbeatlounge.instrument.fsynth',
         'txbeatlounge.player', 'txbeatlounge.notes', 'txbeatlounge.filters',
@@ -169,6 +171,5 @@ def main(argv=None, reactor=None):
     runWithProtocol(klass, audioDev)
 
 if __name__ == '__main__':
-    import time
     main()
  
