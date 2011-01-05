@@ -53,14 +53,44 @@ class FriendlyConsoleManhole(ConsoleManhole):
                 if line[:len(current)] == current:
                     lineToDeliver = line
                     break
-        elif self.historyPosition > 0:
+            if not lineToDeliver:
+                self.historyLines.append(self.lineBuffer)
+        if not lineToDeliver and  self.historyPosition > 0:
             self.historyPosition -= 1
             lineToDeliver = self.historyLines[self.historyPosition]
         if lineToDeliver:
-            self.handle_HOME()
-            self.terminal.eraseToLineEnd()
-            self.lineBuffer = []
-            self._deliverBuffer(lineToDeliver)
+            self._resetAndDeliverBuffer(lineToDeliver)
+
+    def _resetAndDeliverBuffer(self, buffer):
+        self.handle_HOME()
+        self.terminal.eraseToLineEnd()
+        self.lineBuffer = []
+        self._deliverBuffer(buffer)
+
+    def handle_TAB(self):
+        if not self.lineBuffer:
+            return
+        current = ''.join(self.lineBuffer)
+        matches = []
+        for name in self.interpreter.locals.iterkeys():
+            if name[:len(current)] == current:
+                matches.append(name)
+        if not matches:
+            return
+        if len(matches) == 1:
+            self._resetAndDeliverBuffer(matches[0])
+        else:
+            matches.sort()
+            self._writeHelp('  '.join(matches))
+
+    def _writeHelp(self, text):
+        current = ''.join(self.lineBuffer)
+        self.terminal.nextLine()
+        self.terminal.write(text)
+        self.terminal.nextLine()
+        self.terminal.write(self.ps[self.pn])
+        self.terminal.write(current)
+        
 
 def runWithProtocol(klass, audioDev):
     fd = sys.__stdin__.fileno()
