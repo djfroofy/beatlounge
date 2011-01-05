@@ -1,6 +1,9 @@
 import sys
-
-import os, tty, sys, termios
+import random
+import os
+import tty
+import sys
+import termios
 
 from twisted.internet import stdio, protocol, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
@@ -9,11 +12,20 @@ from twisted.python import failure, reflect, log
 from twisted.python.filepath import FilePath
 
 from txbeatlounge.scheduler import clock as reactor
+from txbeatlounge.utils import buildNamespace
+
+consoleNamespace = buildNamespace(
+        'itertools', 'functools', 'collections', 'txbeatlounge.instrument.fsynth',
+        'txbeatlounge.player', 'txbeatlounge.notes', 'txbeatlounge.filters',
+        'txbeatlounge.scheduler', 'txbeatlounge.debug', 'ble.conductor',
+        'comps.complib')
+consoleNamespace.update({'random': random})
 
 class FriendlyConsoleManhole(ConsoleManhole):
 
     historyFile = os.path.join(os.environ.get('HOME', ''), '.beatlounge.history')
     maxLines = 2**12
+    namespace = consoleNamespace
 
     def connectionMade(self):
         self._historySession = os.getpid()

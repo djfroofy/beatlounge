@@ -1,7 +1,8 @@
 import random
 
-from txbeatlounge import constants
+from twisted.python import reflect
 
+from txbeatlounge import constants
 
 
 def percindex(r, lst):
@@ -55,8 +56,27 @@ def random_onoff(event, likelihood=[1,0], frequency=0.125):
             event.start(frequency)
             event.playing = True
 
-def getClock(self, clock=None):
+def getClock(clock=None):
     if clock is None:
         from txbeatlounge.scheduler import clock
     return clock
+
+def buildNamespace(*modules):
+    d = {}
+    for module in modules:
+        if isinstance(module, basestring):
+            try:
+                module = reflect.namedModule(module)
+            except ImportError:
+                continue
+        if hasattr(module, '__all__'):
+            names = module.__all__
+        else:
+            names = [ name for name in  dir(module) if name[0] != '_' ]
+        for name in names:
+            if not hasattr(module, name):
+                continue
+            d[name] = getattr(module, name)
+    return d
+
 
