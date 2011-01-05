@@ -69,17 +69,43 @@ class FriendlyConsoleManhole(ConsoleManhole):
         if not self.lineBuffer:
             return
         current = ''.join(self.lineBuffer)
+        if '.' in current:
+            matches = self._matchAttributes(current)
+        else:
+            matches = self._matchLocals(current)
+        if not matches:
+            return
+        if len(matches) == 1:
+            if '.' in current:
+                buf = '.'.join(current.split('.')[:-1]) + '.' + matches[0] 
+                self._resetAndDeliverBuffer(buf)
+            else:
+                self._resetAndDeliverBuffer(matches[0])
+        else:
+            matches.sort()
+            self._writeHelp('  '.join(matches))
+
+    def _matchAttributes(self, current):
+        names = current.split('.')
+        obj = self.interpreter.locals.get(names[0], None)
+        if obj is None:
+            return
+        for name in names[1:-1]:
+            obj = getattr(obj, name, None)
+            if obj is None:
+                return
+        matches = []
+        for name in dir(obj):
+            if name[:len(names[-1])] == names[-1]:
+                matches.append(name)
+        return matches
+
+    def _matchLocals(self, current):
         matches = []
         for name in self.interpreter.locals.iterkeys():
             if name[:len(current)] == current:
                 matches.append(name)
-        if not matches:
-            return
-        if len(matches) == 1:
-            self._resetAndDeliverBuffer(matches[0])
-        else:
-            matches.sort()
-            self._writeHelp('  '.join(matches))
+        return matches
 
     def _writeHelp(self, text):
         current = ''.join(self.lineBuffer)
