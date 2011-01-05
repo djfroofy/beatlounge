@@ -96,6 +96,9 @@ class FriendlyConsoleManhole(ConsoleManhole):
                 return
         matches = []
         for name in dir(obj):
+            # Omit private names unless we're really trying to complete them
+            if not names[-1] and name[0] == '_':
+                continue
             if name[:len(names[-1])] == names[-1]:
                 matches.append(name)
         return matches
