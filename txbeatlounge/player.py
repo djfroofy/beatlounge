@@ -10,13 +10,12 @@ from txbeatlounge.debug import DEBUG
 from txbeatlounge.scheduler import mtt
 
 
-__all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
-            'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
-            'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
-            'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter',
-            'Delay', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
-            'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq',
-            'cut', 'explode', 'lcycle']
+__all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
+    'NotePlayer', 'ChordPlayer', 'N', 'R', 'noteFactory', 'nf', 'generateSounds',
+    'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
+    'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
+    'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
+    'explode', 'lcycle']
 
 
 class IPlayer(Interface):
@@ -126,17 +125,25 @@ class ChordPlayer(BasePlayer):
     def _next(self):
         return self.chordFactory
 
-def generateSounds(g, velocity=(lambda v, o : (v,o))):
+def noteFactory(g):
+    """
+    Close a generator `g` of note/chord values or
+    callables which return note/chord values
+    with a note factory function which can be passed
+    to a NotePlayer or ChordPlayer's constructor.
+    """
     def f():
         s = g.next()
-        if IPlayOverride.providedBy(s):
-            v, o = velocity(110, None)
-            return s(v)
         if callable(s):
             return s()
         return s
     return f
-snd = generateSounds
+
+nf = noteFactory
+
+# Deprecated aliases for backwards compat
+generateSounds = noteFactory
+snd = noteFactory
 
 
 class _Nothing(object):
@@ -228,40 +235,6 @@ class Shifter(object):
                 yield [ i + self.amount for i in n ]
             else:
                 yield n + self.amount
-
-
-class IPlayOverride(Interface):
-
-    def __call__(velocity):
-
-        raise NotImplementedError('subclass must implement')
-
-class Delay(object):
-    implements(IPlayOverride)
-
-    def __init__(self, instr, ticks, noteFactory, stop=lambda : None, clock=None):
-        warn('probably going to toss Delay in the shit can - sequence is much nicer')
-        self.instr = instr
-        self.ticks = ticks
-        self.noteFactory = noteFactory
-        self.stop = stop
-        self.clock = getClock(clock)
-
-    def __call__(self, velocity):
-        playnote = getattr(self.instr, 'playnote') or self.instr.playchord
-
-        n = self.noteFactory()
-
-        self.clock.callLater(self.ticks, playnote, n, velocity)
-        if callable(self.stop):
-            stop = self.stop()
-        else:
-            step = self.stop
-        if stop:
-            stopnote = getattr(self.instr, 'stopnote') or self.instr.stopchord
-            self.clock.callLater(stopnote, n)
-        return None
-
 
 
 def quarter(n=0):
