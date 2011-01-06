@@ -6,14 +6,15 @@ from zope.interface.verify import verifyClass, verifyObject
 
 from twisted.trial.unittest import TestCase
 
-from txbeatlounge.player import NotePlayer, ChordPlayer, Player, generateSounds, N, R
+from txbeatlounge.player import NotePlayer, ChordPlayer, Player, noteFactory, N, R
 from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase, sequence, Q
+from txbeatlounge.player import Conductor, START
 from txbeatlounge.player import explode, cut 
 from txbeatlounge.scheduler import BeatClock, Meter, mtt
 from txbeatlounge.filters import BaseFilter
 from txbeatlounge.testlib import TestReactor, ClockRunner
 
-snd = generateSounds
+snd = noteFactory
 
 class TestInstrument:
 
@@ -165,10 +166,85 @@ class PlayerTests(TestCase, ClockRunner):
         self.assertEquals(self.instr1.plays, expectedPlays) 
 
 
+class ConductorTests(TestCase, ClockRunner):
+    
+    def setUp(self):
+        self.meters = [ Meter(3,4) ]
+        self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
+        self.instr1 = TestInstrument(self.clock)
+        self.instr2 = TestInstrument(self.clock)
+        self.instr3 = TestInstrument(self.clock)
+        self.notePlayer1 = NotePlayer(self.instr1, snd(cycle([0,1,2])), TestFilter(120),
+                                     clock=self.clock, interval=0.25)
+        self.notePlayer2 = NotePlayer(self.instr2, snd(cycle([3,4,5,6,7,8])), TestFilter(120),
+                                     clock=self.clock, interval=0.125)
+        self.chordPlayer = ChordPlayer(self.instr3, snd(cycle([[0,1],[2,3],[4,5]])), TestFilter(100),
+                                     clock=self.clock, interval=0.125)
+        score = { START : 'a',
+                 'a': { 'transitions': ['b'], 'players': [self.notePlayer1, self.notePlayer2], 'duration': 2},
+                 'b': { 'transitions': ['a'], 'players': [self.notePlayer1, self.chordPlayer], 'duration': 1} }
+        self.score = score
+        self.conductor = Conductor(score, self.clock)
+
+    def test_start(self):
+        self.conductor.start()
+        # The starting point is actually 2 meaures from the current point
+        # - 1 measure before the conductor resumes + 1 measure for players
+        # to start - hence, 72 * 2 = 144 ticks
+        self._runTicks(144)
+        self.assertEquals(self.instr1.plays, [('note', 144, 0, 120)])
+        self.assertEquals(self.instr2.plays, [('note', 144, 3, 120)])
+        self.failIf(self.instr3.plays)
+
+    def test_transitions(self):
+        self.conductor.start()
+        # Run players for 4 measures
+        self._runTicks(144 + 72 * 4 - 1)
+        expected1 = [('note', 144, 0, 120),
+                     ('note', 168, 1, 120),
+                     ('note', 192, 2, 120),
+                     ('note', 216, 0, 120),
+                     ('note', 240, 1, 120),
+                     ('note', 264, 2, 120),
+                     ('note', 288, 0, 120),
+                     ('note', 312, 1, 120),
+                     ('note', 336, 2, 120),
+                     ('note', 360, 0, 120),
+                     ('note', 384, 1, 120),
+                     ('note', 408, 2, 120)]
+        self.assertEquals(self.instr1.plays, expected1)
+        expected2 = [('note', 144, 3, 120),
+                     ('note', 156, 4, 120),
+                     ('note', 168, 5, 120),
+                     ('note', 180, 6, 120),
+                     ('note', 192, 7, 120),
+                     ('note', 204, 8, 120),
+                     ('note', 216, 3, 120),
+                     ('note', 228, 4, 120),
+                     ('note', 240, 5, 120),
+                     ('note', 252, 6, 120),
+                     ('note', 264, 7, 120),
+                     ('note', 276, 8, 120),
+                     ('note', 360, 3, 120),
+                     ('note', 372, 4, 120),
+                     ('note', 384, 5, 120),
+                     ('note', 396, 6, 120),
+                     ('note', 408, 7, 120),
+                     ('note', 420, 8, 120)]
+        self.assertEquals(self.instr2.plays, expected2)
+        expected3 = [('chord', 288, [0, 1], 100),
+                     ('chord', 300, [2, 3], 100),
+                     ('chord', 312, [4, 5], 100),
+                     ('chord', 324, [0, 1], 100),
+                     ('chord', 336, [2, 3], 100),
+                     ('chord', 348, [4, 5], 100)]
+        self.assertEquals(self.instr3.plays, expected3)
+
+
 class UtilityTests(TestCase):
 
-    def test_generateSounds(self):
-        g = generateSounds(cycle([1,2,3, lambda : 4]))
+    def test_noteFactory(self):
+        g = noteFactory(cycle([1,2,3, lambda : 4]))
         snds = []
         for i in range(8):
             snds.append(g())

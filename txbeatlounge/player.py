@@ -15,7 +15,7 @@ __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
     'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
     'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
     'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
-    'explode', 'lcycle']
+    'explode', 'lcycle', 'Conductor', 'START']
 
 
 class IPlayer(Interface):
@@ -124,6 +124,36 @@ class ChordPlayer(BasePlayer):
 
     def _next(self):
         return self.chordFactory
+
+START = None
+
+class Conductor(object):
+
+    def __init__(self, scoreGraph, clock=None):
+        self.clock = getClock(clock)
+        self.scoreGraph = scoreGraph
+        self.currentNode = {'players':()}
+
+    def start(self):
+        node = self.scoreGraph[START]
+        self.clock.callAfterMeasures(1, self._resume, node)
+
+    def _resume(self, node):
+        schedule = self.clock.schedule
+        if node is None:
+            node = random.choice(self.currentNode['transitions'])
+        next = self.scoreGraph[node]
+        if DEBUG:
+            log.msg('[Conductor] transitioning %s' % next)
+        duration = next["duration"]
+        for player in self.currentNode.get('players', ()):
+            player.stopPlaying(node)
+        for player in next['players']:
+            player.startPlaying(node)
+        self.currentNode = next
+        self.clock.callAfterMeasures(duration, self._resume, None)
+
+    
 
 def noteFactory(g):
     """
