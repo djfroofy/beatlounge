@@ -36,18 +36,19 @@ class IChordPlayer(IPlayer):
 class IPlayable(Interface):
     
     def startPlaying(node=None):
-        pasobjects
+        pass
 
-    def stopPlayering(node=None):
+    def stopPlaying(node=None):
         pass
 
     
 class PlayableMixin(object):
     implements(IPlayable)
+    clock = getClock()
 
     def startPlaying(self, node=None):
         self._playSchedule = self.clock.schedule(self.play).startLater(
-            1, self.interval)
+            0, self.interval)
    
     def stopPlaying(self, node=None):
         se = self._playSchedule
@@ -56,10 +57,13 @@ class PlayableMixin(object):
         # you're kind of screwed - though I'm not sure of a nicer way to prevent
         # the non-determinism on something stopping before it starts again when
         # the stop and start are scheduled for the same tick
-        ticks = self.meter.ticksPerMeasure - 1
+
+        ticksd = self.clock.ticks % self.meter.ticksPerMeasure
+        ticks = self.meter.ticksPerMeasure - 1 - ticksd
         self.clock.callLater(ticks, se.stop)
         self._playSchedule = None
-
+        #self.clock.callAfterMeasures(0, se.stop)
+        #self._playSchedule = None
 
 class BasePlayer(PlayableMixin):
     implements(IPlayer)
@@ -157,6 +161,7 @@ class Conductor(object):
         self.clock = getClock(clock)
         self.scoreGraph = scoreGraph
         self.currentNode = {'players':()}
+        self.nextNode = self.currentNode
 
     def start(self):
         """
@@ -176,15 +181,30 @@ class Conductor(object):
         next = self.scoreGraph[node]
         if DEBUG:
             log.msg('[Conductor] transitioning %s' % next)
-        duration = next["duration"]
-        for player in self.currentNode.get('players', ()):
-            player.stopPlaying(node)
+        self._duration = duration = next["duration"]
         for player in next['players']:
             player.startPlaying(node)
         self.currentNode = next
+        self.clock.callAfterMeasures(duration-1, self._stop, node)
         self.clock.callAfterMeasures(duration, self._resume, None)
 
-    
+    def _stop(self, node):
+        for player in self.currentNode.get('players', ()):
+            player.stopPlaying(node)
+
+#    def hold(self):
+#        """
+#        Stop transitioning an continue playing current node for blocks of measures
+#        given by the current node's duration. After calling release(), the conductor
+#        will resume regular transitioning.
+#        """
+#        print 'holding node', self.currentNode['_key']
+#        #self._hold = self.currentNodeKey
+#        self._hold = self.currentNode['_key']
+     
+#    def forceTransition(self, node):
+#        pass
+
 
 def noteFactory(g):
     """

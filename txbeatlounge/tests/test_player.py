@@ -134,7 +134,6 @@ class PlayerTests(TestCase, ClockRunner):
                                 stop=2, clock=self.clock)
         self.assertEquals(notePlayer.stop(), 2)
 
-
     def test_playSkipsNone(self):
         notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,N])), TestFilter(100),
                             clock=self.clock)
@@ -150,7 +149,16 @@ class PlayerTests(TestCase, ClockRunner):
 
     def test_startPlaying(self):
         self.notePlayer.startPlaying('a')
-        self._runTicks(96 * 2)
+        self.runTicks(96)
+        expectedPlays = [('note', 0, 0, 120), ('note', 24, 1, 120),
+                         ('note', 48, 0, 120), ('note', 72, 1, 120),
+                         ('note', 96, 0, 120)]
+        self.assertEquals(self.instr1.plays, expectedPlays) 
+
+    def test_startPlayingBeginsAtNextMeasure(self):
+        self.runTicks(1)
+        self.notePlayer.startPlaying('a')
+        self.runTicks(96 * 2 + 1)
         expectedPlays = [('note', 96, 0, 120), ('note', 120, 1, 120),
                          ('note', 144, 0, 120), ('note', 168, 1, 120),
                          ('note', 192, 0, 120)]
@@ -158,11 +166,11 @@ class PlayerTests(TestCase, ClockRunner):
 
     def test_stopPlaying(self):
         self.notePlayer.startPlaying('a')
-        self._runTicks(96)
+        #self.runTicks(7)
         self.notePlayer.stopPlaying('a')
-        self._runTicks(96 * 2)
-        expectedPlays = [('note', 96, 0, 120), ('note', 120, 1, 120),
-                         ('note', 144, 0, 120), ('note', 168, 1, 120)]
+        self.runTicks(96 * 2)
+        expectedPlays = [('note', 0, 0, 120), ('note', 24, 1, 120),
+                         ('note', 48, 0, 120), ('note', 72, 1, 120)]
         self.assertEquals(self.instr1.plays, expectedPlays) 
 
 
@@ -188,19 +196,19 @@ class ConductorTests(TestCase, ClockRunner):
 
     def test_start(self):
         self.conductor.start()
-        # The starting point is actually 2 meaures from the current point
-        # - 1 measure before the conductor resumes + 1 measure for players
-        # to start - hence, 72 * 2 = 144 ticks
-        self._runTicks(144)
-        self.assertEquals(self.instr1.plays, [('note', 144, 0, 120)])
-        self.assertEquals(self.instr2.plays, [('note', 144, 3, 120)])
+        self.runTicks(72)
+        self.assertEquals(self.instr1.plays, [('note', 72, 0, 120)])
+        self.assertEquals(self.instr2.plays, [('note', 72, 3, 120)])
         self.failIf(self.instr3.plays)
 
     def test_transitions(self):
         self.conductor.start()
         # Run players for 4 measures
-        self._runTicks(144 + 72 * 4 - 1)
-        expected1 = [('note', 144, 0, 120),
+        self.runTicks(72 + 72 * 4 - 1)
+        expected1 = [('note', 72, 0, 120),
+                     ('note', 96, 1, 120),
+                     ('note', 120, 2, 120),
+                     ('note', 144, 0, 120),
                      ('note', 168, 1, 120),
                      ('note', 192, 2, 120),
                      ('note', 216, 0, 120),
@@ -208,37 +216,58 @@ class ConductorTests(TestCase, ClockRunner):
                      ('note', 264, 2, 120),
                      ('note', 288, 0, 120),
                      ('note', 312, 1, 120),
-                     ('note', 336, 2, 120),
-                     ('note', 360, 0, 120),
-                     ('note', 384, 1, 120),
-                     ('note', 408, 2, 120)]
+                     ('note', 336, 2, 120)]
         self.assertEquals(self.instr1.plays, expected1)
-        expected2 = [('note', 144, 3, 120),
+        expected2 = [('note', 72, 3, 120),
+                     ('note', 84, 4, 120),
+                     ('note', 96, 5, 120),
+                     ('note', 108, 6, 120),
+                     ('note', 120, 7, 120),
+                     ('note', 132, 8, 120),
+                     ('note', 144, 3, 120),
                      ('note', 156, 4, 120),
                      ('note', 168, 5, 120),
                      ('note', 180, 6, 120),
                      ('note', 192, 7, 120),
                      ('note', 204, 8, 120),
-                     ('note', 216, 3, 120),
-                     ('note', 228, 4, 120),
-                     ('note', 240, 5, 120),
-                     ('note', 252, 6, 120),
-                     ('note', 264, 7, 120),
-                     ('note', 276, 8, 120),
-                     ('note', 360, 3, 120),
-                     ('note', 372, 4, 120),
-                     ('note', 384, 5, 120),
-                     ('note', 396, 6, 120),
-                     ('note', 408, 7, 120),
-                     ('note', 420, 8, 120)]
+                     ('note', 288, 3, 120),
+                     ('note', 300, 4, 120),
+                     ('note', 312, 5, 120),
+                     ('note', 324, 6, 120),
+                     ('note', 336, 7, 120),
+                     ('note', 348, 8, 120)]
         self.assertEquals(self.instr2.plays, expected2)
-        expected3 = [('chord', 288, [0, 1], 100),
-                     ('chord', 300, [2, 3], 100),
-                     ('chord', 312, [4, 5], 100),
-                     ('chord', 324, [0, 1], 100),
-                     ('chord', 336, [2, 3], 100),
-                     ('chord', 348, [4, 5], 100)]
+        expected3 = [('chord', 216, [0, 1], 100),
+                     ('chord', 228, [2, 3], 100),
+                     ('chord', 240, [4, 5], 100),
+                     ('chord', 252, [0, 1], 100),
+                     ('chord', 264, [2, 3], 100),
+                     ('chord', 276, [4, 5], 100)]
         self.assertEquals(self.instr3.plays, expected3)
+
+
+#    def test_hold(self):
+#        self.conductor.start()
+#        self.runTicks(144 * 2)
+#        #self.instr1.plays = []
+#        #self.instr2.plays = []
+#        #self.instr3.plays = []
+#        
+#        self.conductor.hold()
+#        self.runTicks(72 + 71)
+#        expected = [('chord', 288, [0, 1], 100),
+#                    ('chord', 300, [2, 3], 100),
+#                    ('chord', 312, [4, 5], 100),
+#                    ('chord', 324, [0, 1], 100),
+#                    ('chord', 336, [2, 3], 100),
+#                    ('chord', 348, [4, 5], 100),
+#                    ('chord', 360, [0, 1], 100),
+#                    ('chord', 372, [2, 3], 100),
+#                    ('chord', 384, [4, 5], 100),
+#                    ('chord', 396, [0, 1], 100),
+#                    ('chord', 408, [2, 3], 100),
+#                    ('chord', 420, [4, 5], 100)]
+#        self.assertEquals(self.instr3.plays, expected)
 
 
 class UtilityTests(TestCase):
