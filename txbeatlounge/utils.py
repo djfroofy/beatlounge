@@ -2,7 +2,7 @@ import random
 
 from txbeatlounge import constants
 
-
+min_max = lambda num,low=0,high=127: min([high, max([low, num])])
 
 def percindex(r, lst):
     '''Given 0<=r=<1, get the item of the list'''

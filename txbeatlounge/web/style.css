@@ -4,7 +4,7 @@ body {min-width: 920px; }
 
 #left {width: 49%; float: left; padding-right: 1%}
 #inputRecordContainer {
-  width:100%; height: 38%; margin: 0.5em 0;
+  width:100%; height: 35%; margin: 0.5em 0;
 }
 #inputRecordContainerButtons {
   height: 25px;
@@ -17,7 +17,7 @@ body {min-width: 920px; }
   width: 150px;
   float: left;
 }
-#restore { width: 100%; height: 12%; overflow-x: auto;}
+#restore { width: 100%; height: 10%; overflow-x: auto;}
 .clear { clear: both; }
 #textareaContainer { width: 100%;}
 textarea#input { width: 100%;}

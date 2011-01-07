@@ -1,6 +1,16 @@
 <html>
   <head>
     <title>WebSocket Beatlounge</title>
+    <link id="bespin_base" href=".">
+    <link rel="stylesheet" href="./BespinEmbedded.css">
+    <script src="./BespinEmbedded.js"></script>
+    <style type="text/css">
+      .bespin {
+        width: 600px;
+        height: 375px;
+      }
+    </style>
+
     <link rel="stylesheet" href="style.css" type="text/css">
   </head>
   <body>
@@ -13,7 +23,8 @@
         <button id="runOnly">Run without update</button>
         <button id="inputReplace">Replace</button>
         <br>
-        <textarea id="input" rows=20 cols=80></textarea>
+        <!--<textarea id="input" rows=20 cols=80></textarea>-->
+        <div id="editor" class="bespin" data-bespinoptions='{ "stealFocus":true}'></div>
       </div>
 
       <div id="restore"></div>
@@ -43,12 +54,8 @@
     <script language='javascript'>
       var db = localStorage;
       var ws = new WebSocket("ws://localhost:8080/code");
+      var editdiv = document.getElementById('editor');
 
-      function nl2br_js(str) {
-        var regX = /\n/gi ;
-        s = new String(str);
-        return str;
-      }
       function br2nl_js(str) {
         var regX = /<br \/>/gi;
         var regX2 = /<br>/gi;
@@ -66,6 +73,7 @@
         return s;
       }
 
+      /* why does this never get called? */
       function handle_storage(e) {
         if (!e) { e = window.event; }
         console.log('handle_storage');
@@ -98,20 +106,20 @@
         }
       }
       function text_area_buttons() {
-        if ($('textarea#input').val() == '') {
+        if (editor.value == '') {
           $('#textareaContainer button').hide();
         } else {
           $('#textareaContainer button').show();
         }
       }
       function show_current() {
-        $('#inputDiv').html(nl2br_js(db['___current']));
+        $('#inputDiv').html(db['___current']);
         record_container_buttons();
       }
       function clear_and_focus() {
         $('#output').html('');
-        $('textarea#input').val('');
-        $('textarea#input').focus();
+        editdiv.bespin.editor.value = '';
+        //$('textarea#input').focus();
       }
       $(function(){
         db['___current'] = '';
@@ -127,7 +135,6 @@
 
         ws.onmessage = function(evt) {
           d = evt.data;
-          d = nl2br_js(d);
           $('div#output').append('<p>'+d+'</p>');
         }
         ws.onopen = function(evt) {
@@ -142,19 +149,19 @@
 
         // USER EVENTS
         $('button#runSaveButton').click(function() {
-          var code = $('textarea#input').val();
+          var code = editdiv.bespin.editor.value;
           ws.send(code);
           db['___current'] = db['___current'] + code + '\n';
           show_current();
           //$('textarea#input').val('');
         });
         $('button#runOnly').click(function() {
-          var code = $('textarea#input').val();
+          var code = editdiv.bespin.editor.value;
           ws.send(code);
           //clear_and_focus();
         });
         $('button#inputReplace').click(function() {
-          db['___current'] = $('textarea#input').val();
+          db['___current'] = editdiv.bespin.editor.value;
           show_current();
           //clear_and_focus();
         });
@@ -202,7 +209,7 @@
         });
         $('button#editInputDiv').click(function() {
           var input_html = $('div#inputDiv').html();
-          $('textarea#input').val(br2nl_js(input_html));
+          editdiv.bespin.editor.value = br2nl_js(input_html);
           $('#output').html(input_html);
           db['___current'] = '';
           show_current(); 

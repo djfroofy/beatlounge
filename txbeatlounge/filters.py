@@ -5,6 +5,8 @@ from warnings import warn
 
 from zope.interface import implements, Interface, Attribute
 
+from txbeatlounge.utils import min_max
+
 
 __all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
            'Chain', 'Standard8Ducker', 'Standard16Ducker', 'Standard32Ducker',
@@ -45,7 +47,6 @@ class Sustainer(BaseFilter):
             original = self.velocity
         return self.velocity, original
 
-min_max = lambda num,low=0,high=127: min([high, max([low, num])])
 
 class Humanize(BaseFilter):
     """

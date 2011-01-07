@@ -10,59 +10,23 @@ from txbeatlounge import constants
 from txbeatlounge.utils import windex
 
 
-def rising_gen(gen):
-    incr = 128/gen.num
-    while True:
-        for i in range(gen.num):
-            if not any([divmod(i, o)[1] for o in gen.ones]):
-                gen.e.playchord(gen.all_midi_notes, 127)
+from txosc import osc
+from txosc import dispatch
+from txosc import async
 
-            gen.e.playnote(gen.choose_one(), incr*i)
-            yield
-
-
-def kick_gen(gen):
-    while True:
-        for i in range(gen.num):
-            if not all([divmod(i, o)[1] for o in gen.ones]):
-                gen.e.playnote(gen.choose_one(), gen.get_volume(10))
-
-            else:
-                if random.random() < .5:
-                    gen.e.playnote(gen.choose_one(), gen.get_volume(-10))
-
-            yield
-
-def pattern1_gen(self):
-    while True:
-        for i in range(self.num):
-            note = random.choice(self.notes)
-            notes = getattr(constants, note)
-            if not any([divmod(i, o)[1] for o in self.ones]):
-                self.e.playchord(self.all_midi_notes, self.get_volume()-10)
-
-            else:
-                self.e.stopchord(self.all_midi_notes[12:])
-                self.e.playchord(notes[4:6], self.get_volume())
-
-                for n in range(3):
-                    self.e.playnote(self.get_random_note(), self.get_volume()-5)
-
-            yield
-
-
-class OscFluidGenerator(object):
+class MidiOscFluidStateGenerator(object):
     '''All of the FooGenerator classes below should be deprecated in favor of this abstraction
 
     accepts osc objects and musical parameters as kwargs and provides a unified interface for gen funcs
     first arg is an instrument that will presumably play notes and chords'''
 
-    def __init__(self, instrument, generator, beats=7, ones=[0,2,4], volume=50, humanize=10, osc=None,
+    def __init__(self, instrument, generator, beats=8, ones=[0,2,4], volume=50, humanize=10, osc=None,
             notes=['C', 'E', 'G', 'A'],
             chords=[('C', 'E', 'G'), ('A', 'C', 'E')],
             noteweights=[('C', 20), ('E', 15), ('G', 17), ('A', 12)],
             midi_noteweights=[(45,2),(48,5),(52,1),(53,3),(55,4),(60,5),(64,1),(65,2),(67,3),(72,2),(79,1),],
             midi_notes=[33,36,40,41,43,48,52,53,55,60,64,65,67,72,76,77,79,84],
+            midi_chords=[(33,40), range(33,100)[:12]]
             **kw):
 
 
@@ -365,6 +329,46 @@ class WiiProgressionGenerator(ProgressionGenerator, WiiMixin):
         self.wii_mix()
 
 
+
+def rising_gen(gen):
+    incr = 128/gen.num
+    while True:
+        for i in range(gen.num):
+            if not any([divmod(i, o)[1] for o in gen.ones]):
+                gen.e.playchord(gen.all_midi_notes, 127)
+
+            gen.e.playnote(gen.choose_one(), incr*i)
+            yield
+
+
+def kick_gen(gen):
+    while True:
+        for i in range(gen.num):
+            if not all([divmod(i, o)[1] for o in gen.ones]):
+                gen.e.playnote(gen.choose_one(), gen.get_volume(10))
+
+            else:
+                if random.random() < .5:
+                    gen.e.playnote(gen.choose_one(), gen.get_volume(-10))
+
+            yield
+
+def pattern1_gen(self):
+    while True:
+        for i in range(self.num):
+            note = random.choice(self.notes)
+            notes = getattr(constants, note)
+            if not any([divmod(i, o)[1] for o in self.ones]):
+                self.e.playchord(self.all_midi_notes, self.get_volume()-10)
+
+            else:
+                self.e.stopchord(self.all_midi_notes[12:])
+                self.e.playchord(notes[4:6], self.get_volume())
+
+                for n in range(3):
+                    self.e.playnote(self.get_random_note(), self.get_volume()-5)
+
+            yield
 
 
 
