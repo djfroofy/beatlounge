@@ -128,6 +128,30 @@ class ChordPlayer(BasePlayer):
 START = None
 
 class Conductor(object):
+    """
+    A Conductor plays a score graphs which consists of nodes which each give
+    the duration in measures to play a node, a list of players (IPlayable) to start
+    and stop at the beginning and end of the duration and a list of trasitions
+    (other keys into) the graph to randomly transtition to.  The reserved key START
+    (equal to None) is for designating which node to start at.  The length of the
+    measure is determined by the supplied clock's (or the default global clock's)
+    default Meter (i.e. clock.meters[0]).
+
+    An example score graph and conductor:
+
+        score = { START: 'a',
+                 'a': { 'players' : [player1, player2], 'duration': 2, 
+                        'transitions' : ['a', 'b']},
+                 'b': { 'players' : [player1, player3], 'duration': 1,
+                        'transitions' : ['a']} }
+        conductor = Conductor(score)
+        conductor.start()
+
+    In the above example, the conductor once started will play player1 and
+    player2 for 2 measures, then transition to itself or the next node 'b' with
+    50/50 chance of either. When node 'b' is stated player1 and player3 with play
+    for one measure and then always transition back to 'a'. 
+    """
 
     def __init__(self, scoreGraph, clock=None):
         self.clock = getClock(clock)
@@ -135,6 +159,13 @@ class Conductor(object):
         self.currentNode = {'players':()}
 
     def start(self):
+        """
+        Start the conductor.
+        
+        (Note that the actual start time is generally after two measures a 1
+        measure pause to resume at the start of the next measure and then an additional
+        measure before the the players begin after the initial call to startPlaying())
+        """
         node = self.scoreGraph[START]
         self.clock.callAfterMeasures(1, self._resume, node)
 
@@ -177,10 +208,10 @@ snd = noteFactory
 
 
 class _Nothing(object):
-
+    
     def __str__(self):
         return 'N'
-
+    
     def __repr__(self):
         return 'N'
 
