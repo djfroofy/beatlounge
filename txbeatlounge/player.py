@@ -162,6 +162,7 @@ class Conductor(object):
         self.scoreGraph = scoreGraph
         self.currentNode = {'players':()}
         self.nextNode = self.currentNode
+        self._hold = None
 
     def start(self):
         """
@@ -176,6 +177,8 @@ class Conductor(object):
 
     def _resume(self, node):
         schedule = self.clock.schedule
+        if self._hold:
+            node = self._hold
         if node is None:
             node = random.choice(self.currentNode['transitions'])
         next = self.scoreGraph[node]
@@ -185,6 +188,7 @@ class Conductor(object):
         for player in next['players']:
             player.startPlaying(node)
         self.currentNode = next
+        self.currentNode['key'] = node
         self.clock.callAfterMeasures(duration-1, self._stop, node)
         self.clock.callAfterMeasures(duration, self._resume, None)
 
@@ -192,18 +196,19 @@ class Conductor(object):
         for player in self.currentNode.get('players', ()):
             player.stopPlaying(node)
 
-#    def hold(self):
-#        """
-#        Stop transitioning an continue playing current node for blocks of measures
-#        given by the current node's duration. After calling release(), the conductor
-#        will resume regular transitioning.
-#        """
-#        print 'holding node', self.currentNode['_key']
-#        #self._hold = self.currentNodeKey
-#        self._hold = self.currentNode['_key']
-     
-#    def forceTransition(self, node):
-#        pass
+    def hold(self):
+        """
+        Stop transitioning an continue playing current node for blocks of measures
+        given by the current node's duration. After calling release(), the conductor
+        will resume regular transitioning.
+        """
+        self._hold = self.currentNode['key']
+
+    def release(self):
+        """
+        Continue transitioning - don't hold current node anymore.
+        """
+        self._hold = None
 
 
 def noteFactory(g):

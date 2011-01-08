@@ -246,29 +246,33 @@ class ConductorTests(TestCase, ClockRunner):
         self.assertEquals(self.instr3.plays, expected3)
 
 
-#    def test_hold(self):
-#        self.conductor.start()
-#        self.runTicks(144 * 2)
-#        #self.instr1.plays = []
-#        #self.instr2.plays = []
-#        #self.instr3.plays = []
-#        
-#        self.conductor.hold()
-#        self.runTicks(72 + 71)
-#        expected = [('chord', 288, [0, 1], 100),
-#                    ('chord', 300, [2, 3], 100),
-#                    ('chord', 312, [4, 5], 100),
-#                    ('chord', 324, [0, 1], 100),
-#                    ('chord', 336, [2, 3], 100),
-#                    ('chord', 348, [4, 5], 100),
-#                    ('chord', 360, [0, 1], 100),
-#                    ('chord', 372, [2, 3], 100),
-#                    ('chord', 384, [4, 5], 100),
-#                    ('chord', 396, [0, 1], 100),
-#                    ('chord', 408, [2, 3], 100),
-#                    ('chord', 420, [4, 5], 100)]
-#        self.assertEquals(self.instr3.plays, expected)
+    def test_hold(self):
+        self.conductor.start()
+        self.runTicks(144 + 72 + 24)
+        self.conductor.hold()
+        self.runTicks(72 + 71 - 24)
+        self._expected_held = [
+                    ('chord', 216, [0, 1], 100),
+                    ('chord', 228, [2, 3], 100),
+                    ('chord', 240, [4, 5], 100),
+                    ('chord', 252, [0, 1], 100),
+                    ('chord', 264, [2, 3], 100),
+                    ('chord', 276, [4, 5], 100),
+                    ('chord', 288, [0, 1], 100),
+                    ('chord', 300, [2, 3], 100),
+                    ('chord', 312, [4, 5], 100),
+                    ('chord', 324, [0, 1], 100),
+                    ('chord', 336, [2, 3], 100),
+                    ('chord', 348, [4, 5], 100)]
+        self.assertEquals(self.instr3.plays, self._expected_held)
+        self.assertEquals(self.conductor.currentNode['key'], 'b')
 
+    def test_release(self):
+        self.test_hold()
+        self.conductor.release()
+        self.runTicks(72)
+        self.assertEquals(self.instr3.plays, self._expected_held)
+        self.assertEquals(self.conductor.currentNode['key'], 'a')
 
 class UtilityTests(TestCase):
 
