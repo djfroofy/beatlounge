@@ -3,43 +3,47 @@
     <title>Twisted BeatLounge</title>
     <link id="bespin_base" href=".">
     <link rel="stylesheet" href="./BespinEmbedded.css">
-    <style type="text/css">.bespin {width: 620px;height: 375px;}</style>
-
+    <style type="text/css">.bespin {width: 100%; height: 90%;}</style>
     <link rel="stylesheet" href="style.css" type="text/css">
   </head>
   <body>
-    <div id="left">
-      <div id="conn_status">Not Connected</div>
-      <div id="textareaContainer">
-        <button id="runSaveButton">Run and update</button>
-        <button id="runOnly">Run without update</button>
-        <button id="runSelection">Run Selection</button>
-        <button id="inputReplace">Replace</button>
-        <br>
-        <div id="editor" class="bespin" data-bespinoptions='{ "stealFocus":true}'></div>
+    <div id="body">
+      <div id="topStatus">
+        <div id="outputHeader" style="float:right;"><strong>Output/Preview</strong><button id="clearOutput">Clear</button></div>
+        <div id="conn_status">Not Connected</div>
       </div>
-
-      <div id="restore"></div>
       <div class="clear"></div>
-
-      <div id="inputRecordContainer">
-        <div id="save">
-          <input type="text" id="saveAs">
-          <button id="saveAsButton">Save</button>
+      <div id="left">
+        <div id="leftInner">
+          <div id="textareaContainer">
+            <button id="runSaveButton">Run and update</button>
+            <button id="runOnly">Run without update</button>
+            <button id="runSelection">Run Selection</button>
+            <button id="inputReplace">Replace</button>
+            <br>
+            <div id="editor" class="bespin" data-bespinoptions='{ "stealFocus":true}'></div>
+          </div>
+          <div id="restoreContainer">
+            <div id="restore"></div>
+            <div class="clear"></div>
+          </div>
+          <div id="inputRecordContainer">
+            <div id="save">
+              <input type="text" id="saveAs">
+              <button id="saveAsButton">Save</button>
+            </div>
+            <div id="inputRecordContainerButtons">
+              <button id="runInputDiv">Run</button>
+              <button id="editInputDiv">Edit</button>
+              <button id="clearCurrent">Clear the Current Code</button>
+            </div>
+            <div id="inputDiv"></div>
+          </div>
         </div>
-        <div id="inputRecordContainerButtons">
-          <button id="runInputDiv">Run</button>
-          <button id="editInputDiv">Edit</button>
-          <button id="clearCurrent">Clear the Current Code</button>
-        </div>
-        <div id="inputDiv"></div>
       </div>
-
-    </div>
-
-    <div id="right">
-      <strong>Output/Preview</strong><button id="clearOutput">Clear</button>
-      <div id="output"></div>
+      <div id="right">
+        <div id="output"></div>
+      </div>
     </div>
 
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
@@ -72,6 +76,12 @@
         console.log('handle_storage');
         console.log(e);
       }
+
+      $(window).resize(function() {
+        //$('body').prepend('<div>' + $(window).width() + '</div>');
+        //editdiv.bespin.dimensionsChanged();
+      });
+
 
       function show_saved() {
         $('div#restore').html('');
