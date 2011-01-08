@@ -1,11 +1,13 @@
 
 class ClockRunner:
 
-    def _runTicks(self, ticks):
+    def runTicks(self, ticks):
         for i in range(ticks):
             self.clock.runUntilCurrent()
             self.clock.tick()
+        self.clock.runUntilCurrent()
 
+    _runTicks = runTicks
 
 class TestReactor(object):
     running = True

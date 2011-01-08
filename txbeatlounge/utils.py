@@ -1,8 +1,13 @@
 import random
 
+from twisted.python import reflect
+
 from txbeatlounge import constants
 
-min_max = lambda num,low=0,high=127: min([high, max([low, num])])
+minmax = lambda num,low=0,high=127: min([high, max([low, num])])
+
+# some backwards compat - because i'm such a nice guy 
+min_max = minmax
 
 def percindex(r, lst):
     '''Given 0<=r=<1, get the item of the list'''
@@ -55,8 +60,27 @@ def random_onoff(event, likelihood=[1,0], frequency=0.125):
             event.start(frequency)
             event.playing = True
 
-def getClock(self, clock=None):
+def getClock(clock=None):
     if clock is None:
         from txbeatlounge.scheduler import clock
     return clock
+
+def buildNamespace(*modules):
+    d = {}
+    for module in modules:
+        if isinstance(module, basestring):
+            try:
+                module = reflect.namedModule(module)
+            except ImportError:
+                continue
+        if hasattr(module, '__all__'):
+            names = module.__all__
+        else:
+            names = [ name for name in  dir(module) if name[0] != '_' ]
+        for name in names:
+            if not hasattr(module, name):
+                continue
+            d[name] = getattr(module, name)
+    return d
+
 

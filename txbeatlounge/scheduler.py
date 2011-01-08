@@ -14,7 +14,8 @@ from twisted.internet.task import LoopingCall
 
 #from fluidsynth import Synth
 
-__all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt', 'ScheduledEvent', 'clock' ]
+__all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt',
+            'ScheduledEvent', 'clock' ]
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
 
@@ -127,12 +128,10 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.task.stop()
         self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
 
-    def receiveTime(self, receiver=None, port=17779, interface='192.168.2.3', listen_now=True):
-        """Receives time from a master and starts the clock with the next "one"
 
-from txbeatlounge.scheduler import BeatClock
-clock = BeatClock()
-clock.receiveTime(interface='192.168.2.3')
+    def receiveTime(self, receiver=None, port=17779, interface='192.168.2.3', listen_now=True):
+        """
+        Receives time from a master and starts the clock with the next "one"
         """
 
         if self.running: raise ValueError('clock is already running')

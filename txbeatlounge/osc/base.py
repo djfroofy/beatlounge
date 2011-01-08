@@ -19,14 +19,12 @@ def fallback(message, address):
 
 class MessageSender(object):
     """
-from twisted.internet import reactor
-from txosc.async import DatagramClientProtocol
-from txbeatlounge.scheduler import secs
-from txbeatlounge.osc.base import MessageSender
-client = DatagramClientProtocol()
-clientPort = reactor.listenUDP(0, client)
-sender = MessageSender(client, '192.168.2.3', 17779)
-sender.send('/clock', 10000, secs(), '3/4', 180)
+    Example Usage:
+
+        client = txosc.async.DatagramClientProtocol()
+        clientPort = reactor.listenUDP(0, client)
+        sender = MessageSender(client, '127.0.0.1', 17779)
+        sender.send('/foo', 10000)
     """
 
     def __init__(self, client, host='127.0.0.1', port=17779):
@@ -48,20 +46,6 @@ sender.send('/clock', 10000, secs(), '3/4', 180)
     def _tcp_send(self, element):
         self.client.send(element)
 
-"""
-class MessageReceiver(object):
-
-    def __init__(self);
-        from txosc.dispatch import Receiver
-        from txosc.async import DatagramServerProtocol
-        #from twisted.internet import reactor
-        self.receiver = Receiver()
-        receiver.fallback = fallback
-        reactor.listenUDP(17779, DatagramServerProtocol(receiver), interface='192.168.2.3')
-        #reactor.start()
-"""
-
-
 
 class Play(object):
 
@@ -77,7 +61,6 @@ class Play(object):
     def play(self, index, on_off):
         if on_off:
             self.index = index
-            print 'playing'
             self.player.play()
 
     def callbacks(self):

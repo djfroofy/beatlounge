@@ -10,13 +10,12 @@ from txbeatlounge.debug import DEBUG
 from txbeatlounge.scheduler import mtt
 
 
-__all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer',
-            'BasePlayer', 'Player', 'NotePlayer', 'ChordPlayer',
-            'N', 'R', 'generateSounds', 'snd', 'rp', 'randomPhrase',
-            'randomWalk', 'rw', 'StepSequencer', 'weighted', 'w', 'Shifter',
-            'Delay', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
-            'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq',
-            'cut', 'explode', 'lcycle']
+__all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
+    'NotePlayer', 'ChordPlayer', 'N', 'R', 'noteFactory', 'nf', 'generateSounds',
+    'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
+    'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
+    'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
+    'explode', 'lcycle', 'Conductor', 'START']
 
 
 class IPlayer(Interface):
@@ -37,18 +36,19 @@ class IChordPlayer(IPlayer):
 class IPlayable(Interface):
     
     def startPlaying(node=None):
-        pasobjects
+        pass
 
-    def stopPlayering(node=None):
+    def stopPlaying(node=None):
         pass
 
     
 class PlayableMixin(object):
     implements(IPlayable)
+    clock = getClock()
 
     def startPlaying(self, node=None):
         self._playSchedule = self.clock.schedule(self.play).startLater(
-            1, self.interval)
+            0, self.interval)
    
     def stopPlaying(self, node=None):
         se = self._playSchedule
@@ -57,11 +57,11 @@ class PlayableMixin(object):
         # you're kind of screwed - though I'm not sure of a nicer way to prevent
         # the non-determinism on something stopping before it starts again when
         # the stop and start are scheduled for the same tick
-        ticks = self.meter.ticksPerMeasure - 1
+
+        ticksd = self.clock.ticks % self.meter.ticksPerMeasure
+        ticks = self.meter.ticksPerMeasure - 1 - ticksd
         self.clock.callLater(ticks, se.stop)
         self._playSchedule = None
-        self.instr.stopall()
-
 
 class BasePlayer(PlayableMixin):
     implements(IPlayer)
@@ -127,24 +127,114 @@ class ChordPlayer(BasePlayer):
     def _next(self):
         return self.chordFactory
 
-def generateSounds(g, velocity=(lambda v, o : (v,o))):
+START = None
+
+class Conductor(object):
+    """
+    A Conductor plays a score graphs which consists of nodes which each give
+    the duration in measures to play a node, a list of players (IPlayable) to start
+    and stop at the beginning and end of the duration and a list of trasitions
+    (other keys into) the graph to randomly transtition to.  The reserved key START
+    (equal to None) is for designating which node to start at.  The length of the
+    measure is determined by the supplied clock's (or the default global clock's)
+    default Meter (i.e. clock.meters[0]).
+
+    An example score graph and conductor:
+
+        score = { START: 'a',
+                 'a': { 'players' : [player1, player2], 'duration': 2, 
+                        'transitions' : ['a', 'b']},
+                 'b': { 'players' : [player1, player3], 'duration': 1,
+                        'transitions' : ['a']} }
+        conductor = Conductor(score)
+        conductor.start()
+
+    In the above example, the conductor once started will play player1 and
+    player2 for 2 measures, then transition to itself or the next node 'b' with
+    50/50 chance of either. When node 'b' is stated player1 and player3 with play
+    for one measure and then always transition back to 'a'. 
+    """
+
+    def __init__(self, scoreGraph, clock=None):
+        self.clock = getClock(clock)
+        self.scoreGraph = scoreGraph
+        self.currentNode = {'players':()}
+        self.nextNode = self.currentNode
+        self._hold = None
+
+    def start(self):
+        """
+        Start the conductor.
+        
+        (Note that the actual start time is generally after two measures a 1
+        measure pause to resume at the start of the next measure and then an additional
+        measure before the the players begin after the initial call to startPlaying())
+        """
+        node = self.scoreGraph[START]
+        self.clock.callAfterMeasures(1, self._resume, node)
+
+    def _resume(self, node):
+        schedule = self.clock.schedule
+        if self._hold:
+            node = self._hold
+        if node is None:
+            node = random.choice(self.currentNode['transitions'])
+        next = self.scoreGraph[node]
+        if DEBUG:
+            log.msg('[Conductor] transitioning %s' % next)
+        self._duration = duration = next["duration"]
+        for player in next['players']:
+            player.startPlaying(node)
+        self.currentNode = next
+        self.currentNode['key'] = node
+        self.clock.callAfterMeasures(duration-1, self._stop, node)
+        self.clock.callAfterMeasures(duration, self._resume, None)
+
+    def _stop(self, node):
+        for player in self.currentNode.get('players', ()):
+            player.stopPlaying(node)
+
+    def hold(self):
+        """
+        Stop transitioning an continue playing current node for blocks of measures
+        given by the current node's duration. After calling release(), the conductor
+        will resume regular transitioning.
+        """
+        self._hold = self.currentNode['key']
+
+    def release(self):
+        """
+        Continue transitioning - don't hold current node anymore.
+        """
+        self._hold = None
+
+
+def noteFactory(g):
+    """
+    Close a generator `g` of note/chord values or
+    callables which return note/chord values
+    with a note factory function which can be passed
+    to a NotePlayer or ChordPlayer's constructor.
+    """
     def f():
         s = g.next()
-        if IPlayOverride.providedBy(s):
-            v, o = velocity(110, None)
-            return s(v)
         if callable(s):
             return s()
         return s
     return f
-snd = generateSounds
+
+nf = noteFactory
+
+# Deprecated aliases for backwards compat
+generateSounds = noteFactory
+snd = noteFactory
 
 
 class _Nothing(object):
-
+    
     def __str__(self):
         return 'N'
-
+    
     def __repr__(self):
         return 'N'
 
@@ -232,40 +322,6 @@ class Shifter(object):
                 yield [ i + self.amount for i in n ]
             else:
                 yield n + self.amount
-
-
-class IPlayOverride(Interface):
-
-    def __call__(velocity):
-
-        raise NotImplementedError('subclass must implement')
-
-class Delay(object):
-    implements(IPlayOverride)
-
-    def __init__(self, instr, ticks, noteFactory, stop=lambda : None, clock=None):
-        warn('probably going to toss Delay in the shit can - sequence is much nicer')
-        self.instr = instr
-        self.ticks = ticks
-        self.noteFactory = noteFactory
-        self.stop = stop
-        self.clock = getClock(clock)
-
-    def __call__(self, velocity):
-        playnote = getattr(self.instr, 'playnote') or self.instr.playchord
-
-        n = self.noteFactory()
-
-        self.clock.callLater(self.ticks, playnote, n, velocity)
-        if callable(self.stop):
-            stop = self.stop()
-        else:
-            step = self.stop
-        if stop:
-            stopnote = getattr(self.instr, 'stopnote') or self.instr.stopchord
-            self.clock.callLater(stopnote, n)
-        return None
-
 
 
 def quarter(n=0):
