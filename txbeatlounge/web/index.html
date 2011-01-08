@@ -1,29 +1,21 @@
 <html>
   <head>
-    <title>WebSocket Beatlounge</title>
+    <title>Twisted BeatLounge</title>
     <link id="bespin_base" href=".">
     <link rel="stylesheet" href="./BespinEmbedded.css">
-    <script src="./BespinEmbedded.js"></script>
-    <style type="text/css">
-      .bespin {
-        width: 600px;
-        height: 375px;
-      }
-    </style>
+    <style type="text/css">.bespin {width: 620px;height: 375px;}</style>
 
     <link rel="stylesheet" href="style.css" type="text/css">
   </head>
   <body>
     <div id="left">
-      <h3>Send Text to the Beatlounge</h3>
       <div id="conn_status">Not Connected</div>
-
       <div id="textareaContainer">
         <button id="runSaveButton">Run and update</button>
         <button id="runOnly">Run without update</button>
+        <button id="runSelection">Run Selection</button>
         <button id="inputReplace">Replace</button>
         <br>
-        <!--<textarea id="input" rows=20 cols=80></textarea>-->
         <div id="editor" class="bespin" data-bespinoptions='{ "stealFocus":true}'></div>
       </div>
 
@@ -51,6 +43,7 @@
     </div>
 
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script>
+    <script src="./BespinEmbedded.js"></script>
     <script language='javascript'>
       var db = localStorage;
       var ws = new WebSocket("ws://localhost:8080/code");
@@ -159,6 +152,10 @@
           var code = editdiv.bespin.editor.value;
           ws.send(code);
           //clear_and_focus();
+        });
+        $('button#runSelection').click(function() {
+          var code = editdiv.bespin.editor.selectedText;
+          ws.send(code+'\n');
         });
         $('button#inputReplace').click(function() {
           db['___current'] = editdiv.bespin.editor.value;
