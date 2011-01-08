@@ -88,6 +88,7 @@ class _BaseManhole(service.MultiService):
         def makeProtocol():
             namespace = makeNamespace()
             p = insults.ServerProtocol(FriendlyManhole, namespace)
+            return p
 
         if using_ssh:
             r = manhole_ssh.TerminalRealm()
