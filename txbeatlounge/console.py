@@ -29,11 +29,13 @@ class FriendlyConsoleManhole(ConsoleManhole):
     historyFile = os.path.join(os.environ.get('HOME', ''), '.beatlounge.history')
     maxLines = 2**12
     namespace = consoleNamespace
+    session = None
 
     def connectionMade(self):
         ConsoleManhole.connectionMade(self)
         if self.persistent:
             self._readHistoryFile()
+        self.interpreter.locals['console'] = self
         
     def _readHistoryFile(self):
         self._historySession = os.getpid()
@@ -63,6 +65,9 @@ class FriendlyConsoleManhole(ConsoleManhole):
         rv = ConsoleManhole.handle_RETURN(self)
         if line and self.persistent:
             self._historyFd.write(line + '\n')
+        if self.session:
+            log.msg('session set - forwarding line: %r' % line)
+            self.session.write(line + '\r\n')
         return rv
 
     def handle_UP(self):
@@ -138,6 +143,92 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.terminal.write(self.ps[self.pn])
         self.terminal.write(current)
         
+try:
+    import getpass
+    import tty
+    import struct
+    import fcntl
+    import signal
+
+    from twisted.conch.ssh import channel, session, connection
+    from twisted.conch.client import default, connect, options
+
+
+    def connectConsole(console, user=None, host='127.0.0.1', port=9000):
+        opts = options.ConchOptions()
+        opts.parseOptions([])
+        opts['host'] = host
+        opts['port'] = port
+        if user is None:
+            user = getpass.getuser()
+        conn = SSHConnection(console)
+        userauth = default.SSHUserAuthClient(user, opts, conn)
+
+        log.msg('connecting')
+        connect.connect(host, port, opts,
+                        default.verifyHostKey, userauth).addErrback(log.err)
+        return conn
+
+    class SSHConnection(connection.SSHConnection):
+
+        def __init__(self, console):
+            self.console = console
+            connection.SSHConnection.__init__(self)
+
+        def serviceStarted(self):
+            connection.SSHConnection.serviceStarted(self)
+            self.openChannel(SSHSession())
+            self.console._writeHelp('connected to remote')
+
+    class SSHSession(channel.SSHChannel):
+        name = 'session'
+
+        def channelOpen(self, ignore):
+            log.msg('session %s open' % self.id)
+            conn = self.conn
+
+            def connectionLost(reason):
+                log.msg('connection lost: %s' % reason)
+                conn.console.session = None
+                conn.console._writeHelp('Lost remote connection! %s' % reason)
+                self.sendEOF()
+
+            client = session.SSHSessionClient()
+            #client.dataReceived = dataReceived
+            client.connectionLost = connectionLost
+            
+            conn.console.session = self
+
+            # tty voodoo magic (my head is officially fucking hurting)
+            term = os.environ['TERM']
+            winsz = fcntl.ioctl(0, tty.TIOCGWINSZ, '12345678')
+            winSize = struct.unpack('4H', winsz)
+            ptyReqData = session.packRequest_pty_req(term, winSize, '')
+            conn.sendRequest(self, 'pty-req', ptyReqData)
+            signal.signal(signal.SIGWINCH, self._windowResized)
+            conn.sendRequest(self, 'shell', '')
+
+        def dataReceived(self, data):
+            log.msg('data received from remote side. bytes=%r' % data)
+
+        def closeReceived(self):
+            log.msg('remote side closed %s' % self) 
+
+        def closed(self):
+            log.msg('closed: %r' % self)
+            self.conn.console.session = None
+ 
+        def sendEOF(self):
+            self.conn.sendEOF(self)
+    
+        def _windowResized(self, *args):
+            winsz = fcntl.ioctl(0, tty.TIOCGWINSZ, '12345678')
+            winSize = struct.unpack('4H', winsz)
+            newSize = winSize[1], winSize[0], winSize[2], winSize[3]
+            self.conn.sendRequest(self, 'window-change', struct.pack('!4L', *newSize))
+
+except ImportError:
+    pass
 
 def runWithProtocol(klass, audioDev):
     fd = sys.__stdin__.fileno()
