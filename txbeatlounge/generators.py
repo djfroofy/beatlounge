@@ -26,7 +26,7 @@ class MidiOscFluidStateGenerator(object):
             noteweights=[('C', 20), ('E', 15), ('G', 17), ('A', 12)],
             midi_noteweights=[(45,2),(48,5),(52,1),(53,3),(55,4),(60,5),(64,1),(65,2),(67,3),(72,2),(79,1),],
             midi_notes=[33,36,40,41,43,48,52,53,55,60,64,65,67,72,76,77,79,84],
-            midi_chords=[(33,40), range(33,100)[:12]]
+            midi_chords=[(33,40), range(33,100)[:12]],
             **kw):
 
 

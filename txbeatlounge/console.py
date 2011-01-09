@@ -19,8 +19,7 @@ __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 consoleNamespace = buildNamespace(
         'itertools', 'functools', 'collections', 'txbeatlounge.instrument.fsynth',
         'txbeatlounge.player', 'txbeatlounge.notes', 'txbeatlounge.filters',
-        'txbeatlounge.scheduler', 'txbeatlounge.debug', 'ble.conductor',
-        'comps.complib')
+        'txbeatlounge.scheduler', 'txbeatlounge.debug', 'comps.complib')
 consoleNamespace.update({'random': random})
 
 class FriendlyConsoleManhole(ConsoleManhole):
