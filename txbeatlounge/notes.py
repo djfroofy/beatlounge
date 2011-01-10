@@ -362,6 +362,10 @@ del _raise
 _midi = lambda v : (v > 127) and (v - 12) or v
 
 def invert(chord, inversion=1):
+    if inversion < 0 or inversion > 4:
+        raise ValueError('Inversion must be one of: 0, 1, 2, 3, 4')
+    if not inversion:
+        return chord
     first = _midi(chord[0] + 12)
     second = chord[1]
     third = chord[2]
