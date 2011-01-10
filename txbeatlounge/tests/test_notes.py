@@ -29,6 +29,8 @@ class InversionTests(TestCase):
         self.assertEquals(inv, [C[1], E[1], G[1], B[0], D[1]])
 
     def test_fourthInversion(self):
+        inv = invert(Cmaj[0], 4)
+        self.assertEquals(inv, [C[1], E[1], G[1]])
         inv = invert(Cmaj9[0], 4)
         self.assertEquals(inv, [C[1], E[1], G[1], B[1], D[1]])
 

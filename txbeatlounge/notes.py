@@ -371,8 +371,8 @@ def invert(chord, inversion=1):
         third = _midi(chord[2] + 12)
     if len(chord) >= 4:
         fourth = chord[3]
-    if inversion >= 4:
-        fourth = _midi(chord[3] + 12)
+        if inversion >= 4:
+            fourth = _midi(chord[3] + 12)
     if len(chord) == 3:
         return [ first, second, third ]
     return [ first, second, third, fourth ] + chord[4:]
