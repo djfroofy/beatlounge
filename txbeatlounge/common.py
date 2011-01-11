@@ -1,9 +1,12 @@
+import types
 import random
 import logging
 import warnings
 from copy import copy
 
 logging.basicConfig(level=logging.DEBUG)
+
+import fluidsynth
 
 from twisted.internet.task import LoopingCall
 from twisted.internet import reactor
@@ -72,29 +75,5 @@ class SndObjInstrument(object):
         self.env.SetCurve(self.amp, 0)
         self.osc.SetAmp(0, self.env)
         self.env.Restart()
-
-
-
-def slider(osc):
-    while True:
-        for i in range(881):
-            osc.SetFreq(i)
-            time.sleep(.0001)
-            yield
-        for i in range(881)[::-1]:
-            osc.SetFreq(i)
-            time.sleep(.0001)
-            yield
-
-def volume_warb(osc):
-    while True:
-        for i in range(0,100000):
-            osc.SetAmp(i*.0001)
-            time.sleep(.0001)
-            yield
-        for i in range(0,100000)[::-1]:
-            osc.SetAmp(i*.0001)
-            time.sleep(.0001)
-            yield
 
 

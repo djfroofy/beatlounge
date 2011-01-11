@@ -4,6 +4,7 @@
 built on https://github.com/rlotun/txWebSocket
 """
 
+import argparse
 import StringIO, sys, time
 from datetime import datetime
 
@@ -86,12 +87,20 @@ for v in l.values():
 
 
 if __name__ == "__main__":
+
+    # Note, the port will need to be changed in the index.html
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', default=8080)
+    args = parser.parse_args()
+    port = int(args.p)
+
+
     from twisted.internet import reactor
     log.startLogging(sys.stdout)
 
     root = File('.')
     site = WebSocketSite(root)
     site.addHandler('/code', CodeHandler)
-    reactor.listenTCP(8080, site, interface='127.0.0.1')
+    reactor.listenTCP(port, site, interface='127.0.0.1')
     reactor.run()
 
