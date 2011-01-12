@@ -4,13 +4,12 @@
 built on https://github.com/rlotun/txWebSocket
 """
 
-import argparse
 import StringIO, sys, time
 from datetime import datetime
 import pprint
 
 from twisted.internet.protocol import Protocol, Factory
-from twisted.python import log
+from twisted.python import log, usage
 from twisted.web import resource
 from twisted.web.static import File
 from twisted.internet import task
@@ -91,24 +90,29 @@ class CodeHandler(WebSocketHandler):
         #time.sleep(3)
         #self.startInterpreter()
 
-
+class Options(usage.Options):
+    optParameters = [['port', 'p', 8080, 'Port to listen on', int],
+                     ['interface', 'i', '127.0.0.1', 'Interface to listen on'],
+                     ['audio-dev', 'a', 'coreaudio', 'Audio device']]
 
 if __name__ == "__main__":
     from twisted.internet import reactor
     from txbeatlounge.scheduler import clock
     
     # Note, the port will need to be changed in the index.html
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', default=8080)
-    args = parser.parse_args()
-    port = int(args.p)
+    options = Options()
+    options.parseOptions()
+    port = options['port']
+    interface = options['interface']
+    
+    clock.synthAudioDevice = options['audio-dev']
 
     log.startLogging(sys.stdout)
 
     root = File('.')
     site = WebSocketSite(root)
     site.addHandler('/code', CodeHandler)
-    reactor.listenTCP(port, site, interface='127.0.0.1')
+    reactor.listenTCP(port, site, interface=interface)
     reactor.callWhenRunning(clock.run)
     reactor.run()
 
