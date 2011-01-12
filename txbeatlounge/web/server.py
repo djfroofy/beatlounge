@@ -12,14 +12,44 @@ from twisted.internet.protocol import Protocol, Factory
 from twisted.python import log, usage
 from twisted.web import resource
 from twisted.web.static import File
-from twisted.internet import task
+from twisted.internet import defer, task
 from twisted.conch.manhole import ManholeInterpreter
 
 from websocket import WebSocketHandler, WebSocketSite
 
 from txbeatlounge.console import consoleNamespace
 
-class CodeHandler(WebSocketHandler):
+class ReallyStupidHostKeyVericationUIMixinRewriteMePlease(object):
+    """
+    This class is just some skeleton code to make consoleConnect()
+    work but needs to be replaced with something that's ummm secure
+    so the user can verify hosts, rather than doing it under the hood.
+    
+    Read docstrings below for information on what needs to be implemented.
+    """
+
+    session = None
+
+    def writeHelp(self, message):
+        """
+        This should push some help text to the user's web browser
+        and display somewhere in the UI. Generally we're just going
+        to need this for the standard yes/no prompt text to accept
+        a host's identity. 
+        """
+        log.msg('writeHelp: %s' % message)
+
+    warn = writeHelp
+
+    def prompt(self, message):
+        """
+        This should actually notify the UI and let the user verify
+        the identity of the host. A popup or something.
+        """
+        return defer.succeed(True)
+
+
+class CodeHandler(WebSocketHandler, ReallyStupidHostKeyVericationUIMixinRewriteMePlease):
 
     special_messages_to_method = {'restart': 'restart'}
 
@@ -34,6 +64,7 @@ class CodeHandler(WebSocketHandler):
         pp = pprint.PrettyPrinter(indent=2)
         pp = pp.pprint
         self.interpreter.locals['pp'] = pp
+        self.interpreter.locals['console'] = self
 
     def __del__(self):
         log.msg('Deleting handler')
@@ -49,6 +80,16 @@ class CodeHandler(WebSocketHandler):
             getattr(self, self.special_messages_to_method[frame])()
         else:
             self.interpreter.runcode(frame)
+            if self.session:
+                self._forwardRemote(frame)
+
+    def _forwardRemote(self, frame):
+        log.msg('forwarding frame to remote: %r' % frame)
+        for line in frame.splitlines():
+            line2 = line.strip()
+            if not line2: continue
+            self.session.write(line2 + '\r\n')
+            
 
     def addOutput(self, data, async=False):
         self.transport.write(data)
@@ -89,6 +130,9 @@ class CodeHandler(WebSocketHandler):
 #        self.interpreter = None
         #time.sleep(3)
         #self.startInterpreter()
+
+
+    
 
 class Options(usage.Options):
     optParameters = [['port', 'p', 8080, 'Port to listen on', int],
