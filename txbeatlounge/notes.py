@@ -358,3 +358,29 @@ Bsus2 = _raise(Csus2, 11)
 
 del _raise
 
+
+_midi = lambda v : (v > 127) and (v - 12) or v
+
+def invert(chord, inversion=1):
+    if inversion < 0 or inversion > 4:
+        raise ValueError('inversion argument must be one of: 0, 1, 2, 3, 4')
+    if not inversion:
+        return chord
+    first = _midi(chord[0] + 12)
+    second = chord[1]
+    third = chord[2]
+    if inversion >= 2:
+        second = _midi(chord[1] + 12)
+    if inversion >= 3:
+        third = _midi(chord[2] + 12)
+    if len(chord) >= 4:
+        fourth = chord[3]
+        if inversion >= 4:
+            fourth = _midi(chord[3] + 12)
+    if len(chord) == 3:
+        return [ first, second, third ]
+    return [ first, second, third, fourth ] + chord[4:]
+
+
+
+

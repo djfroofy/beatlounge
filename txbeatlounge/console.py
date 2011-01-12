@@ -4,6 +4,10 @@ import os
 import tty
 import sys
 import termios
+import getpass
+import struct
+import fcntl
+import signal
 
 from twisted.internet import stdio, protocol, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
@@ -17,9 +21,10 @@ from txbeatlounge.utils import buildNamespace
 __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 
 consoleNamespace = buildNamespace(
-        'itertools', 'functools', 'collections', 'txbeatlounge.instrument.fsynth',
-        'txbeatlounge.player', 'txbeatlounge.notes', 'txbeatlounge.filters',
-        'txbeatlounge.scheduler', 'txbeatlounge.debug', 'comps.complib')
+        'itertools', 'functools', 'collections',
+        'txbeatlounge.instrument.fsynth', 'txbeatlounge.player', 'txbeatlounge.notes',
+        'txbeatlounge.filters', 'txbeatlounge.scheduler', 'txbeatlounge.debug',
+        'comps.complib')
 consoleNamespace.update({'random': random})
 
 class FriendlyConsoleManhole(ConsoleManhole):
@@ -29,6 +34,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
     maxLines = 2**12
     namespace = consoleNamespace
     session = None
+    _onPrompt = None
 
     def connectionMade(self):
         ConsoleManhole.connectionMade(self)
@@ -61,6 +67,8 @@ class FriendlyConsoleManhole(ConsoleManhole):
 
     def handle_RETURN(self):
         line = ''.join(self.lineBuffer)
+        if self._onPrompt:
+            return self._answerPrompt(line)
         rv = ConsoleManhole.handle_RETURN(self)
         if line and self.persistent:
             self._historyFd.write(line + '\n')
@@ -107,7 +115,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
                 self._resetAndDeliverBuffer(matches[0])
         else:
             matches.sort()
-            self._writeHelp('  '.join(matches))
+            self.writeHelp('  '.join(matches))
 
     def _matchAttributes(self, current):
         names = current.split('.')
@@ -134,24 +142,45 @@ class FriendlyConsoleManhole(ConsoleManhole):
                 matches.append(name)
         return matches
 
-    def _writeHelp(self, text):
+    def writeHelp(self, text):
         current = ''.join(self.lineBuffer)
         self.terminal.nextLine()
         self.terminal.write(text)
         self.terminal.nextLine()
         self.terminal.write(self.ps[self.pn])
         self.terminal.write(current)
-        
+       
+
+    # methods for host key verification ui
+
+    def prompt(self, message):
+        """
+        Set state to stop evaluating python and give a yes/no prompt to answer
+        to the given message.
+        """
+        self._onPrompt = defer.Deferred()
+        self.writeHelp(message)
+        return self._onPrompt
+   
+    warn = writeHelp
+ 
+    def _answerPrompt(self, line):
+        answer = line.strip().lower()
+        if answer == 'yes':
+            self._onPrompt.callback(True)
+        else:
+            self._onPrompt.callback(False)
+        self._onPrompt = None
+        self.lineBuffer = []
+        self.handle_HOME()
+        self.writeHelp('')
+
+ 
 try:
-    import getpass
-    import tty
-    import struct
-    import fcntl
-    import signal
 
-    from twisted.conch.ssh import channel, session, connection
+    from twisted.conch.ssh import channel, session, keys, connection
     from twisted.conch.client import default, connect, options
-
+    from twisted.conch.client.knownhosts import KnownHostsFile
 
     def connectConsole(console, user=None, host='127.0.0.1', port=9000):
         opts = options.ConchOptions()
@@ -163,10 +192,28 @@ try:
         conn = SSHConnection(console)
         userauth = default.SSHUserAuthClient(user, opts, conn)
 
+        def eb(reason):
+            log.err(reason)
+            console.writeHelp('failed connecting to remote: %s' % reason)
+
         log.msg('connecting')
+        
+        def verifyHostKey(transport, host, pubKey, fingerprint):
+            log.msg('verifying host key')
+            actualHost = transport.factory.options['host']
+            actualKey = keys.Key.fromString(pubKey)
+            kh = KnownHostsFile.fromPath(FilePath(
+                transport.factory.options['known-hosts'] or
+                os.path.expanduser('~/.ssh/known_hosts')
+                ))
+            return kh.verifyHostKey(console, actualHost, host, actualKey).addErrback(log.err)
+
         connect.connect(host, port, opts,
-                        default.verifyHostKey, userauth).addErrback(log.err)
+                        verifyHostKey, userauth).addErrback(eb)
         return conn
+
+
+            
 
     class SSHConnection(connection.SSHConnection):
 
@@ -177,7 +224,7 @@ try:
         def serviceStarted(self):
             connection.SSHConnection.serviceStarted(self)
             self.openChannel(SSHSession())
-            self.console._writeHelp('connected to remote')
+            self.console.writeHelp('connected to remote')
 
     class SSHSession(channel.SSHChannel):
         name = 'session'
@@ -189,7 +236,7 @@ try:
             def connectionLost(reason):
                 log.msg('connection lost: %s' % reason)
                 conn.console.session = None
-                conn.console._writeHelp('Lost remote connection! %s' % reason)
+                conn.console.writeHelp('Lost remote connection! %s' % reason)
                 self.sendEOF()
 
             client = session.SSHSessionClient()
@@ -226,8 +273,9 @@ try:
             newSize = winSize[1], winSize[0], winSize[2], winSize[3]
             self.conn.sendRequest(self, 'window-change', struct.pack('!4L', *newSize))
 
-except ImportError:
-    pass
+except ImportError, ie:
+    from warnings import warn
+    warn('%s - connectConsole() will not be avaiable' % ie)
 
 def runWithProtocol(klass, audioDev):
     fd = sys.__stdin__.fileno()

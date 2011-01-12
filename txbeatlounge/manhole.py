@@ -8,6 +8,8 @@ from twisted.conch import manhole, telnet
 try:
     from twisted.conch import manhole_ssh, checkers as conchc
 except ImportError, ie:
+    from warnings import warn
+    warn('%s - AuthorizedKeysManhole not avaiable' % ie)
     manhole_ssh = None
     conchc = None
 from twisted.conch.insults import insults
