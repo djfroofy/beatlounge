@@ -1,8 +1,10 @@
+from itertools import cycle
 
 from twisted.trial.unittest import TestCase
 
 from txbeatlounge import filters
 from txbeatlounge.scheduler import Meter, BeatClock
+from txbeatlounge.player import callMemo
 from txbeatlounge.testlib import TestReactor
 from txbeatlounge.tests import data
 
@@ -15,6 +17,7 @@ StandardDucker = filters.StandardDucker
 Sinusoid = filters.Sinusoid
 Sawtooth = filters.Sawtooth
 Triangle = filters.Triangle
+WeightNote = filters.WeightNote
 
 class FiltersTests(TestCase):
 
@@ -154,3 +157,25 @@ class FiltersTests(TestCase):
             self.clock.ticks += 1
 
         self.assertEquals(velocities, data.triangle_velocities)
+
+    def test_weightNote(self):
+        c = cycle([60,63,67,71])
+        notes = callMemo(c.next)
+        noteWeights = { 60: 127, 63: 95, 67: 80 }
+        wn = WeightNote(notes, noteWeights)
+        notes()
+        v = wn(100)
+        self.assertEquals(v, (127, 100))
+        notes()
+        v = wn(100)
+        self.assertEquals(v, (95, 100))
+        notes()
+        v = wn(100)
+        self.assertEquals(v, (80, 100))
+        notes()
+        v = wn(100)
+        self.assertEquals(v, (100, 100))
+        notes()
+        v = wn(60, 120)
+        self.assertEquals(v, (63, 120))
+        

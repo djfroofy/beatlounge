@@ -51,7 +51,8 @@ class Sustainer(BaseFilter):
 
 class Humanize(BaseFilter):
     """
-    Takes a original and alters it within a certain amount
+    Takes an original and alters it randomly within the integral range
+    [-amount, amount]
     """
 
     def __init__(self, amount):
@@ -65,6 +66,25 @@ class Humanize(BaseFilter):
             original = velocity
         return minmax(velocity + random.choice([-1, 1]) * h), original
 
+
+def _scaleVelocity(velocity, original):
+    if original is None:
+        original = velocity
+    scale = float(velocity) / original
+    return scale, original
+
+
+class WeightNote(BaseFilter):
+
+    def __init__(self, callMemo, noteWeights, default=100):
+        self.callMemo = callMemo
+        self.noteWeights = noteWeights
+        self.default = default
+
+    def filter(self, velocity, original=None):
+        scale, original = _scaleVelocity(velocity, original)
+        velocity = self.noteWeights.get(self.callMemo.currentValue, self.default)
+        return int(scale * velocity), original
 
 
 class Ducker(BaseFilter):
