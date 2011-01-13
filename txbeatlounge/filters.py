@@ -1,3 +1,4 @@
+import random
 from itertools import cycle
 
 import math
@@ -5,7 +6,7 @@ from warnings import warn
 
 from zope.interface import implements, Interface, Attribute
 
-from txbeatlounge.utils import min_max
+from txbeatlounge.utils import minmax, getClock
 
 
 __all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
@@ -57,13 +58,12 @@ class Humanize(BaseFilter):
         self.amount = amount
 
     def filter(self, velocity, original=None):
-        import random
         h = random.randrange(self.amount)
         if not velocity:
             velocity = h
         if original is None:
             original = velocity
-        return min_max(velocity+random.choice([-1,1])*h), original
+        return minmax(velocity + random.choice([-1, 1]) * h), original
 
 
 # TODO - should deprecate Ducker and make something nicer - Histogram?
@@ -74,7 +74,7 @@ class Ducker(BaseFilter):
 
     def __init__(self, duckLevel=None, peaks=None, clock=None, meter=None):
         warn('Ducker is deprecated - use Stepper instead which is simpler')
-        self.clock = _getclock(clock)
+        self.clock = getClock(clock)
         if meter is None:
             meter = self.clock.meters[0]
         self.meter = meter
@@ -174,7 +174,7 @@ duck78 = duck34
 class FadeX(BaseFilter):
     
     def __init__(self, min=0, max=127, step=1, tickrate=12, clock=None):
-        self.clock = _getclock(clock)
+        self.clock = getClock(clock)
         self.min = min
         self.max = max
         self.step = step
@@ -225,7 +225,7 @@ class Sin(BaseFilter):
         self.frequency = math.pi * 2 / period
         self.phase = phase
         self.center = center
-        self.clock = _getclock(clock)
+        self.clock = getClock(clock)
 
     def filter(self, velocity, original=None):
         if original is None:
@@ -235,7 +235,7 @@ class Sin(BaseFilter):
         velocity = min(velocity, self.max)
         return velocity, original
 
-# for backwards compat
+# backwards compat
 Sinusoid = Sin
 
 def _sawtooth(period, t):
@@ -250,7 +250,7 @@ class Sawtooth(BaseFilter):
         self.amplitude = amplitude
         self.center = center
         self.phase = phase
-        self.clock = _getclock(clock)
+        self.clock = getClock(clock)
 
     def filter(self, velocity, original=None):
         if original is None:
@@ -270,8 +270,4 @@ class Triangle(Sawtooth):
         velocity = abs(_sawtooth(self.period, self.clock.ticks + self.phase))
         return int(self.center + self.amplitude * velocity - self._bump), original
 
-def _getclock(clock):
-    if clock is None:
-        from txbeatlounge.scheduler import clock
-    return clock
 
