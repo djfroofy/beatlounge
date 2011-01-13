@@ -356,6 +356,28 @@ def sequence(schedule, length=8):
 
 seq = sequence
 
+class generatorMemo:
+    """
+    Wrap a generator with one which will memo the last generated
+    value on the attribute `currentValue`. This is useful if you
+    need to access the last value (generally, a note or chord) later;
+    in the context of a custom velocity factory, for example.
+    """
+
+    def __init__(self, gen):
+        self._gen = gen
+        self._iter = iter(self)
+        self.currentValue = None
+        self.next = self._iter.next
+
+    def __iter__(self):
+        while 1:
+            self.currentValue = self._gen.next()
+            yield self.currentValue
+       
+gm = generatorMemo
+  
+
 def explode(notes, factor=2):
     notes2 = []
     f = factor-1
