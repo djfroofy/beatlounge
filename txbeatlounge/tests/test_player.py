@@ -9,7 +9,7 @@ from twisted.trial.unittest import TestCase
 from txbeatlounge.player import NotePlayer, ChordPlayer, Player, noteFactory, N, R
 from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase, sequence, Q
 from txbeatlounge.player import Conductor, START
-from txbeatlounge.player import explode, cut, gm 
+from txbeatlounge.player import explode, cut, callMemo 
 from txbeatlounge.scheduler import BeatClock, Meter, mtt
 from txbeatlounge.filters import BaseFilter
 from txbeatlounge.testlib import TestReactor, ClockRunner
@@ -358,32 +358,21 @@ class UtilityTests(TestCase):
             self.assertEquals(len(chopped), 32)
 
 
-    def test_generatorMemo(self):
-        def gen():
-            start = 1
-            while 1:
-                yield start
-                start += 1
-        g = gm(gen())
+    def test_callMemo(self):
+        start = [0]
+        def func():
+            start[0] = start[0] + 1
+            return start[0]
+        f = callMemo(func)
         values = []
         cur = 1
-        for v in g:
+        for i in range(2):
+            v = f()
             self.assertEquals(v, cur)
             cur += 1
-            values.append(g.currentValue)
-            if len(values) == 2:
-                break
+            values.append(f.currentValue)
         self.assertEquals(values, [1,2])
        
-
-    def test_generatorMemoNextMethod(self):
-        def gen():
-            while 1:
-                yield 1
-
-        g = gm(gen())
-        c = g.next()
-        self.assertEquals(c, 1)
 
 
 

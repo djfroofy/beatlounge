@@ -66,7 +66,6 @@ class Humanize(BaseFilter):
         return minmax(velocity + random.choice([-1, 1]) * h), original
 
 
-# TODO - should deprecate Ducker and make something nicer - Histogram?
 
 class Ducker(BaseFilter):
     peaks = None
@@ -137,7 +136,6 @@ class Chain(BaseFilter):
             if original is None:
                 original = o
         return velocity, original
-
 
 class StandardDucker(Ducker):
     peaks = [(0,0,0,0),(1,0,0,0),(2,0,0,0),(3,0,0,0)]

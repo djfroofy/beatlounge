@@ -15,7 +15,7 @@ __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
     'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
     'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
     'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
-    'explode', 'lcycle', 'Conductor', 'START', 'generatorMemo', 'gm']
+    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm']
 
 
 class IPlayer(Interface):
@@ -356,26 +356,23 @@ def sequence(schedule, length=8):
 
 seq = sequence
 
-class generatorMemo:
+class callMemo:
     """
-    Wrap a generator with one which will memo the last generated
+    Wrap a callable with one which will memo the last returned
     value on the attribute `currentValue`. This is useful if you
     need to access the last value (generally, a note or chord) later;
     in the context of a custom velocity factory, for example.
     """
 
-    def __init__(self, gen):
-        self._gen = gen
-        self._iter = iter(self)
+    def __init__(self, func):
+        self._func = func
         self.currentValue = None
-        self.next = self._iter.next
 
-    def __iter__(self):
-        while 1:
-            self.currentValue = self._gen.next()
-            yield self.currentValue
+    def __call__(self, *a, **kw):
+        self.currentValue = self._func(*a, **kw)
+        return self.currentValue
        
-gm = generatorMemo
+cm = callMemo
   
 
 def explode(notes, factor=2):
