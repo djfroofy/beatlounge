@@ -301,6 +301,16 @@ w = weighted
 
 
 class Shifter(object):
+    """
+    shifter = Shifter()
+    shifter.amount = 60
+    shift_cycle = cycle([0,4,7,12])
+    s = nf(shifter.shift(shift_cycle))
+    p = Player(instr, s, v1, interval... )
+    p.startPlaying()
+    shifter.amount = 55
+    shifter.shift(other_cycle)
+    """
 
     def __init__(self, gen=None):
         self.gen = gen
