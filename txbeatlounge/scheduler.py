@@ -72,7 +72,9 @@ class SynthControllerMixin(object):
 
 class BeatClock(SelectReactor, SynthControllerMixin):
 
-    def __init__(self, tempo=130, meters=(), reactor=None):
+    defaultClock = None
+
+    def __init__(self, tempo=130, meters=(), reactor=None, default=False):
         self.tempo = tempo
         self.ticks = 0
         #self.setTempo(tempo)
@@ -84,6 +86,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         if not reactor:
             from twisted.internet import reactor
         self.reactor = reactor
+        if default or (self.defaultClock is None):
+            BeatClock.defaultClock = self
         SelectReactor.__init__(self)
 
     def setTempo(self, tempo):

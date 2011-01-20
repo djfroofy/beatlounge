@@ -140,6 +140,8 @@ class Stepper(BaseFilter):
         if original is None:
             original = velocity
         v = self._stepcycle.next()
+        if callable(v):
+            v = v()
         self._current_step += 1
         self._current_step %= self._count
         return v, original

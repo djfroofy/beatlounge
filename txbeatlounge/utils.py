@@ -62,7 +62,8 @@ def random_onoff(event, likelihood=[1,0], frequency=0.125):
 
 def getClock(clock=None):
     if clock is None:
-        from txbeatlounge.scheduler import clock
+        from txbeatlounge.scheduler import BeatClock
+        return BeatClock.defaultClock
     return clock
 
 def buildNamespace(*modules):
