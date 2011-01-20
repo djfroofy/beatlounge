@@ -385,6 +385,13 @@ def explode(notes, factor=2):
     return notes2
 
 
+#def cut(list, start, end1, end2, strict=True):
+#    c = (end2 - start) / (end1 - start)
+#    thecut = list[:start] + list[start:end1] * c + list[end2:]
+#    print thecut
+#    assert len(thecut) == len(list), 'dude %d %d' % (len(thecut), len(list))
+#    return thecut
+
 
 def cut(notes, aprob=0.25, bprob=0.25):
     size = len(notes)
