@@ -23,7 +23,7 @@ requirements = load_requirements('requirements.txt')
 packages = [PKGNAME] + [ ( '%s.%s' % (PKGNAME, pkg) ) for pkg in find_packages(PKGNAME) ]
 
 setup(
-    name='Twisted Beat Lounge',
+    name='txbeatlounge',
     author = "Beatscape Drone Unicorns",
     version=VERSION,
     description='Twisted Beat Lounge is a framework for laying beats with fluidsynth',
