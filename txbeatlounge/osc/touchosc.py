@@ -83,18 +83,19 @@ class XY(object):
         self.receiver = receiver
         self.callbacks = callbacks
         self.callback = callback
+        self.page = page
 
     def attach(self):
         self._recv_callbacks = []
         if self.callbacks:
-            for (idx, cb) in enumerate(callbacks):
-                node = '/%d/xy%d' % (page, idx + 1)
+            for (idx, cb) in enumerate(self.callbacks):
+                node = '/%d/xy%d' % (self.page, idx + 1)
                 recvcb = partial(self._callback, cb, node)
                 self._recv_callbacks.append((node, recvcb))
                 self.receiver.addCallback(node, recvcb)
         else:
-            node = '/%d/xy' % page
-            recvcb = partial(self._callback, callback, node)
+            node = '/%d/xy' % self.page
+            recvcb = partial(self._callback, self.callback, node)
             self._recv_callbacks.append((node, recvcb))
             self.receiver.addCallback(node, recvcb)
         return self
