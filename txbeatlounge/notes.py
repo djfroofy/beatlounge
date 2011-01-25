@@ -16,6 +16,10 @@ Bf = As = [10, 22, 34, 46, 58, 70, 82, 94, 106, 118]
 B = [11, 23, 35, 47, 59, 71, 83, 95, 107, 119]
 MIDI_NOTES = [C, Df, D, Ef, E, F, Gf, G, Af, A, Bf, B]
 
+keys = {'C':0, 'Df':1, 'Cs':1, 'D':2, 'Ds':3, 'Ef':3,
+        'E':4, 'F':5, 'Fs':6, 'Gf':6, 'G':7, 'Gs':8,
+        'Af':8, 'A':9, 'As':10, 'Bf':10, 'B':11}
+
 ##########
 # Chords #
 ##########
@@ -383,4 +387,22 @@ def invert(chord, inversion=1):
 
 
 
+# Scale definitions and function
+
+def keyScale(scale, key='C', octave=0):
+    base = keys[key]
+    octave = octave * 12
+    return [ n + base + octave for n in scale ]
+
+
+major = ionian = [ C[0], D[0], E[0], F[0], G[0], A[0], B[0], C[1] ]
+melodic = melodiciMinor = [ C[0], D[0], Ef[0], F[0], G[0], A[0], B[0], C[1] ]
+dorian = [ C[0], D[0], Ef[0], F[0], G[0], A[0], Bf[0], C[1] ]
+aeolian = naturalMinor = [ C[0], D[0], Ef[0], F[0], G[0], Af[0], Bf[0], C[1] ]
+mixolydian = [ C[0], D[0], E[0], F[0], G[0], A[0], Bf[0], C[1] ]
+lydian = [ C[0], D[0], E[0], Fs[0], G[0], A[0], B[0], C[1] ]
+byzantine = hungarian = egyptian = [ C[0], D[0], Ef[0], Fs[0], G[0], Af[0], B[0], C[1] ] 
+phrygian = [ C[0], Df[0], Ef[0], F[0], G[0], Af[0], Bf[0], C[1] ]
+phrygianDominant = [ C[0], Df[0], E[0], F[0], G[0], Af[0], Bf[0], C[1] ]
+locrian = [ C[0], Df[0], Ef[0], F[0], Gf[0], Af[0], Bf[0], C[1] ]  
 
