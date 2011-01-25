@@ -402,6 +402,10 @@ minorpenta = [ C[0], Ef[0], F[0], G[0], Bf[0], C[1] ]
 egyptpenta = suspenta = [ C[0], D[0], F[0], G[0], Bf[0], C[1] ]
 bluesminor = mangong = [ C[0], Ef[0], F[0], Af[0], Bf[0], C[1] ]
 bluesmajor = ritusen = [ C[0], D[0], F[0], G[0], A[0], C[1] ] 
+insen = [ C[0], Df[0], F[0], G[0], Bf[0], C[1] ]
+hirajoshi = hirachoshi = [ C[0], D[0], Ef[0], G[0], Af[0], C[1] ]
+iwato = [ C[0], Df[0], F[0], Gf[0], Bf[0], C[1] ]  
+kumoi = [ C[0], Df[0], F[0], G[0], Af[0], C[1] ]
 
 # hexatonic
 
@@ -424,6 +428,7 @@ byzantine = hungarian = egyptian = [ C[0], D[0], Ef[0], Fs[0], G[0], Af[0], B[0]
 phrygian = [ C[0], Df[0], Ef[0], F[0], G[0], Af[0], Bf[0], C[1] ]
 phrygianDominant = [ C[0], Df[0], E[0], F[0], G[0], Af[0], Bf[0], C[1] ]
 locrian = [ C[0], Df[0], Ef[0], F[0], Gf[0], Af[0], Bf[0], C[1] ]  
+arabic = [ C[0], Df[0], E[0], F[0], G[0], Af[0], B[0], C[1] ]
 
 # ocotatonic
 
