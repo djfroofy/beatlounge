@@ -274,9 +274,12 @@ def randomPhrase(*phrases):
 rp = randomPhrase
 
 
-def randomWalk(sounds):
+def randomWalk(sounds, startIndex=None):
     ct = len(sounds)
-    index = random.randint(0, ct - 1)
+    if startIndex is None:
+        index = random.randint(0, ct - 1)
+    else:
+        index = startIndex
     direction = 1
     while 1:
         yield sounds[index]
