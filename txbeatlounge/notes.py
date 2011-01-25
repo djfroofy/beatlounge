@@ -395,6 +395,25 @@ def keyScale(scale, key='C', octave=0):
     return [ n + base + octave for n in scale ]
 
 
+# pentatonic
+
+majorpenta = pentatonic = [ C[0], D[0], E[0], G[0], A[0], C[1] ]
+minorpenta = [ C[0], Ef[0], F[0], G[0], Bf[0], C[1] ] 
+egyptpenta = suspenta = [ C[0], D[0], F[0], G[0], Bf[0], C[1] ]
+bluesminor = mangong = [ C[0], Ef[0], F[0], Af[0], Bf[0], C[1] ]
+bluesmajor = ritusen = [ C[0], D[0], F[0], G[0], A[0], C[1] ] 
+
+# hexatonic
+
+wholetone = [ C[0], D[0], E[0], Fs[0], Gs[0], As[0], C[1] ]
+augmented = [ C[0], Ef[0], E[0], G[0], Gs[0], B[0], C[1] ]
+prometheus = [ C[0], D[0], E[0], Fs[0], A[0], Bf[0], C[1] ]
+blues = [ C[0], Ef[0], F[0], Fs[0], G[0], Bf[0], C[1] ]
+tritone = [ C[0], Df[0], E[0], Gf[0], G[0], Bf[0], C[1] ]
+tstritone = twoSemitoneTritone = [ C[0], Df[0], D[0], Fs[0], G[0], Bf[0], C[1] ]
+
+# heptatonic
+
 major = ionian = [ C[0], D[0], E[0], F[0], G[0], A[0], B[0], C[1] ]
 melodic = melodiciMinor = [ C[0], D[0], Ef[0], F[0], G[0], A[0], B[0], C[1] ]
 dorian = [ C[0], D[0], Ef[0], F[0], G[0], A[0], Bf[0], C[1] ]
@@ -405,4 +424,12 @@ byzantine = hungarian = egyptian = [ C[0], D[0], Ef[0], Fs[0], G[0], Af[0], B[0]
 phrygian = [ C[0], Df[0], Ef[0], F[0], G[0], Af[0], Bf[0], C[1] ]
 phrygianDominant = [ C[0], Df[0], E[0], F[0], G[0], Af[0], Bf[0], C[1] ]
 locrian = [ C[0], Df[0], Ef[0], F[0], Gf[0], Af[0], Bf[0], C[1] ]  
+
+# ocotatonic
+
+diminished = [ C[0], D[0], Ef[0], F[0], Gf[0], Af[0], A[0], B[0], C[1] ]
+
+
+
+
 
