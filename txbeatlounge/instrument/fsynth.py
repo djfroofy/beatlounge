@@ -7,7 +7,7 @@ from fluidsynth import Synth
 from txbeatlounge.utils import getClock
 
 __all__ = [ 'SynthRouter', 'SynthPool', 'StereoPool', 'QuadPool', 'NConnectionPool',
-            'Instrument', 'MultiInstrument', 'Layer' ]
+            'Instrument', 'MultiInstrument', 'Layer', 'suggestDefaultPool' ]
 
 
 class SynthRouter:
