@@ -10,6 +10,7 @@ SynthRouter = fsynth.SynthRouter
 SynthPool = fsynth.SynthPool
 Instrument = fsynth.Instrument
 MultiInstrument = fsynth.MultiInstrument
+Layer = fsynth.Layer
 
 class SynthRouterTests(TestCase):
 
@@ -204,4 +205,45 @@ class MultiInstrumentTests(TestCase):
         self.assertEquals(instr3.record, [('stop', 43), ('stop', 44)])
 
  
+class LayerTests(TestCase):
+
+    def setUp(self):
+        self.patch(fsynth, 'Synth', Synth)
+        defaultPool = fsynth.defaultPool
+        self.addCleanup(fsynth.suggestDefaultPool, defaultPool)
+        fsynth.suggestDefaultPool(fsynth.StereoPool())
+        
+        Instrument = MockInstrument
+        self.instr1 = Instrument()
+        self.instr2 = Instrument()
+
+        self.layer = Layer([self.instr1, (self.instr2, ([24,25],))])
+
+
+    def test_instruments_initialization(self):
+        midi = Layer.MIDI
+        midi2 = dict(midi)
+        midi2[24] = 25
+        
+        layer = self.layer
+
+        self.assertEquals(layer.instruments[0][0], self.instr1)
+        self.assertEquals(layer.instruments[0][1], midi)
+        self.assertEquals(layer.instruments[1][0], self.instr2)
+        self.assertEquals(layer.instruments[1][1], midi2)
+
+    def test_playnote_stopnote(self):
+        layer = self.layer
+
+        layer.playnote(45, 127)
+        layer.playnote(24, 100)
+        layer.playnote(30)
+        layer.stopnote(45)
+        layer.stopnote(24)
+        self.assertEquals(self.instr1.record, [('play', 45, 127), ('play', 24, 100), ('play', 30, 80), ('stop', 45), ('stop', 24)])
+        self.assertEquals(self.instr2.record, [('play', 45, 127), ('play', 25, 100), ('play', 30, 80), ('stop', 45), ('stop', 25)]) 
+
+
+
+        
 

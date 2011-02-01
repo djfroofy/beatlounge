@@ -221,6 +221,34 @@ class MultiInstrument(ChordPlayerMixin):
         instr.stopnote(realNote)
 
 
+class Layer(ChordPlayerMixin):
+
+    MIDI = dict([[n,n] for n in range(128)])
+
+    def __init__(self, instruments):
+        self.instruments = []
+        for entry in instruments:
+            if type(entry) in (tuple, list):
+                self.instruments.append((entry[0], dict(self.MIDI)))
+                self.instruments[-1][1].update(entry[1])
+            else:
+                self.instruments.append((entry, dict(self.MIDI)))
+
+    def playnote(self, note, velocity=80):
+        for (instr, mapping) in self.instruments:
+            realNote = mapping.get(note, None)
+            if realNote is None:
+                continue
+            instr.playnote(realNote, velocity)
+
+    def stopnote(self, note):
+        for (instr, mapping) in self.instruments:
+            realNote = mapping.get(note, None)
+            if realNote is None:
+                continue
+            instr.stopnote(realNote)
+
+
 def suggestDefaultPool(pool):
     global defaultPool
     defaultPool = pool
