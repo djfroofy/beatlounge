@@ -82,7 +82,6 @@ class BasePlayer(PlayableMixin):
             meter = self.clock.meters[0]
         self.meter = meter
 
-
     def play(self):
         n = self._next()
         while callable(n):
@@ -98,6 +97,13 @@ class BasePlayer(PlayableMixin):
         if stop is not None:
             self.clock.callLater(stop, self._off_method, n)
 
+def _wrapgen(o):
+    if callable(o):
+        return o
+    if hasattr(o, 'next'):
+        return noteFactory(o)
+    raise ValueError('Argument must be a callable or a generator with .next method')
+
 
 class NotePlayer(BasePlayer):
     implements(INotePlayer)
@@ -105,7 +111,7 @@ class NotePlayer(BasePlayer):
     def __init__(self, instr, noteFactory, velocity, stop=lambda : None,
                  clock=None, interval=None):
         super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
-        self.noteFactory = noteFactory
+        self.noteFactory = _wrapgen(noteFactory)
         self._on_method = lambda n, v : self.instr.playnote(n, v)
         self._off_method = lambda n : self.instr.stopnote(n)
 
@@ -120,7 +126,7 @@ class ChordPlayer(BasePlayer):
     def __init__(self, instr, chordFactory, velocity, stop=lambda : None, clock=None,
                  interval=None):
         super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
-        self.chordFactory = chordFactory
+        self.chordFactory = _wrapgen(chordFactory)
         self._on_method = lambda c, v : self.instr.playchord(c, v)
         self._off_method = lambda  c : self.instr.stopchord(c)
 

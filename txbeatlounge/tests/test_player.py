@@ -168,6 +168,20 @@ class PlayerTests(TestCase, ClockRunner):
         self.assertEquals(self.instr1.plays, expectedPlays)
         
 
+    def test_generatorsAreWrapperInNoteFactory(self):
+        c = cycle([1,2])
+        notePlayer = NotePlayer(self.instr1, c, TestFilter(100),
+                            clock=self.clock)
+        for i in range(3):
+            notePlayer.play()
+            self.clock.tick()
+        expectedPlays = [
+            ('note', 0, 1, 100),
+            ('note', 1, 2, 100),
+            ('note', 2, 1, 100),]
+        self.assertEquals(self.instr1.plays, expectedPlays)
+
+
     def test_startPlaying(self):
         self.notePlayer.startPlaying('a')
         self.runTicks(96)
