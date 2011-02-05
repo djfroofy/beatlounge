@@ -86,9 +86,9 @@ class BasePlayer(PlayableMixin):
         n = self._next()
         while callable(n):
             n = n()
+        v, o = self.velocity(110, None)
         if n is None:
             return
-        v, o = self.velocity(110, None)
         if DEBUG:
             log.msg('%s %s %s %s' % (self.instr, n,
                     self.clock.meters[0].beat(self.clock.ticks), v))

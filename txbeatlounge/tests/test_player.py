@@ -11,7 +11,7 @@ from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase, sequenc
 from txbeatlounge.player import Conductor, START
 from txbeatlounge.player import explode, cut, callMemo 
 from txbeatlounge.scheduler import BeatClock, Meter, mtt
-from txbeatlounge.filters import BaseFilter
+from txbeatlounge.filters import BaseFilter, Stepper
 from txbeatlounge.testlib import TestReactor, ClockRunner
 
 snd = noteFactory
@@ -181,6 +181,19 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 2, 1, 100),]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
+
+    def test_velocityGetsCalledEvenOnNoneNotes(self):
+        notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,N])), Stepper([100, 90, 80]),
+                            clock=self.clock)
+        for i in range(6):
+            notePlayer.play()
+            self.clock.tick()
+        expectedPlays = [
+            ('note', 0, 0, 100),
+            ('note', 1, 1, 90),
+            ('note', 3, 0, 100),
+            ('note', 4, 1, 90),]
+        self.assertEquals(self.instr1.plays, expectedPlays)
 
     def test_startPlaying(self):
         self.notePlayer.startPlaying('a')
