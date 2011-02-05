@@ -211,10 +211,9 @@ class Conductor(object):
 
 def noteFactory(g):
     """
-    Close a generator `g` of note/chord values or
-    callables which return note/chord values
-    with a note factory function which can be passed
-    to a NotePlayer or ChordPlayer's constructor.
+    Convert a generator to a callable. This is mostly equivalent
+    to g.next, except if the value yielded is a callable it
+    will be called first before returing.
     """
     def f():
         s = g.next()

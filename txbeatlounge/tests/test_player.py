@@ -147,6 +147,27 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 4, 1, 100),]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
+    def test_playerExhaustsCallChain(self):
+        # maybe this is bad
+        def f():
+            def g():
+                def h():
+                    def i():
+                        return 1
+                    return i
+                return h
+            return g
+        notePlayer = NotePlayer(self.instr1, f, TestFilter(100),
+                            clock=self.clock)
+        for i in range(2):
+            notePlayer.play()
+            self.clock.tick()
+        expectedPlays = [
+            ('note', 0, 1, 100),
+            ('note', 1, 1, 100),]
+        self.assertEquals(self.instr1.plays, expectedPlays)
+        
+
     def test_startPlaying(self):
         self.notePlayer.startPlaying('a')
         self.runTicks(96)
