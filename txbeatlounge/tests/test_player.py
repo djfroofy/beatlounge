@@ -195,6 +195,11 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 4, 1, 90),]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
+    def test_valueErrorForBadNoteFactory(self):
+        self.assertRaises(ValueError, NotePlayer, self.instr1, '1234', TestFilter(100),
+                            clock=self.clock)
+
+
     def test_startPlaying(self):
         self.notePlayer.startPlaying('a')
         self.runTicks(96)
