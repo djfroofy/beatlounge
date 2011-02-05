@@ -11,11 +11,11 @@ from txbeatlounge.scheduler import mtt
 
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
-    'NotePlayer', 'ChordPlayer', 'N', 'R', 'noteFactory', 'nf', 'generateSounds',
+    'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf', 'generateSounds',
     'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
     'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
     'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
-    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm']
+    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W']
 
 
 class IPlayer(Interface):
@@ -85,7 +85,7 @@ class BasePlayer(PlayableMixin):
 
     def play(self):
         n = self._next()
-        if callable(n):
+        while callable(n):
             n = n()
         if n is None:
             return
@@ -110,7 +110,7 @@ class NotePlayer(BasePlayer):
         self._off_method = lambda n : self.instr.stopnote(n)
 
     def _next(self):
-        return self.noteFactory
+        return self.noteFactory()
 
 Player = NotePlayer
 
@@ -125,7 +125,7 @@ class ChordPlayer(BasePlayer):
         self._off_method = lambda  c : self.instr.stopchord(c)
 
     def _next(self):
-        return self.chordFactory
+        return self.chordFactory()
 
 START = None
 
@@ -247,12 +247,12 @@ class _Nothing(object):
 N = _Nothing()
 
 
-def R(*c):
+def Random(*c):
     def f():
         return random.choice(c)
     return f
 
-
+R = Random
 
 def _randomPhraseGen(phrases):
     while 1:
@@ -302,6 +302,12 @@ def weighted(*notes):
     return ws 
 w = weighted
 
+def Weight(*weights):
+    "yo dog"
+    ws = weighted(*weights)
+    return R(*ws) 
+
+W = Weight
 
 class Shifter(object):
     """
