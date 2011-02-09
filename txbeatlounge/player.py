@@ -338,8 +338,8 @@ class Shifter(object):
         while 1:
             next = self.gen.next()
             n = next
-            if callable(next):
-                n = next()
+            while callable(n):
+                n = n()
             if n is None:
                 yield next
             elif type(n) in (list, tuple):
