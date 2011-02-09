@@ -12,10 +12,10 @@ import signal
 from twisted.internet import stdio, protocol, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
 from twisted.conch.recvline import HistoricRecvLine
-from twisted.python import failure, reflect, log
+from twisted.python import failure, reflect, log, usage
 from twisted.python.filepath import FilePath
 
-from txbeatlounge.scheduler import clock as reactor
+from txbeatlounge.scheduler import clock
 from txbeatlounge.utils import buildNamespace
 
 __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
@@ -26,6 +26,14 @@ consoleNamespace = buildNamespace('twisted.internet',
         'txbeatlounge.filters', 'txbeatlounge.scheduler', 'txbeatlounge.debug',
         'comps.complib', 'txosc.async', 'txbeatlounge.osc')
 consoleNamespace.update({'random': random})
+
+class Options(usage.Options):
+    optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
+                     ['logfile', 'l', 'child.log', 'Path to logfile'],
+                     ]
+
+    def parseArgs(self, audiodev='coreaudio'):
+        self['audiodev'] = audiodev
 
 class FriendlyConsoleManhole(ConsoleManhole):
 
@@ -213,8 +221,6 @@ try:
         return conn
 
 
-            
-
     class SSHConnection(connection.SSHConnection):
 
         def __init__(self, console):
@@ -277,36 +283,44 @@ except ImportError, ie:
     from warnings import warn
     warn('%s - connectConsole() will not be avaiable' % ie)
 
-def runWithProtocol(klass, audioDev):
+def runWithProtocol(klass, audioDev, channels):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
     try:
         p = ServerProtocol(klass)
         stdio.StandardIO(p)
-        reactor.synthAudioDevice = audioDev
-        reactor.run()
+        # TODO - there should be a cleaner strategy for collecting parameters and
+        # initializing fluidsynth - initializing fluidsynth shouldn't really even be
+        # necessary
+        clock.synthAudioDevice = audioDev
+        clock.synthChannels = channels
+        clock.run()
     finally:
         termios.tcsetattr(fd, termios.TCSANOW, oldSettings)
         os.write(fd, "\r\x1bc\r")
 
 
 def main(argv=None, reactor=None):
-    log.startLogging(file('child.log', 'w'))
 
-    audioDev = 'coreaudio'
-
-    if argv is None:
-        argv = sys.argv[1:]
-        if argv:
-            audioDev = argv[0]
-            argv = argv[2:]
-    if argv:
-        klass = reflect.namedClass(argv[0])
-    else:
-        klass = FriendlyConsoleManhole
-    log.msg('audio dev: %s' % audioDev)
-    runWithProtocol(klass, audioDev)
+    opts = Options()
+    opts.parseOptions()
+#    audioDev = 'coreaudio'
+#
+#    if argv is None:
+#        argv = sys.argv[1:]
+#        if argv:
+#            audioDev = argv[0]
+#            argv = argv[2:]
+#    if argv:
+#        klass = reflect.namedClass(argv[0])
+#    else:
+#        klass = FriendlyConsoleManhole
+    klass = FriendlyConsoleManhole
+    log.startLogging(file(opts['logfile'], 'w'))
+    log.msg('audio dev: %s' % opts['audiodev'])
+    log.msg('channels: %s' % opts['channels'])
+    runWithProtocol(klass, opts['audiodev'], opts['channels'])
 
 if __name__ == '__main__':
     main()

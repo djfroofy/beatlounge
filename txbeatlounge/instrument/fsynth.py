@@ -12,7 +12,9 @@ __all__ = [ 'SynthRouter', 'SynthPool', 'StereoPool', 'QuadPool', 'NConnectionPo
 
 class SynthRouter:
 
-    def __init__(self, **synth_factories):
+    def __init__(self, *p, **synth_factories):
+        if not synth_factories:
+            synth_factories = p[0]
         self.connections = cx = {}
         cx.update(synth_factories)
 
@@ -81,6 +83,9 @@ class SynthPool:
         instr.registerSoundfont(sfid, channel)
 
 
+def MonoPool():
+    router = SynthRouter(mono=Synth)
+    return SynthPool(router)
 
 def StereoPool():
     router = SynthRouter(left=Synth, right=Synth, mono=Synth)
@@ -91,8 +96,8 @@ def QuadPool():
     router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth, mono=Synth)
     return SynthPool(router)
 
-def NConnectionPool(**synth_factories):
-    router = SynthRouter(**synth_factories)
+def NConnectionPool(*p, **synth_factories):
+    router = SynthRouter(*p, **synth_factories)
     return SynthPool(router)
 
 

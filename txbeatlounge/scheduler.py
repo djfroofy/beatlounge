@@ -69,6 +69,7 @@ standardMeter = Meter(4,4)
 
 class SynthControllerMixin(object):
     synthAudioDevice = 'coreaudio'
+    synthChannels = 'stereo'
 
 class BeatClock(SelectReactor, SynthControllerMixin):
 
@@ -98,10 +99,33 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.tempo = tempo
 
     def run(self):
+        self._initBackends()
         self.startTicking()
         self.running = True
         if not self.reactor.running:
             self.reactor.run()
+
+
+    def _initBackends(self):
+        try:
+            from txbeatlounge.instrument import fsynth
+            if self.synthChannels == 'stereo':
+                return
+            if self.synthChannels == 'mono':
+                pool = fsynth.MonoPool()
+            elif self.synthChannels == 'quad':
+                pool = fsynth.QuadPool()
+            else:
+                try:
+                    self.synthChannels = int(self.synthChannels) 
+                except ValueError:
+                    raise ValueError('synthChannels should be one of mono, stereo, quad or an integer')
+                synths = dict( (n, fsynth.Synth) for n in range(self.synthChannels) )
+                pool = fsynth.NConnectionPool(synths)
+            fsynth.suggestDefaultPool(pool)
+        except ImportError:
+            log.msg('fluidsynth will not be available at runtime')
+            pass
 
     def startTicking(self):
         self.task = LoopingCall(self.tick)
