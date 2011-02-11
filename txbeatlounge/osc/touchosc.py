@@ -168,7 +168,7 @@ class TouchOSCStepSequencer:
         # really only want this for udp, but alas
         self.send(self.ledAddressPattern % (self.page, on), 1.0)
         self.send(self.ledAddressPattern % (self.page, off), 0.0)
-        log.msg('[TouchOSCStepSequencer.updateLEDs] sent off=%s, on=%s [%d]' % (off, on, ss.clock.ticks))            
+        # log.msg('[TouchOSCStepSequencer.updateLEDs] sent off=%s, on=%s [%d]' % (off, on, ss.clock.ticks))            
 
     def setVelocity(self, idx, v):
         nv = int(v * 127)

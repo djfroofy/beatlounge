@@ -12,7 +12,10 @@ min_max = minmax
 def percindex(r, lst):
     '''Given 0<=r=<1, get the item of the list'''
 
-    return lst[int(len(lst)*r)]
+    try:
+        return lst[int(len(lst)*r)]
+    except IndexError: #wtf?
+        return lst[-1]
 
 
 def windex(lst):

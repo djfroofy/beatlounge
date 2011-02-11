@@ -160,6 +160,11 @@ class BeatClock(SelectReactor, SynthControllerMixin):
     def receiveTime(self, receiver=None, port=17779, interface='192.168.2.3', listen_now=True):
         """
         Receives time from a master and starts the clock with the next "one"
+        Master sends 4 args: ticks, time, timeSignature, tempo
+
+clock = BeatClock()
+
+
         """
 
         if self.running: raise ValueError('clock is already running')
