@@ -58,16 +58,16 @@ class Rack(object):
         ]
 
         self.chorus = Chorus(self.inputs)
-        #self.convolve = Convolve(self.inputs, self.chebyT, size=8192) # bad usage!
-        self.delay = Delay(self.inputs, maxdelay=20)
+        self.convolve = Convolve(self.inputs, self.harmT, size=512) # bad usage!
+        self.delay = Delay(self.inputs, feedback=.6, maxdelay=20)
         self.disto = Disto(self.inputs)
         self.freeverb = Freeverb(self.inputs)
-        self.harmonizer = Harmonizer(self.inputs)
+        self.harmonizer = Harmonizer(self.inputs, transpo=-12)
         self.sdelay = SDelay(self.inputs, maxdelay=20)
         self.wgverb = WGVerb(self.inputs)
         self.waveguide = Waveguide(self.inputs)
         self.FX['effects'] = [
-            self.chorus, #self.convolve,
+            self.chorus, self.convolve,
             self.delay, self.disto, self.freeverb, self.harmonizer, self.sdelay, self.wgverb, self.waveguide
         ]
 
@@ -77,21 +77,62 @@ class Rack(object):
         ]
 
 
-    def setOuts(self, li=[["chorus", "disto", "freeverb", "delay", "harmonizer"]]):
+    def setOuts(self, li=[["harmonizer", "disto", "chorus", "delay"], ["harmonizer", 'disto', 'chorus']], play_clean=True):
         """
         List of lists.  The input of l[n] is l[n-1] or the main input if it is first.
         each list can not reuse a param where it would change the input of the filter.
         More on this later.
         """
-        print li
+        for i in self.FX['effects'] + self.FX['filters']:
+            i.stop()
+            i.play()
+
         for l in li:
             inp = self.inputs
             for i,s in enumerate(l):
                 this = getattr(self, s)
-                this.inp = inp
+                this.input = inp
                 inp = this
 
                 if i == len(l)-1:
                     this.out()
+
+        if play_clean:
+            [i.out() for i in self.inputs]
+        else:
+            [(i.out(),i.stop()) for i in self.inputs]
+
+
+    def A(self, x):
+        self.delay.delay = 4*x
+    def B(self, x):
+        self.delay.feedback = x
+    def C(self, x):
+        self.chorus.feedback = x
+    def D(self, x):
+        self.chorus.depth = 4*x
+    def E(self, x):
+        self.disto.slope = x
+    def F(self, x):
+        self.disto.drive = x
+
+
+def main():
+    from txosc.dispatch import Receiver
+    from txosc.async import DatagramServerProtocol, DatagramClientProtocol
+    from twisted.internet import reactor
+    from txbeatlounge.osc.touchosc import Rotary
+
+    receiver = Receiver()
+    reactor.listenUDP(17779, DatagramServerProtocol(receiver), interface='0.0.0.0')
+
+    s = startPYO()
+    #client = DatagramClientProtocol()
+    #clientPort = reactor.listenUDP(0, client)
+    r = Rack()
+    Rotary(receiver, [r.A, r.B, r.C, r.D, r.E, r.F], page=3).attach()
+
+    return s,r
+
 
 
