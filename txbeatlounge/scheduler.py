@@ -14,6 +14,8 @@ from twisted.internet.task import LoopingCall
 
 #from fluidsynth import Synth
 
+from txbeatlounge.debug import DEBUG
+
 __all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt',
             'ScheduledEvent', 'clock' ]
 
@@ -152,7 +154,6 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.runUntilCurrent()
         if self.syncClock:
             tick, ts = self.syncClock.lastTick()
-            #print 'tick=%s, self.ticks=%s, delta=%s' % (tick, self.ticks, tick - self.ticks)
             if tick > self.ticks:
                 self._syncToTick(tick, ts)
 
@@ -161,7 +162,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         Synchronize the current ticks based on tick and timestamp (ts) reported
         by the SyncClock.
         """
-        log.msg("We're behind; ticks=%s, expected=%s" % (self.ticks, tick))
+        if DEBUG:
+            log.msg("We're behind; ticks=%s, expected=%s" % (self.ticks, tick))
         # TODO - quiet everything somehow
         delta = tick - self.ticks
         tpm = self.meters[0].ticksPerMeasure
@@ -174,7 +176,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
         # Do some catchup 
         for i in range(delta):
-            log.msg('Catch up tick: %d' % i)
+            if DEBUG:
+                log.msg('Catch up tick: %d' % i)
             self.ticks += 1
             self.runUntilCurrent()
         # XXX not very smart to do this considering tick based scheduling
@@ -183,12 +186,16 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
         # First normalize the timed events
         offset = tick - self.ticks
-        log.msg('Adjusting delayed calls ticks by offset: %s' % offset)
+        if DEBUG:
+            log.msg('Adjusting delayed calls ticks by offset: %s' % offset)
         for call in self._pendingTimedCalls:
-            log.msg('Call time was %s' % call.time)
+            if DEBUG:
+                log.msg('Call time was %s' % call.time)
             call.time += offset
-            log.msg('Call time now %s' % call.time)
-        log.msg('Reset ticks to %s' % tick)
+            if DEBUG:
+                log.msg('Call time now %s' % call.time)
+        if DEBUG:
+            log.msg('Reset ticks to %s' % tick)
         self.ticks = tick
         
 
