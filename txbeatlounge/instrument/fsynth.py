@@ -2,6 +2,9 @@ import os
 import random
 from warnings import warn
 
+
+from twisted.python import log
+
 from fluidsynth import Synth
 
 from txbeatlounge.utils import getClock
@@ -30,7 +33,7 @@ class SynthPool:
         self.settings = {}
         self._channel_gen = {}
         if reactor is None:
-            from txbeatlounge.scheduler import clock as reactor
+            clock = reactor = getClock()
         self.reactor = reactor
         self.audiodev = audiodev
         self.reactor.callWhenRunning(self.startSynths)

@@ -15,21 +15,18 @@ from twisted.conch.recvline import HistoricRecvLine
 from twisted.python import failure, reflect, log, usage
 from twisted.python.filepath import FilePath
 
-from txbeatlounge.scheduler import clock
-from txbeatlounge.utils import buildNamespace
+
+from txbeatlounge.scheduler import BeatClock
 
 __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 
-consoleNamespace = buildNamespace('twisted.internet',
-        'itertools', 'functools', 'collections',
-        'txbeatlounge.instrument.fsynth', 'txbeatlounge.player', 'txbeatlounge.notes',
-        'txbeatlounge.filters', 'txbeatlounge.scheduler', 'txbeatlounge.debug',
-        'comps.complib', 'txosc.async', 'txbeatlounge.osc')
-consoleNamespace.update({'random': random})
+# Todo - make this an opt flag instead
+EXPERIMENTAL = True
 
 class Options(usage.Options):
     optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
                      ['logfile', 'l', 'child.log', 'Path to logfile'],
+                     ['tempo', 't', 130, 'The tempo (bpm)', int],
                      ]
 
     def parseArgs(self, audiodev='coreaudio'):
@@ -40,9 +37,20 @@ class FriendlyConsoleManhole(ConsoleManhole):
     persistent = True
     historyFile = os.path.join(os.environ.get('HOME', ''), '.beatlounge.history')
     maxLines = 2**12
-    namespace = consoleNamespace
     session = None
     _onPrompt = None
+
+
+    def __init__(self, *p, **kw):
+        from txbeatlounge.utils import buildNamespace
+        namespace = buildNamespace('twisted.internet',
+                'itertools', 'functools', 'collections',
+                'txbeatlounge.instrument.fsynth', 'txbeatlounge.player', 'txbeatlounge.notes',
+                'txbeatlounge.filters', 'txbeatlounge.scheduler', 'txbeatlounge.debug',
+                'comps.complib', 'txosc.async', 'txbeatlounge.osc')
+        namespace.update({'random': random})
+        self.namespace = namespace
+        ConsoleManhole.__init__(self, *p, **kw)
 
     def connectionMade(self):
         ConsoleManhole.connectionMade(self)
@@ -283,18 +291,23 @@ except ImportError, ie:
     from warnings import warn
     warn('%s - connectConsole() will not be avaiable' % ie)
 
-def runWithProtocol(klass, audioDev, channels):
+def runWithProtocol(klass, audioDev, channels, tempo):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
     try:
-        p = ServerProtocol(klass)
-        stdio.StandardIO(p)
         # TODO - there should be a cleaner strategy for collecting parameters and
         # initializing fluidsynth - initializing fluidsynth shouldn't really even be
         # necessary
+        if EXPERIMENTAL:
+            from txbeatlounge.sync import SystemClock
+            clock = BeatClock(tempo=tempo, default=True, syncClockClass=SystemClock)
+        else:
+            clock = BeatClock(tempo=tempo, default=True)
         clock.synthAudioDevice = audioDev
         clock.synthChannels = channels
+        p = ServerProtocol(klass)
+        stdio.StandardIO(p)
         clock.run()
     finally:
         termios.tcsetattr(fd, termios.TCSANOW, oldSettings)
@@ -305,22 +318,12 @@ def main(argv=None, reactor=None):
 
     opts = Options()
     opts.parseOptions()
-#    audioDev = 'coreaudio'
-#
-#    if argv is None:
-#        argv = sys.argv[1:]
-#        if argv:
-#            audioDev = argv[0]
-#            argv = argv[2:]
-#    if argv:
-#        klass = reflect.namedClass(argv[0])
-#    else:
-#        klass = FriendlyConsoleManhole
     klass = FriendlyConsoleManhole
     log.startLogging(file(opts['logfile'], 'w'))
     log.msg('audio dev: %s' % opts['audiodev'])
     log.msg('channels: %s' % opts['channels'])
-    runWithProtocol(klass, opts['audiodev'], opts['channels'])
+    log.msg('tempo/BPM: %s' % opts['tempo'])
+    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['tempo'])
 
 if __name__ == '__main__':
     main()

@@ -74,8 +74,10 @@ class SynthControllerMixin(object):
 class BeatClock(SelectReactor, SynthControllerMixin):
 
     defaultClock = None
+    syncClock = None
 
-    def __init__(self, tempo=130, meters=(), reactor=None, default=False):
+    def __init__(self, tempo=130, meters=(), reactor=None, syncClockClass=None, default=False):
+        global clock
         self.tempo = tempo
         self.ticks = 0
         #self.setTempo(tempo)
@@ -89,6 +91,13 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.reactor = reactor
         if default or (self.defaultClock is None):
             BeatClock.defaultClock = self
+            clock = self
+
+        if syncClockClass:
+            self.syncClock = syncClockClass(self)
+            lasttick, ts = self.syncClock.lastTick()
+            self.ticks = lasttick
+
         SelectReactor.__init__(self)
 
     def setTempo(self, tempo):
@@ -97,6 +106,10 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             self.task.stop()
             self.task.start(self._tick_interval, True)
         self.tempo = tempo
+
+        if self.syncClock:
+            lasttick, ignore = self.syncClock.lastTick()
+            self.ticks = lasttick
 
     def run(self):
         self._initBackends()
@@ -132,8 +145,52 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.on_stop = self.task.start(self._tick_interval, True)
 
     def tick(self):
+        """
+        Advance ticks and run delayed calls.
+        """
         self.ticks += 1
         self.runUntilCurrent()
+        if self.syncClock:
+            tick, ts = self.syncClock.lastTick()
+            #print 'tick=%s, self.ticks=%s, delta=%s' % (tick, self.ticks, tick - self.ticks)
+            if tick > self.ticks:
+                self._syncToTick(tick, ts)
+
+    def _syncToTick(self, tick, ts):
+        """
+        Synchronize the current ticks based on tick and timestamp (ts) reported
+        by the SyncClock.
+        """
+        log.msg("We're behind; ticks=%s, expected=%s" % (self.ticks, tick))
+        # TODO - quiet everything somehow
+        delta = tick - self.ticks
+        tpm = self.meters[0].ticksPerMeasure
+        if delta > tpm:
+            t = tick % tpm
+            ct = self.ticks % tpm
+            if t < ct:
+                t += tpm
+            delta = t - ct
+
+        # Do some catchup 
+        for i in range(delta):
+            log.msg('Catch up tick: %d' % i)
+            self.ticks += 1
+            self.runUntilCurrent()
+        # XXX not very smart to do this considering tick based scheduling
+        # - i.e. we need to take something already scheduled for tick N and make it instead
+        # schedule for N + delta or something (???)
+
+        # First normalize the timed events
+        offset = tick - self.ticks
+        log.msg('Adjusting delayed calls ticks by offset: %s' % offset)
+        for call in self._pendingTimedCalls:
+            log.msg('Call time was %s' % call.time)
+            call.time += offset
+            log.msg('Call time now %s' % call.time)
+        log.msg('Reset ticks to %s' % tick)
+        self.ticks = tick
+        
 
     def seconds(self):
         return self.ticks
