@@ -150,6 +150,12 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         """
         Advance ticks and run delayed calls.
         """
+        if self.syncClock:
+            ticks, ts = self.syncClock.lastTick()
+            if self.ticks > (ticks + 1):
+                if DEBUG:
+                    log.msg("We're ahead by %s ticks, waiting" % (self.ticks - (ticks + 1)))
+                return
         self.ticks += 1
         self.runUntilCurrent()
         if self.syncClock:
@@ -162,10 +168,10 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         Synchronize the current ticks based on tick and timestamp (ts) reported
         by the SyncClock.
         """
-        if DEBUG:
-            log.msg("We're behind; ticks=%s, expected=%s" % (self.ticks, tick))
         # TODO - quiet everything somehow
         delta = tick - self.ticks
+        if DEBUG:
+            log.msg("We're behind by %s ticks (ticks=%s expected=%s)" % (delta, self.ticks, tick))
         tpm = self.meters[0].ticksPerMeasure
         if delta > tpm:
             t = tick % tpm
