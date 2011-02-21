@@ -16,17 +16,23 @@ from twisted.python import failure, reflect, log, usage
 from twisted.python.filepath import FilePath
 
 
-from txbeatlounge.scheduler import BeatClock
+from txbeatlounge.scheduler import BeatClock, Meter, standardMeter
 
 __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 
 # Todo - make this an opt flag instead
 EXPERIMENTAL = True
 
+
+def toMeter(s):
+    count, division = s.split('/')
+    return Meter(int(count), int(division))
+
 class Options(usage.Options):
     optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
                      ['logfile', 'l', 'child.log', 'Path to logfile'],
                      ['tempo', 't', 130, 'The tempo (bpm)', int],
+                     ['meter', 'm', standardMeter, 'The meter (default 4/4)', toMeter]
                      ]
 
     def parseArgs(self, audiodev='coreaudio'):
@@ -291,7 +297,7 @@ except ImportError, ie:
     from warnings import warn
     warn('%s - connectConsole() will not be avaiable' % ie)
 
-def runWithProtocol(klass, audioDev, channels, tempo):
+def runWithProtocol(klass, audioDev, channels, tempo, meter):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
@@ -301,9 +307,9 @@ def runWithProtocol(klass, audioDev, channels, tempo):
         # necessary
         if EXPERIMENTAL:
             from txbeatlounge.sync import SystemClock
-            clock = BeatClock(tempo=tempo, default=True, syncClockClass=SystemClock)
+            clock = BeatClock(tempo=tempo, meters=[meter], default=True, syncClockClass=SystemClock)
         else:
-            clock = BeatClock(tempo=tempo, default=True)
+            clock = BeatClock(tempo=tempo, meters=[meter], default=True)
         clock.synthAudioDevice = audioDev
         clock.synthChannels = channels
         p = ServerProtocol(klass)
@@ -323,7 +329,8 @@ def main(argv=None, reactor=None):
     log.msg('audio dev: %s' % opts['audiodev'])
     log.msg('channels: %s' % opts['channels'])
     log.msg('tempo/BPM: %s' % opts['tempo'])
-    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['tempo'])
+    log.msg('meter: %s' % opts['meter'])
+    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['tempo'], opts['meter'])
 
 if __name__ == '__main__':
     main()
