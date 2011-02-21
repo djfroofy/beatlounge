@@ -162,6 +162,11 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             tick, ts = self.syncClock.lastTick()
             if tick > self.ticks:
                 self._syncToTick(tick, ts)
+            next = self.task._expectNextCallAt
+            if abs(next - ts) > 0.0005:
+                if DEBUG:
+                    log.msg('Off by: %3.3fms; skewing time' % (1000. * (next - ts)))
+                self.task._expectNextCallAt -= (next - ts)
 
     def _syncToTick(self, tick, ts):
         """
