@@ -1,6 +1,5 @@
 from pyo import *
 
-#from twisted.python import log
 
 
 class PyoServer:
@@ -98,16 +97,18 @@ class Rack(object):
     """
 
 
-    def __init__(self, channels=[0,1], bpm=120):
+    def __init__(self, inputs=[], channels=[0,1], bpm=120):
 
-        # TODO, don't have this side-effect in the __init__
 
-        self.inputs = []
-        for c in channels:
-            n = "chan%s" % c
-            i = Input(c)
-            setattr(self, n, i)
-            self.inputs.append(i)
+        if not inputs:
+            self.inputs = []
+            for c in channels:
+                n = "chan%s" % c
+                i = Input(c)
+                setattr(self, n, i)
+                self.inputs.append(i)
+        else:
+            self.inputs = inputs
 
         self.FX = {}
 
@@ -150,7 +151,7 @@ class Rack(object):
         ]
 
 
-    def setOuts(self, li=[["harmonizer", "disto", "chorus", "delay"], ["harmonizer", 'disto', 'chorus']], play_clean=True):
+    def setOuts(self, li=[["disto", "chorus", "waveguide", "biquad"]], play_clean=True):
         """
         List of lists.  The input of l[n] is l[n-1] or the main input if it is first.
         each list can not reuse a param where it would change the input of the filter.
@@ -177,9 +178,9 @@ class Rack(object):
 
 
     def A(self, x):
-        self.delay.delay = 4*x
+        self.biquad.freq = (440*4)*x
     def B(self, x):
-        self.delay.feedback = x
+        self.biquad.q = x
     def C(self, x):
         self.chorus.feedback = x
     def D(self, x):
@@ -190,11 +191,13 @@ class Rack(object):
         self.disto.drive = x
 
 
-def main():
+def main(root=55):
     from txosc.dispatch import Receiver
     from txosc.async import DatagramServerProtocol, DatagramClientProtocol
+    from txbeatlounge.utils import percindex
     from twisted.internet import reactor
-    from txbeatlounge.osc.touchosc import Rotary
+    from txbeatlounge.osc.touchosc import Rotary, XY
+    from twisted.python import log
 
     receiver = Receiver()
     reactor.listenUDP(17779, DatagramServerProtocol(receiver), interface='0.0.0.0')
@@ -202,10 +205,31 @@ def main():
     s = startPYO()
     #client = DatagramClientProtocol()
     #clientPort = reactor.listenUDP(0, client)
-    r = Rack()
+    sineA = Sine([220,222])
+    sineB = Sine([440,442])
+    r = Rack([sineA, sineB])
+
+    factors = [1, 7/6., 6/5., 5/4., 4/3., 3/2.,2]
+    octaves = 9
+    choices = []
+    binoff = 2
+    for octave in range(octaves):
+        o = octave+1
+        for f in factors:
+            choices.append(root*f*o)
+
+    def f(x,y):
+        choiceX = percindex(x,choices)
+        choiceY = percindex(y,choices)
+        #log.msg(choiceX)
+        #log.msg(choiceY)
+        sineA.setFreq([choiceX, choiceX+binoff])
+        sineB.setFreq([choiceY, choiceY+binoff])
+
+    XY(receiver, f, page=4).attach()
     Rotary(receiver, [r.A, r.B, r.C, r.D, r.E, r.F], page=3).attach()
 
-    return s,r
+    return s,r,sineA,sineB
 
 
 
