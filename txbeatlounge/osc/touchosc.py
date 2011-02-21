@@ -99,7 +99,7 @@ class XY(object):
             self._recv_callbacks.append((node, recvcb))
             self.receiver.addCallback(node, recvcb)
         return self
-    
+
     def _callback(self, cb, node, message, address):
         (x,y) = message.arguments
         x = float(x)

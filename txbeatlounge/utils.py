@@ -9,6 +9,26 @@ minmax = lambda num,low=0,high=127: min([high, max([low, num])])
 # some backwards compat - because i'm such a nice guy 
 min_max = minmax
 
+
+
+def ranProb(li, p):
+    """
+    Takes a list and a probability and returns a callable that returns a random member of the list
+    if random.random() > p
+    """
+    from txbeatlounge.player import R
+    r = R(*li)
+    def f():
+        if random.random() > p:
+            return None
+        else:
+            return r()
+    return f
+
+
+def hertz2bpm(h):
+    return (h*60)/(2**5.)
+
 def percindex(r, lst):
     '''Given 0<=r=<1, get the item of the list'''
 
@@ -16,7 +36,6 @@ def percindex(r, lst):
         return lst[int(len(lst)*r)]
     except IndexError: #wtf?
         return lst[-1]
-
 
 def windex(lst):
     '''an attempt to make a random.choose() function that makes weighted choices
