@@ -26,7 +26,6 @@ NO_RESET = object()
 class AttributeInstrument(GenericInstrument):
 
     attributes = ()
-    scale = 1
     reset = NO_RESET
 
     def _get_attribute(self, note):

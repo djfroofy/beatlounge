@@ -82,7 +82,35 @@ class UtilityTests(TestCase):
         self.assertEquals(ticks, 12)
         ticks = measuresToTicks(1)
         self.assertEquals(ticks, 96)
-       
+      
+
+    def test_measuresToTicksMeterRelativity(self):
+        meter34 = Meter(3,4)
+        meter118 = Meter(11,8)
+        ticks = measuresToTicks(1.5)
+        self.assertEquals(ticks, 144)
+        ticks = measuresToTicks(0.25, meter34)
+        self.assertEquals(ticks, 24)
+        ticks = measuresToTicks(1, meter34)
+        self.assertEquals(ticks, 72)
+        ticks = measuresToTicks(1.25, meter34)
+        self.assertEquals(ticks, 96)
+        ticks = measuresToTicks(1, meter118)
+        self.assertEquals(ticks, 12 * 11)
+        ticks = measuresToTicks(4.25, meter118)
+        self.assertEquals(ticks, 12 * 11 * 4 + 24)
+
+    def test_measuresToTicksWithTuples(self):
+        meter98 = Meter(9, 8)
+        standardMeter = Meter(4, 4)
+        ticks = measuresToTicks((1,4), meter98)
+        self.assertEquals(ticks, 204)
+        ticks = measuresToTicks((1,3), standardMeter)
+        self.assertEquals(ticks, 168)
+        ticks = measuresToTicks((2,1.5), standardMeter)
+        self.assertEquals(ticks, 228)
+        ticks = measuresToTicks((2,1.5), meter98)
+        self.assertEquals(ticks, 252)
  
 class ClockTests(TestCase, ClockRunner):
 
@@ -170,7 +198,7 @@ class ClockTests(TestCase, ClockRunner):
 
         called[:] = []
        
-        self.clock.schedule(instr2).startLater(0, 0.25, meter=self.meter34).stopLater(2 + 2/3., meter=self.meter34)
+        self.clock.schedule(instr2).startLater(0, 0.25, meter=self.meter34).stopLater(2.5, meter=self.meter34)
         self._runTicks(96 * 5)
         expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
         self.assertEquals(called, expected)
@@ -201,7 +229,7 @@ class ClockTests(TestCase, ClockRunner):
 
         called[:] = []
        
-        self.clock.schedule(instr2).bindMeter(self.meter34).startLater(0, 0.25).stopLater(2 + 2/3.)
+        self.clock.schedule(instr2).bindMeter(self.meter34).startLater(0, 0.25).stopLater(2.5)
         self._runTicks(96 * 5)
         expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
         self.assertEquals(called, expected)
