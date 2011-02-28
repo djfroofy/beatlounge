@@ -308,7 +308,6 @@ def weighted(*notes):
 w = weighted
 
 def Weight(*weights):
-    "yo dog"
     ws = weighted(*weights)
     return R(*ws) 
 
