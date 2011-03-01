@@ -100,6 +100,8 @@ a('STOP', 0xFC)
 a('ACTIVESENSING', 0xFE)
 a('SYSTEMRESET', 0xFF)
 
+del a, g
+
 class MidiDispatcher(object):
 
     def __init__(self, midiInput, handlers, clock=None):
