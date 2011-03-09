@@ -14,7 +14,7 @@ class GenericInstrument(object):
 
     def stopchord(self, chord):
         for note in chord:
-            self.topnote(note)
+            self.stopnote(note)
 
     def stopall(self):
         pass
