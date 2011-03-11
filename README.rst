@@ -1,4 +1,4 @@
-txBeatLounge is an experiment in computer music. At its core txBeatLounge is:
+beatlounge is an experiment in computer music. At its core beatlounge is:
 
 1. An musical-measure-relative event scheduler based on Twisted
 2. Wrapper around fluidsynth for loading and playing soundfonts
@@ -28,20 +28,12 @@ You can run unit tests with trial:
     trial txbeatlounge
 
 
-Additional dependencies for certain parts of txBeatLounge, from other languages,
-may include fluidsynth, sndobj, supercollider, osculator, touchosc, puredata, 
-cwiid and other software and hardware, proprietary and open source,
-in the past, present and future.  They are, of course, not provided and must be installed
-on the users machine and configured.  The authors primarily use OS X 10.6 with JACK
-and homebrew installed packages where possible.
-
-
 Future
 ------
 
-There is some experimental stuff in ble package (ble = beatlounge experiment).
-We hope to graduate good experiments to the stable package txbeatlounge
-and of course cleanup and adequately test this dog before too long.
+beatlounge continues to grow and morph and gradually canabilize itself in a quest
+towards world domination and unimaginable profit.
+
 
 For rilz.
 
