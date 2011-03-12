@@ -32,3 +32,22 @@ class LoopRecorderTests(TestCase, ClockRunner):
         self.assertEquals(len(loopRecorder._loops), 10)
 
 
+    def test_ticks_are_relative_to_loop_start(self):
+        loopRecorder = LoopRecorder(3, self.clock, Meter(4,4))
+        self.runTicks(12)
+        loopRecorder.record('a')
+        self.runTicks(84)
+        loopRecorder.record('b')
+        self.runTicks(12)
+        loopRecorder.record('c')
+        self.runTicks(84)
+        loopRecorder.record('d')
+        self.runTicks(12)
+        loopRecorder.record('e')
+        self.runTicks(84)
+        loopRecorder.record('f')
+        current = loopRecorder.latch()
+        self.assertEquals(current, [('a', 12), ('b', 96), ('c', 108), ('d', 192), ('e', 204)])
+
+
+

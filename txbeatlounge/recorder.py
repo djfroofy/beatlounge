@@ -19,7 +19,6 @@ class LoopRecorder(object):
 
     def record(self, event):
         ticks = self.clock.ticks
-        revent = (event, self.meter.ticks(self.clock.ticks))
         if (ticks - self._last_ticks) >= self.period and self._buffer:
             if not self._loops:
                 self._loops.append(self._buffer)
@@ -32,7 +31,8 @@ class LoopRecorder(object):
             self._last_ticks = self.meter.ticksPerMeasure * self.meter.measure(ticks)
         if not self._buffer:
             self._last_ticks = self.meter.ticksPerMeasure * self.meter.measure(ticks)
-        self._buffer.append(revent)
+        elapsed = ticks - self._last_ticks
+        self._buffer.append((event, elapsed))
         
     def latch(self, index=0):
         backindex = -(index + 1)
