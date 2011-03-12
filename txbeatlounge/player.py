@@ -1,5 +1,6 @@
 import random
 from itertools import cycle
+from warnings import warn
 
 from zope.interface import Interface, Attribute, implements
 
@@ -7,6 +8,7 @@ from twisted.python import log
 
 from txbeatlounge.utils import getClock
 from txbeatlounge.debug import DEBUG
+from txbeatlounge.filters import BaseFilter
 from txbeatlounge.scheduler import mtt
 
 
@@ -68,7 +70,15 @@ class BasePlayer(PlayableMixin):
 
     def __init__(self, instr, velocity, stop, clock=None, interval=None, meter=None):
         self.instr = instr
-        self.velocity = velocity
+        if isinstance(velocity, BaseFilter):
+            warn('Filters are deprecated - make your velocity factory a no-arg callable instead')
+            # XXX pardon the transitory hack here - will be gone with filters one day soon
+            def filter_adaptor():
+                v, o = velocity(110, None)
+                return v
+            self.velocity = filter_adaptor
+        else:
+            self.velocity = velocity
         if isinstance(stop, int):
             s = stop
             stop = lambda : s
@@ -86,7 +96,7 @@ class BasePlayer(PlayableMixin):
         n = self._next()
         while callable(n):
             n = n()
-        v, o = self.velocity(110, None)
+        v = self.velocity()
         if n is None:
             return
         if DEBUG:

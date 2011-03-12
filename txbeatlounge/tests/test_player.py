@@ -36,6 +36,8 @@ class TestInstrument:
         self.stops.append(('chord', self.clock.ticks, chord))
 
 
+# TODO - refactor to use normal velocity filter
+# since filters are deprecated
 class TestFilter(BaseFilter):
 
     def __init__(self, sustain):
@@ -56,9 +58,11 @@ class PlayerTests(TestCase, ClockRunner):
         self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
-        self.notePlayer = NotePlayer(self.instr1, snd(cycle([0,1])), TestFilter(120),
+        self.notePlayerFilter = TestFilter(120)
+        self.notePlayer = NotePlayer(self.instr1, snd(cycle([0,1])), self.notePlayerFilter,
                                      clock=self.clock, interval=0.25)
-        self.chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3]])), TestFilter(100),
+        self.chordPlayerFilter = TestFilter(100)
+        self.chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3]])), self.chordPlayerFilter,
                                      clock=self.clock, interval=0.125)
         
 
@@ -85,7 +89,7 @@ class PlayerTests(TestCase, ClockRunner):
                     ('note', 9, 1, 120)]
         self.assertEquals(self.instr1.plays, expectedPlays)
         self.failIf(self.instr1.stops)
-        self.assertEquals(len(self.notePlayer.velocity.calls), 10)
+        self.assertEquals(len(self.notePlayerFilter.calls), 10)
 
     def test_chordPlayerPlaysChords(self):
         for i in range(10):
@@ -104,7 +108,7 @@ class PlayerTests(TestCase, ClockRunner):
                      ('chord', 9, [2, 3], 100)]
         self.assertEquals(self.instr2.plays, expectedPlays)
         self.failIf(self.instr2.stops)
-        self.assertEquals(len(self.chordPlayer.velocity.calls), 10)
+        self.assertEquals(len(self.chordPlayerFilter.calls), 10)
 
     def test_stoppingNotes(self):
         notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,2])), TestFilter(100),
@@ -207,6 +211,22 @@ class PlayerTests(TestCase, ClockRunner):
                          ('note', 48, 0, 120), ('note', 72, 1, 120),
                          ('note', 96, 0, 120)]
         self.assertEquals(self.instr1.plays, expectedPlays) 
+
+
+
+    def test_newVelocityFactory(self):
+        velocities = cycle([127,120,110,100])
+        def v():
+            return velocities.next()
+        notePlayer = NotePlayer(self.instr1, cycle([0,1]), v,
+                                clock=self.clock, interval=0.25)
+        notePlayer.startPlaying('a')
+        self.runTicks(96)
+        expectedPlays = [('note', 0, 0, 127), ('note', 24, 1, 120),
+                         ('note', 48, 0, 110), ('note', 72, 1, 100),
+                         ('note', 96, 0, 127)]
+        self.assertEquals(self.instr1.plays, expectedPlays)
+        
 
     def test_startPlayingBeginsAtNextMeasure(self):
         self.runTicks(1)

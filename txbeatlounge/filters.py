@@ -9,6 +9,8 @@ from zope.interface import implements, Interface, Attribute
 from txbeatlounge.utils import minmax, getClock
 
 
+warn('txbeatlounge.filters was a bad idea; this is deprecated, so do not use anymore')
+
 __all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
            'Chain', 'Standard8Ducker', 'Standard16Ducker', 'Standard32Ducker',
            'Sin', 'Sinusoid', 'Sawtooth', 'Triangle', 'FadeIn', 'FadeOut',
