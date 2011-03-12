@@ -24,6 +24,15 @@ class LoopRecorderTests(TestCase, ClockRunner):
         self.assertEquals(last, [('a',0),('b',24),('c',48),('d',72)])
 
 
+    def test_record_with_non_standard_meter(self):
+        loopRecorder = LoopRecorder(1, self.clock, Meter(3,4))
+        for c in 'abcde':
+            loopRecorder.record(c)
+            self.runTicks(24)
+        current = loopRecorder.latch()
+        self.assertEquals(current, [('a',0),('b',24),('c',48)])
+
+
     def test_max_loop_depth(self):
         loopRecorder = LoopRecorder(1, self.clock, Meter(4,4))
         for i in range(80):
@@ -48,6 +57,5 @@ class LoopRecorderTests(TestCase, ClockRunner):
         loopRecorder.record('f')
         current = loopRecorder.latch()
         self.assertEquals(current, [('a', 12), ('b', 96), ('c', 108), ('d', 192), ('e', 204)])
-
 
 
