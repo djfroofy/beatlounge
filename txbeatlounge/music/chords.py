@@ -1,5 +1,5 @@
 from twisted.python import log
-from txbeatlounge.numbers import notes
+from txbeatlounge.music import notes
 
 
 types = {
@@ -50,9 +50,12 @@ class RootedChord(object):
     def __getitem__(self, i):
         return self.list[i]
 
+    def transpose(self, i):
+        return [n+i for n in self]
+
     def freqs(self, intone=None):
         if not intone:
-            return [notes.twelve_tone_equal_440[n] for n in self.list]
+            return [notes.twelve_tone_equal_440[n] for n in self]
         return [notes.twelve_tone_equal_440[n] * notes.offsets[n-self.root][0] for n in self]
 
 
@@ -61,6 +64,7 @@ class NamedChord(object):
     def __init__(self, key="C", flav="maj"):
         self.key = key
         self.flav = flav
+        log.msg(key)
         self.root = notes.keys[key] # 0,1,2 ..
 
     def __iter__(self):
@@ -73,13 +77,16 @@ class NamedChord(object):
     def __getitem__(self, i):
         return self.lists[i]
 
+    def transpose(self, i):
+        return [n.transpose(i) for n in self]
+
     @property
     def lists(self):
         ret = []
         root = self.root
 
         while root < 115:
-            chord = RootedChord(root=root)
+            chord = RootedChord(root=root, flav=self.flav)
             if all([c < 127 for c in chord]):
                 ret.append(chord)
                 root += 12
@@ -104,7 +111,7 @@ C9 = NamedChord("C", "_9")
 C11 = NamedChord("C", "_11")
 C13 = NamedChord("C", "_13")
 Cmaj9 = NamedChord("C", "maj9")
-Cmaj11 = NamedChord("C" "maj11")
+Cmaj11 = NamedChord("C", "maj11")
 Cmaj13 = NamedChord("C", "maj13")
 Cmin9 = NamedChord("C", "min9")
 Cmin11 = NamedChord("C", "min11")
@@ -112,6 +119,7 @@ Cmin13 = NamedChord("C", "min13")
 Csus4 = NamedChord("C", "sus4")
 Csus2 = NamedChord("C", "sus2")
 
+"""
 _raise = lambda l,i : [ [e+i for e in k] for k in l]
 
 Csmaj = Dfmaj = _raise(Cmaj, 1)
