@@ -496,7 +496,7 @@ def lcycle(length, list):
 class StepSequencer(PlayableMixin):
     """
     A step sequencer allows you to pass an instr (typically a drum kit)
-    and a set of notes of chords (representing the rows in a step sequencer graph).
+    and a set of notes or chords (representing the rows in a step sequencer graph).
     """
 
     def __init__(self, instr, notes, beats=16, clock=None, meter=None):

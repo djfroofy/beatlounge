@@ -7,7 +7,14 @@ from zope.interface import Interface, Attribute, implements
 from txbeatlounge.utils import getClock 
 
 
+__all__ = [ 'IArp', 'AscArp', 'DescArp', 'OrderedArp', 'ArpSwitcher',
+            'OctaveArp' ]
+
+
 class IArp(Interface):
+    """
+    An interface for arpeggiators.
+    """
 
     values =  Attribute("Values to arpeggiate")
     
@@ -43,7 +50,7 @@ def sortNumeric(values, sort=None):
     if sort is None:
         sort = lambda l : list(sorted(l))
     numbers = [ v for v in values if type(v) in (int, float, list, tuple) ]
-    sort(numbers)
+    numbers = sort(numbers)
     newvalues = []
     for v in values:
         if type(v) in (int, float):
@@ -54,7 +61,6 @@ def sortNumeric(values, sort=None):
 
 
 class IndexedArp(BaseArp):
-
     index = 0
     count = 0
     direction = 1
@@ -84,9 +90,6 @@ class AscArp(IndexedArp):
         return sortNumeric(values)
 
 class DescArp(IndexedArp):
-
-    index = -1
-    direction = -1
 
     def sort(self, values):
         return sortNumeric(values, lambda l : list(reversed(sorted(l))))
