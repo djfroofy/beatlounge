@@ -56,7 +56,22 @@ class RootedChord(object):
     def freqs(self, intone=None):
         if not intone:
             return [notes.twelve_tone_equal_440[n] for n in self]
-        return [notes.twelve_tone_equal_440[n] * notes.offsets[n-self.root][0] for n in self]
+
+        ret = []
+        """
+        for midinote in self:
+            log.msg(int(midinote))
+            log.msg(self.root)
+            offset = notes.offsets[int(midinote) - self.root][0]
+            base = notes.twelve_tone_equal_440[midinote]
+            log.msg(offset)
+            log.msg(base)
+            ret.append(base*offset)
+        return ret
+        """
+        return [notes.twelve_tone_equal_440[n] * notes.offsets[int(n)-self.root][0] for n in self]
+        # through the above debugging, I have found that       ^^^
+        # is required here, there is something smelly about my MidiNote implementation :(
 
 
 class NamedChord(object):
@@ -96,7 +111,31 @@ class NamedChord(object):
 
 
 Cmaj = NamedChord("C", "maj")
+Csmaj = Dfmaj = NamedChord("Cs", "maj") #Cmaj.transpose(1) .. would like to preserve type .. 
+Dmaj = NamedChord("D", "maj")
+Dsmaj = Efmaj = NamedChord("Ds", "maj")
+Emaj = NamedChord("E", "maj")
+Fmaj = NamedChord("F", "maj")
+Fsmaj = Gfmaj =  NamedChord("Fs", "maj")
+Gmaj = NamedChord("G", "maj")
+Gsmaj = Afmaj = NamedChord("Gs", "maj")
+Amaj = NamedChord("A", "maj")
+Asmaj = Bfmaj = NamedChord("As", "maj")
+Bmaj = NamedChord("B", "maj")
+
 Cmin = NamedChord("C", "min")
+Csmin = Dfmin = NamedChord("Cs", "min")
+Dmin = NamedChord("D", "min")
+Dsmin = Efmin = NamedChord("Ds", "min")
+Emin = NamedChord("E", "min")
+Fmin = NamedChord("F", "min")
+Fsmin = Gfmin =  NamedChord("Fs", "min")
+Gmin = NamedChord("G", "min")
+Gsmin = Afmin = NamedChord("Gs", "min")
+Amin = NamedChord("A", "min")
+Asmin = Bfmin = NamedChord("As", "min")
+Bmin = NamedChord("B", "min")
+
 Caug = NamedChord("C", "aug")
 Cdim = NamedChord("C", "dim")
 Cdim7 = NamedChord("C", "dim7")
@@ -120,19 +159,6 @@ Csus4 = NamedChord("C", "sus4")
 Csus2 = NamedChord("C", "sus2")
 
 """
-_raise = lambda l,i : [ [e+i for e in k] for k in l]
-
-Csmaj = Dfmaj = _raise(Cmaj, 1)
-Dmaj = _raise(Cmaj, 2)
-Dsmaj = Efmaj = _raise(Cmaj, 3)
-Emaj = _raise(Cmaj, 4)
-Fmaj = _raise(Cmaj, 5)
-Fsmaj = Gfmaj =  _raise(Cmaj, 6)
-Gmaj = _raise(Cmaj, 7)
-Gsmaj = Afmaj = _raise(Cmaj, 8)
-Amaj = _raise(Cmaj, 9)
-Asmaj = Bfmaj = _raise(Cmaj, 10)
-Bmaj = _raise(Cmaj, 11)
 
 Csmin = Dfmin = _raise(Cmin, 1)
 Dmin = _raise(Cmin, 2)

@@ -19,11 +19,16 @@ from decimal import Decimal
 
 class MidiNote(int):
 
-    def __init__(self, value=0): # value can be one of 0-11
+    def __init__(self, value=0): # value can be one of 0-127
         self.value = value
         int.__init__(self, value)
 
+    def __repr__(self):
+        """Like to be able to tell if we have an int or a MidiNote"""
+        return "MidiNote(%s)" % self.value
+
     def __iter__(self):
+        """Octaves from the root until the highest, < 127"""
         n = self.value
         while n < 128:
             yield n
@@ -45,7 +50,7 @@ class MidiNote(int):
         return self.__class__(int(other)+int(self))
 
     def __sub__(self, other):
-        return self.__class__(int(other)-int(self))
+        return self.__class__(int(self)-int(other))
 
     def freq(self, octave=0, intone=None):
         """
@@ -314,6 +319,6 @@ for k, v in shrutis.iteritems():
         offsets[k].append(440*val/twelve_tone_equal_440[57+k])
 
 
-
-
+def getCentsMultiplier(cents):
+    return 2**(cents/1200.)
 

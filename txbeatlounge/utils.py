@@ -2,8 +2,6 @@ import random
 
 from twisted.python import reflect
 
-from txbeatlounge import constants
-
 minmax = lambda num,low=0,high=127: min([high, max([low, num])])
 
 # some backwards compat - because i'm such a nice guy 
@@ -50,11 +48,13 @@ def windex(lst):
         n = n - weight
     return item
 
+
+"""
 def midi_to_letter(midi):
     for l in constants.NOTES:
         if midi in getattr(constants, l):
             return l
-
+"""
 
 
 spaces = {
