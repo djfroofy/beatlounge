@@ -52,11 +52,11 @@ class MidiNote(int):
     def __sub__(self, other):
         return self.__class__(int(self)-int(other))
 
-    def freq(self, octave=0, intone=None):
+    def freq(self, intone=None):
         """
         Tonality can be "3rd", "4th", "5th" or a numeric offset.
         """
-        note = twelve_tone_equal_440[self[octave]]
+        note = twelve_tone_equal_440[self.value]
         if not intone:
             return note
 
@@ -73,11 +73,9 @@ class MidiNote(int):
 
     def freqs(self, intone=None):
         fs = []
-        n = self.value
-        octave = 0
+        n = self
         while n < 128:
-            fs.append(self.freq(octave, intone))
-            octave += 1
+            fs.append(self.freq(intone))
             n += 12
         return fs
 

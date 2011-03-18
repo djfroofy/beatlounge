@@ -36,9 +36,12 @@ class RootedChord(object):
             raise ValueError("root must be between 0 and 115 (maybe less)")
         self.root = root
         self.flav = flav
-        log.msg(flav)
+        #log.msg(flav)
         self.proto = types[flav]
         self.list = [notes.MidiNote(root+n) for n in self.proto]
+
+    def __repr__(self):
+        return repr(self.list)
 
     def __iter__(self):
         for i in self.list:
@@ -79,8 +82,11 @@ class NamedChord(object):
     def __init__(self, key="C", flav="maj"):
         self.key = key
         self.flav = flav
-        log.msg(key)
+        #log.msg(key)
         self.root = notes.keys[key] # 0,1,2 ..
+
+    def __repr__(self):
+        return "NamedChord(key=%s, flav=%s)" % (self.key, self.flav)
 
     def __iter__(self):
         for i in self.lists:
@@ -110,6 +116,7 @@ class NamedChord(object):
         return ret
 
 
+# Major
 Cmaj = NamedChord("C", "maj")
 Csmaj = Dfmaj = NamedChord("Cs", "maj") #Cmaj.transpose(1) .. would like to preserve type .. 
 Dmaj = NamedChord("D", "maj")
@@ -123,6 +130,7 @@ Amaj = NamedChord("A", "maj")
 Asmaj = Bfmaj = NamedChord("As", "maj")
 Bmaj = NamedChord("B", "maj")
 
+# Minor
 Cmin = NamedChord("C", "min")
 Csmin = Dfmin = NamedChord("Cs", "min")
 Dmin = NamedChord("D", "min")
@@ -136,8 +144,27 @@ Amin = NamedChord("A", "min")
 Asmin = Bfmin = NamedChord("As", "min")
 Bmin = NamedChord("B", "min")
 
+# Augmented
 Caug = NamedChord("C", "aug")
+Csaug = Dfaug = NamedChord("Cs", "aug")
+Daug = NamedChord("D", "aug")
+Dsaug = Efaug = NamedChord("Ds", "aug")
+Eaug = NamedChord("E", "aug")
+Faug = NamedChord("F", "aug")
+Fsaug = Gfaug =  NamedChord("Fs", "aug")
+Gaug = NamedChord("G", "aug")
+Gsaug = Afaug = NamedChord("Gs", "aug")
+Aaug = NamedChord("A", "aug")
+Asaug = Bfaug = NamedChord("As", "aug")
+Baug = NamedChord("B", "aug")
+
+# Diminished
 Cdim = NamedChord("C", "dim")
+
+
+
+
+# Diminished seventh
 Cdim7 = NamedChord("C", "dim7")
 Cm7f5 = NamedChord("C", "m7f5")
 Cmin7 = NamedChord("C", "min7")
@@ -160,29 +187,7 @@ Csus2 = NamedChord("C", "sus2")
 
 """
 
-Csmin = Dfmin = _raise(Cmin, 1)
-Dmin = _raise(Cmin, 2)
-Dsmin = Efmin = _raise(Cmin, 3)
-Emin = _raise(Cmin, 4)
-Fmin = _raise(Cmin, 5)
-Fsmin = Gfmin =  _raise(Cmin, 6)
-Gmin = _raise(Cmin, 7)
-Gsmin = Afmin = _raise(Cmin, 8)
-Amin = _raise(Cmin, 9)
-Asmin = Bfmin = _raise(Cmin, 10)
-Bmin = _raise(Cmin, 11)
 
-Csaug = Dfaug = _raise(Caug, 1)
-Daug = _raise(Caug, 2)
-Dsaug = Efaug = _raise(Caug, 3)
-Eaug = _raise(Caug, 4)
-Faug = _raise(Caug, 5)
-Fsaug = Gfaug =  _raise(Caug, 6)
-Gaug = _raise(Caug, 7)
-Gsaug = Afaug = _raise(Caug, 8)
-Aaug = _raise(Caug, 9)
-Asaug = Bfaug = _raise(Caug, 10)
-Baug = _raise(Caug, 11)
 
 Csdim = Dfdim = _raise(Cdim, 1)
 Ddim = _raise(Cdim, 2)
