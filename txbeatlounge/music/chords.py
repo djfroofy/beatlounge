@@ -1,14 +1,15 @@
 from twisted.python import log
-from txbeatlounge.music import notes
+
+from txbeatlounge.music import notes, constants
 
 
-types = {
+flavs = {
 "maj": [0,4,7,12],
 "min": [0,3,7,12],
 "aug": [0,4,8,12],
 "dim": [0,3,6,12],
 "dim7": [0,3,6,9,12],
-"m5f7": [0,3,6,10,12],
+"m7f5": [0,3,6,10,12],
 "min7": [0,3,7,10,12],
 "CmM7": [0,3,7,11,12],
 "dom7": [0,4,7,10,12],
@@ -37,7 +38,7 @@ class RootedChord(object):
         self.root = root
         self.flav = flav
         #log.msg(flav)
-        self.proto = types[flav]
+        self.proto = flavs[flav]
         self.list = [notes.MidiNote(root+n) for n in self.proto]
 
     def __repr__(self):
@@ -58,7 +59,7 @@ class RootedChord(object):
 
     def freqs(self, intone=None):
         if not intone:
-            return [notes.twelve_tone_equal_440[n] for n in self]
+            return [constants.twelve_tone_equal_440[n] for n in self]
 
         ret = []
         """
@@ -66,13 +67,13 @@ class RootedChord(object):
             log.msg(int(midinote))
             log.msg(self.root)
             offset = notes.offsets[int(midinote) - self.root][0]
-            base = notes.twelve_tone_equal_440[midinote]
+            base = constants.twelve_tone_equal_440[midinote]
             log.msg(offset)
             log.msg(base)
             ret.append(base*offset)
         return ret
         """
-        return [notes.twelve_tone_equal_440[n] * notes.offsets[int(n)-self.root][0] for n in self]
+        return [constants.twelve_tone_equal_440[n] * notes.offsets[int(n)-self.root][0] for n in self]
         # through the above debugging, I have found that       ^^^
         # is required here, there is something smelly about my MidiNote implementation :(
 
@@ -130,6 +131,7 @@ Amaj = NamedChord("A", "maj")
 Asmaj = Bfmaj = NamedChord("As", "maj")
 Bmaj = NamedChord("B", "maj")
 
+
 # Minor
 Cmin = NamedChord("C", "min")
 Csmin = Dfmin = NamedChord("Cs", "min")
@@ -143,6 +145,7 @@ Gsmin = Afmin = NamedChord("Gs", "min")
 Amin = NamedChord("A", "min")
 Asmin = Bfmin = NamedChord("As", "min")
 Bmin = NamedChord("B", "min")
+
 
 # Augmented
 Caug = NamedChord("C", "aug")
@@ -158,15 +161,43 @@ Aaug = NamedChord("A", "aug")
 Asaug = Bfaug = NamedChord("As", "aug")
 Baug = NamedChord("B", "aug")
 
+
 # Diminished
 Cdim = NamedChord("C", "dim")
-
-
+Csdim = Dfdim = NamedChord("Cs", "dim")
+Ddim = NamedChord("D", "dim")
+Dsdim = Efdim = NamedChord("Ds", "dim")
+Edim = NamedChord("E", "dim")
+Fdim = NamedChord("F", "dim")
+Fsdim = Gfdim =  NamedChord("Fs", "dim")
+Gdim = NamedChord("G", "dim")
+Gsdim = Afdim = NamedChord("Gs", "dim")
+Adim = NamedChord("A", "dim")
+Asdim = Bfdim = NamedChord("As", "dim")
+Bdim = NamedChord("B", "dim")
 
 
 # Diminished seventh
 Cdim7 = NamedChord("C", "dim7")
+Csdim7 = Dfdim7 = NamedChord("Cs", "dim7")
+Ddim7 = NamedChord("D", "dim7")
+Dsdim7 = Efdim7 = NamedChord("Ds", "dim7")
+Edim7 = NamedChord("E", "dim7")
+Fdim7 = NamedChord("F", "dim7")
+Fsdim7 = Gfdim7 =  NamedChord("Fs", "dim7")
+Gdim7 = NamedChord("G", "dim7")
+Gsdim7 = Afdim7 = NamedChord("Gs", "dim7")
+Adim7 = NamedChord("A", "dim7")
+Asdim7 = Bfdim7 = NamedChord("As", "dim7")
+Bdim7 = NamedChord("B", "dim7")
+
+
+# M
 Cm7f5 = NamedChord("C", "m7f5")
+
+
+
+
 Cmin7 = NamedChord("C", "min7")
 CmM7 = NamedChord("C", "mM7")
 Cdom7 = NamedChord("C", "dom7")
@@ -428,8 +459,11 @@ Gssus2 = Afsus2 = _raise(Csus2, 8)
 Asus2 = _raise(Csus2, 9)
 Assus2 = Bfsus2 = _raise(Csus2, 10)
 Bsus2 = _raise(Csus2, 11)
+"""
 
-chord_choices = [
+
+"""
+CHORDS = chord_choices = [
     A11, A13, A9, AM7s5, Aaug, Aaug7, Adim, Adim7, Adom7, Af11, Af13, Af9, AfM7s5, Afaug, Afaug7,
     Afdim, Afdim7, Afdom7, Afm7f5, AfmM7, Afmaj, Afmaj11, Afmaj13, Afmaj7, Afmaj9, Afmin, Afmin11, Afmin13,
     Afmin7, Afmin9, Afsus2, Afsus4, Am7f5, AmM7, Amaj, Amaj11, Amaj13, Amaj7, Amaj9, Amin, Amin11, Amin13,
@@ -459,9 +493,5 @@ chord_choices = [
     GsmM7, Gsmaj, Gsmaj11, Gsmaj13, Gsmaj7, Gsmaj9, Gsmin, Gsmin11, Gsmin13, Gsmin7, Gsmin9, Gssus2, Gssus4,
     Gsus2, Gsus4
 ]
-
-
-
-
-del _raise
 """
+
