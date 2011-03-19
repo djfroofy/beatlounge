@@ -192,13 +192,41 @@ Asdim7 = Bfdim7 = NamedChord("As", "dim7")
 Bdim7 = NamedChord("B", "dim7")
 
 
-# M
+# Minor 7, flat 5
 Cm7f5 = NamedChord("C", "m7f5")
+Csm7f5 = Dfm7f5 = NamedChord("Cs", "m7f5")
+Dm7f5 = NamedChord("D", "m7f5")
+Dsm7f5 = Efm7f5 = NamedChord("Ds", "m7f5")
+Em7f5 = NamedChord("E", "m7f5")
+Fm7f5 = NamedChord("F", "m7f5")
+Fsm7f5 = Gfm7f5 =  NamedChord("Fs", "m7f5")
+Gm7f5 = NamedChord("G", "m7f5")
+Gsm7f5 = Afm7f5 = NamedChord("Gs", "m7f5")
+Am7f5 = NamedChord("A", "m7f5")
+Asm7f5 = Bfm7f5 = NamedChord("As", "m7f5")
+Bm7f5 = NamedChord("B", "m7f5")
 
 
-
-
+# Minor 7th
 Cmin7 = NamedChord("C", "min7")
+Csmin7 = Dfmin7 = NamedChord("Cs", "min7")
+Dmin7 = NamedChord("D", "min7")
+Dsmin7 = Efmin7 = NamedChord("Ds", "min7")
+Emin7 = NamedChord("E", "min7")
+Fmin7 = NamedChord("F", "min7")
+Fsmin7 = Gfmin7 =  NamedChord("Fs", "min7")
+Gmin7 = NamedChord("G", "min7")
+Gsmin7 = Afmin7 = NamedChord("Gs", "min7")
+Amin7 = NamedChord("A", "min7")
+Asmin7 = Bfmin7 = NamedChord("As", "min7")
+Bmin7 = NamedChord("B", "min7")
+
+
+
+
+
+
+
 CmM7 = NamedChord("C", "mM7")
 Cdom7 = NamedChord("C", "dom7")
 Cmaj7 = NamedChord("C", "maj7")
@@ -218,55 +246,6 @@ Csus2 = NamedChord("C", "sus2")
 
 """
 
-
-
-Csdim = Dfdim = _raise(Cdim, 1)
-Ddim = _raise(Cdim, 2)
-Dsdim = Efdim = _raise(Cdim, 3)
-Edim = _raise(Cdim, 4)
-Fdim = _raise(Cdim, 5)
-Fsdim = Gfdim =  _raise(Cdim, 6)
-Gdim = _raise(Cdim, 7)
-Gsdim = Afdim = _raise(Cdim, 8)
-Adim = _raise(Cdim, 9)
-Asdim = Bfdim = _raise(Cdim, 10)
-Bdim = _raise(Cdim, 11)
-
-Csdim7 = Dfdim7 = _raise(Cdim7, 1)
-Ddim7 = _raise(Cdim7, 2)
-Dsdim7 = Efdim7 = _raise(Cdim7, 3)
-Edim7 = _raise(Cdim7, 4)
-Fdim7 = _raise(Cdim7, 5)
-Fsdim7 = Gfdim7 =  _raise(Cdim7, 6)
-Gdim7 = _raise(Cdim7, 7)
-Gsdim7 = Afdim7 = _raise(Cdim7, 8)
-Adim7 = _raise(Cdim7, 9)
-Asdim7 = Bfdim7 = _raise(Cdim7, 10)
-Bdim7 = _raise(Cdim7, 11)
-
-Csm7f5 = Dfm7f5 = _raise(Cm7f5, 1)
-Dm7f5 = _raise(Cm7f5, 2)
-Dsm7f5 = Efm7f5 = _raise(Cm7f5, 3)
-Em7f5 = _raise(Cm7f5, 4)
-Fm7f5 = _raise(Cm7f5, 5)
-Fsm7f5 = Gfm7f5 =  _raise(Cm7f5, 6)
-Gm7f5 = _raise(Cm7f5, 7)
-Gsm7f5 = Afm7f5 = _raise(Cm7f5, 8)
-Am7f5 = _raise(Cm7f5, 9)
-Asm7f5 = Bfm7f5 = _raise(Cm7f5, 10)
-Bm7f5 = _raise(Cm7f5, 11)
-
-Csmin7 = Dfmin7 = _raise(Cmin7, 1)
-Dmin7 = _raise(Cmin7, 2)
-Dsmin7 = Efmin7 = _raise(Cmin7, 3)
-Emin7 = _raise(Cmin7, 4)
-Fmin7 = _raise(Cmin7, 5)
-Fsmin7 = Gfmin7 =  _raise(Cmin7, 6)
-Gmin7 = _raise(Cmin7, 7)
-Gsmin7 = Afmin7 = _raise(Cmin7, 8)
-Amin7 = _raise(Cmin7, 9)
-Asmin7 = Bfmin7 = _raise(Cmin7, 10)
-Bmin7 = _raise(Cmin7, 11)
 
 CsmM7 = DfmM7 = _raise(CmM7, 1)
 DmM7 = _raise(CmM7, 2)

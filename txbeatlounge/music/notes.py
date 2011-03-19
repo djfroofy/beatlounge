@@ -1,8 +1,15 @@
 from txbeatlounge.music.constants import twelve_tone_equal_440
 from txbeatlounge.music.freq import offsets
 
+
 class MidiNote(object):
     """
+    int is an immutable value type and whatnot.  so, this is some kind of frowned upon idea, subclassing int.
+    <strike>However, these MidiNotes are immutable value types, so let's try.</strike>
+
+    We want the note to act like a sequence, as well, however.
+    You can iterate over the octaves above, or "index" the octave.
+
     You probably shouldn't subclass this thing.
     """
 
@@ -10,6 +17,7 @@ class MidiNote(object):
         if not 0 <= value < 128:
             raise ValueError("Value must be between 0 and 127 inclusive")
         self.value = value
+        # this is bad:
         #int.__init__(self, value)
 
     def __repr__(self):
@@ -18,13 +26,29 @@ class MidiNote(object):
     def __str__(self):
         return repr(self)
 
+
+    # SEQUENCE, for rilz.
+
     def __iter__(self):
-        """Octaves from the root until the highest, < 127"""
+        """
+        Octaves from the root until the highest, < 127
+        eg 60,72,84 ...
+        """
 
         n = self.value
         while n < 128:
-            yield self.__class__(n)
+            yield MidiNote(n)
             n += 12
+
+    def __reversed__(self):
+        """
+        Octaves > 0, MidiNotes, eg 60,48,36,24 ..
+        """
+
+        n = self.value
+        while n > 0:
+            yield MidiNote(n)
+            n -= 12
 
     def __getitem__(self, num):
         return MidiNote(self.value + num*12)
@@ -35,6 +59,9 @@ class MidiNote(object):
             n += 1
         return n
 
+
+    # INTEGER, it is.
+
     def __int__(self):
         return self.value
 
@@ -43,6 +70,27 @@ class MidiNote(object):
 
     def __sub__(self, other):
         return self.__class__(int(self)-int(other))
+
+    def __lt__(self, other):
+        return int(self) < int(other)
+
+    def __le__(self, other):
+        return int(self) <= int(other)
+
+    def __eq__(self, other):
+        return int(self) == int(other)
+
+    def __ne__(self, other):
+        return int(self) != int(other)
+
+    def __gt__(self, other):
+        return int(self) > int(other)
+
+    def __ge__(self, other):
+        return int(self) >= int(other)
+
+
+    # FREQUENCIES are the thing.
 
     def freq(self, intone=None):
         """Tonality can be "3rd", "4th", "5th" or a numeric offset"""
