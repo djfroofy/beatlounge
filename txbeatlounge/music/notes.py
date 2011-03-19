@@ -1,23 +1,18 @@
+from txbeatlounge.music.constants import twelve_tone_equal_440
+from txbeatlounge.music.freq import offsets
 
-
-class MidiNote(int):
+class MidiNote(object):
     """
-    A midi note is usually an integer between 0 and 127 inclusive.
-
-    This MidiNote tries to be as much like an int as possible while also adding methods
-    for getting the frequency (with optional intonation)
-    Also, it acts like a sequence.  You may iterate through the
-    higher octaves, index (the octaves), get the len(), etc.
-
     You probably shouldn't subclass this thing.
     """
 
-    def __init__(self, value=0): # value can be one of 0-127
+    def __init__(self, value=0):
+        if not 0 <= value < 128:
+            raise ValueError("Value must be between 0 and 127 inclusive")
         self.value = value
-        int.__init__(self, value)
+        #int.__init__(self, value)
 
     def __repr__(self):
-        """Like to be able to tell if we have an int or a MidiNote"""
         return "MidiNote(%s)" % self.value
 
     def __str__(self):
@@ -25,6 +20,7 @@ class MidiNote(int):
 
     def __iter__(self):
         """Octaves from the root until the highest, < 127"""
+
         n = self.value
         while n < 128:
             yield self.__class__(n)
@@ -49,9 +45,8 @@ class MidiNote(int):
         return self.__class__(int(self)-int(other))
 
     def freq(self, intone=None):
-        """
-        Tonality can be "3rd", "4th", "5th" or a numeric offset.
-        """
+        """Tonality can be "3rd", "4th", "5th" or a numeric offset"""
+
         note = twelve_tone_equal_440[self.value]
         if not intone:
             return note
@@ -70,7 +65,7 @@ class MidiNote(int):
     def freqs(self, intone=None):
         fs = []
         for n in self:
-            note = self.__class__(n)
+            note = MidiNote(int(n))
             fs.append(note.freq(intone))
         return fs
 
@@ -91,7 +86,6 @@ keys = {'C':0, 'Df':1, 'Cs':1, 'D':2, 'Ds':3, 'Ef':3,
         'E':4, 'F':5, 'Fs':6, 'Gf':6, 'G':7, 'Gs':8,
         'Af':8, 'A':9, 'As':10, 'Bf':10, 'B':11}
 
-# notice that this is bad
 # ok, maybe we can just use the sharps as canonical?
 keys_rev = dict((v,k) for k,v in keys.iteritems() if 'f' not in k)
 
