@@ -1,3 +1,21 @@
+twelve_tone_equal_440 = [440*(2**(i/12.)) for i in range(-57,71)]
+
+
+
+
+
+
+
+
+
+
+######
+# TODO: This is old experimental stuff that should be sorted through and organized/disgarded
+#
+
+
+
+
 NOTES = ['C', 'Df', 'D', 'Ef', 'E', 'F', 'Gf', 'G', 'Af', 'A', 'Bf', 'B']
 
 
@@ -26,7 +44,6 @@ MIDI_NOTES = [C, Df, D, Ef, E, F, Gf, G, Af, A, Bf, B]
 
 
 from decimal import Decimal
-twelve_tone_equal_440 = [440*(2**(i/Decimal(12))) for i in range(-57,71)]
 
 just_3rd = Decimal(5)/Decimal(4)
 just_5th = Decimal(3)/Decimal(2)

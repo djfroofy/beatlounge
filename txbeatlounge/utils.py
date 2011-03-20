@@ -2,13 +2,19 @@ import random
 
 from twisted.python import reflect
 
-from txbeatlounge import constants
 
 minmax = lambda num,low=0,high=127: min([high, max([low, num])])
-
-# some backwards compat - because i'm such a nice guy 
 min_max = minmax
 
+
+def flattenLists(li):
+    """
+    Takes a list of lists and returns a flat list of the submembers
+    """
+    ret = []
+    for l in li:
+        ret.extend(l)
+    return ret
 
 
 def ranProb(li, p):
@@ -50,11 +56,13 @@ def windex(lst):
         n = n - weight
     return item
 
+
+"""
 def midi_to_letter(midi):
     for l in constants.NOTES:
         if midi in getattr(constants, l):
             return l
-
+"""
 
 
 spaces = {

@@ -1,23 +1,25 @@
 from twisted.python import log
-from txbeatlounge.music import notes
+
+from txbeatlounge.utils import flattenLists
+from txbeatlounge.music import notes, constants
 
 
-types = {
+flavs = {
 "maj": [0,4,7,12],
 "min": [0,3,7,12],
 "aug": [0,4,8,12],
 "dim": [0,3,6,12],
 "dim7": [0,3,6,9,12],
-"m5f7": [0,3,6,10,12],
+"m7f5": [0,3,6,10,12],
 "min7": [0,3,7,10,12],
-"CmM7": [0,3,7,11,12],
+"mM7": [0,3,7,11,12],
 "dom7": [0,4,7,10,12],
 "maj7": [0,4,7,11,12],
 "aug7": [0,4,8,10,12],
-"m7s5": [0,4,8,11,12],
-"_9": [0,4,7,10,12,14],
-"_11": [0,4,7,10,12,14,17],
-"_13": [0,4,7,10,12,14,17,21],
+"M7s5": [0,4,8,11,12],
+"9": [0,4,7,10,12,14],
+"11": [0,4,7,10,12,14,17],
+"13": [0,4,7,10,12,14,17,21],
 "maj9": [0,4,7,11,12,14],
 "maj11": [0,4,7,11,12,14,17],
 "maj13": [0,4,7,11,12,14,17,21],
@@ -36,9 +38,12 @@ class RootedChord(object):
             raise ValueError("root must be between 0 and 115 (maybe less)")
         self.root = root
         self.flav = flav
-        log.msg(flav)
-        self.proto = types[flav]
-        self.list = [notes.MidiNote(root+n) for n in self.proto]
+        #log.msg(flav)
+        self.proto = flavs[flav]
+        self.list = [notes.MidiNote(root+n) for n in self.proto if 0 <= (root+n) < 128]
+
+    def __repr__(self):
+        return repr(self.list)
 
     def __iter__(self):
         for i in self.list:
@@ -55,8 +60,10 @@ class RootedChord(object):
 
     def freqs(self, intone=None):
         if not intone:
-            return [notes.twelve_tone_equal_440[n] for n in self]
-        return [notes.twelve_tone_equal_440[n] * notes.offsets[n-self.root][0] for n in self]
+            return [constants.twelve_tone_equal_440[n] for n in self]
+
+        ret = []
+        return [constants.twelve_tone_equal_440[n] * notes.offsets[int(n)-self.root][0] for n in self]
 
 
 class NamedChord(object):
@@ -64,8 +71,11 @@ class NamedChord(object):
     def __init__(self, key="C", flav="maj"):
         self.key = key
         self.flav = flav
-        log.msg(key)
+        #log.msg(key)
         self.root = notes.keys[key] # 0,1,2 ..
+
+    def __repr__(self):
+        return "NamedChord(key=%s, flav=%s)" % (self.key, self.flav)
 
     def __iter__(self):
         for i in self.lists:
@@ -76,6 +86,15 @@ class NamedChord(object):
 
     def __getitem__(self, i):
         return self.lists[i]
+
+    def __contains__(self, prospect):
+        """
+        WARNING: This method is inconsistent with __iter__/__getitem__.
+        It's a convenience to be able to say ``9 in chords.Amaj``.
+
+        "for x in y: ..." and "x in y" are supposed to talk about the same elements x.
+        """
+        return prospect in self.flat
 
     def transpose(self, i):
         return [n.transpose(i) for n in self]
@@ -94,311 +113,342 @@ class NamedChord(object):
                 break
         return ret
 
+    @property
+    def flat(self):
+        """return self.lists as a flat list"""
+        return list(set(flattenLists(self)))
 
+
+# Major
 Cmaj = NamedChord("C", "maj")
+Csmaj = Dfmaj = NamedChord("Cs", "maj") #Cmaj.transpose(1) .. would like to preserve type .. 
+Dmaj = NamedChord("D", "maj")
+Dsmaj = Efmaj = NamedChord("Ds", "maj")
+Emaj = NamedChord("E", "maj")
+Fmaj = NamedChord("F", "maj")
+Fsmaj = Gfmaj =  NamedChord("Fs", "maj")
+Gmaj = NamedChord("G", "maj")
+Gsmaj = Afmaj = NamedChord("Gs", "maj")
+Amaj = NamedChord("A", "maj")
+Asmaj = Bfmaj = NamedChord("As", "maj")
+Bmaj = NamedChord("B", "maj")
+
+
+# Minor
 Cmin = NamedChord("C", "min")
+Csmin = Dfmin = NamedChord("Cs", "min")
+Dmin = NamedChord("D", "min")
+Dsmin = Efmin = NamedChord("Ds", "min")
+Emin = NamedChord("E", "min")
+Fmin = NamedChord("F", "min")
+Fsmin = Gfmin =  NamedChord("Fs", "min")
+Gmin = NamedChord("G", "min")
+Gsmin = Afmin = NamedChord("Gs", "min")
+Amin = NamedChord("A", "min")
+Asmin = Bfmin = NamedChord("As", "min")
+Bmin = NamedChord("B", "min")
+
+
+# Augmented
 Caug = NamedChord("C", "aug")
+Csaug = Dfaug = NamedChord("Cs", "aug")
+Daug = NamedChord("D", "aug")
+Dsaug = Efaug = NamedChord("Ds", "aug")
+Eaug = NamedChord("E", "aug")
+Faug = NamedChord("F", "aug")
+Fsaug = Gfaug =  NamedChord("Fs", "aug")
+Gaug = NamedChord("G", "aug")
+Gsaug = Afaug = NamedChord("Gs", "aug")
+Aaug = NamedChord("A", "aug")
+Asaug = Bfaug = NamedChord("As", "aug")
+Baug = NamedChord("B", "aug")
+
+
+# Diminished
 Cdim = NamedChord("C", "dim")
+Csdim = Dfdim = NamedChord("Cs", "dim")
+Ddim = NamedChord("D", "dim")
+Dsdim = Efdim = NamedChord("Ds", "dim")
+Edim = NamedChord("E", "dim")
+Fdim = NamedChord("F", "dim")
+Fsdim = Gfdim =  NamedChord("Fs", "dim")
+Gdim = NamedChord("G", "dim")
+Gsdim = Afdim = NamedChord("Gs", "dim")
+Adim = NamedChord("A", "dim")
+Asdim = Bfdim = NamedChord("As", "dim")
+Bdim = NamedChord("B", "dim")
+
+
+# Diminished seventh
 Cdim7 = NamedChord("C", "dim7")
-Cm7f5 = NamedChord("C", "m7f5")
-Cmin7 = NamedChord("C", "min7")
-CmM7 = NamedChord("C", "mM7")
-Cdom7 = NamedChord("C", "dom7")
-Cmaj7 = NamedChord("C", "maj7")
+Csdim7 = Dfdim7 = NamedChord("Cs", "dim7")
+Ddim7 = NamedChord("D", "dim7")
+Dsdim7 = Efdim7 = NamedChord("Ds", "dim7")
+Edim7 = NamedChord("E", "dim7")
+Fdim7 = NamedChord("F", "dim7")
+Fsdim7 = Gfdim7 =  NamedChord("Fs", "dim7")
+Gdim7 = NamedChord("G", "dim7")
+Gsdim7 = Afdim7 = NamedChord("Gs", "dim7")
+Adim7 = NamedChord("A", "dim7")
+Asdim7 = Bfdim7 = NamedChord("As", "dim7")
+Bdim7 = NamedChord("B", "dim7")
+
+
 Caug7 = NamedChord("C", "aug7")
+Csaug7 = Dfaug7 = NamedChord("Cs", "aug7")
+Daug7 = NamedChord("D", "aug7")
+Dsaug7 = Efaug7 = NamedChord("Ds", "aug7")
+Eaug7 = NamedChord("E", "aug7")
+Faug7 = NamedChord("F", "aug7")
+Fsaug7 = Gfaug7 =  NamedChord("Fs", "aug7")
+Gaug7 = NamedChord("G", "aug7")
+Gsaug7 = Afaug7 = NamedChord("Gs", "aug7")
+Aaug7 = NamedChord("A", "aug7")
+Asaug7 = Bfaug7 = NamedChord("As", "aug7")
+Baug7 = NamedChord("B", "aug7")
+
+
+# Minor 7, flat 5
+Cm7f5 = NamedChord("C", "m7f5")
+Csm7f5 = Dfm7f5 = NamedChord("Cs", "m7f5")
+Dm7f5 = NamedChord("D", "m7f5")
+Dsm7f5 = Efm7f5 = NamedChord("Ds", "m7f5")
+Em7f5 = NamedChord("E", "m7f5")
+Fm7f5 = NamedChord("F", "m7f5")
+Fsm7f5 = Gfm7f5 =  NamedChord("Fs", "m7f5")
+Gm7f5 = NamedChord("G", "m7f5")
+Gsm7f5 = Afm7f5 = NamedChord("Gs", "m7f5")
+Am7f5 = NamedChord("A", "m7f5")
+Asm7f5 = Bfm7f5 = NamedChord("As", "m7f5")
+Bm7f5 = NamedChord("B", "m7f5")
+
+
+# Minor 7th
+Cmin7 = NamedChord("C", "min7")
+Csmin7 = Dfmin7 = NamedChord("Cs", "min7")
+Dmin7 = NamedChord("D", "min7")
+Dsmin7 = Efmin7 = NamedChord("Ds", "min7")
+Emin7 = NamedChord("E", "min7")
+Fmin7 = NamedChord("F", "min7")
+Fsmin7 = Gfmin7 =  NamedChord("Fs", "min7")
+Gmin7 = NamedChord("G", "min7")
+Gsmin7 = Afmin7 = NamedChord("Gs", "min7")
+Amin7 = NamedChord("A", "min7")
+Asmin7 = Bfmin7 = NamedChord("As", "min7")
+Bmin7 = NamedChord("B", "min7")
+
+
+CmM7 = NamedChord("C", "mM7")
+CsmM7 = DfmM7 = NamedChord("Cs", "mM7")
+DmM7 = NamedChord("D", "mM7")
+DsmM7 = EfmM7 = NamedChord("Ds", "mM7")
+EmM7 = NamedChord("E", "mM7")
+FmM7 = NamedChord("F", "mM7")
+FsmM7 = GfmM7 =  NamedChord("Fs", "mM7")
+GmM7 = NamedChord("G", "mM7")
+GsmM7 = AfmM7 = NamedChord("Gs", "mM7")
+AmM7 = NamedChord("A", "mM7")
+AsmM7 = BfmM7 = NamedChord("As", "mM7")
+BmM7 = NamedChord("B", "mM7")
+
+
+Cdom7 = NamedChord("C", "dom7")
+Csdom7 = Dfdom7 = NamedChord("Cs", "dom7")
+Ddom7 = NamedChord("D", "dom7")
+Dsdom7 = Efdom7 = NamedChord("Ds", "dom7")
+Edom7 = NamedChord("E", "dom7")
+Fdom7 = NamedChord("F", "dom7")
+Fsdom7 = Gfdom7 =  NamedChord("Fs", "dom7")
+Gdom7 = NamedChord("G", "dom7")
+Gsdom7 = Afdom7 = NamedChord("Gs", "dom7")
+Adom7 = NamedChord("A", "dom7")
+Asdom7 = Bfdom7 = NamedChord("As", "dom7")
+Bdom7 = NamedChord("B", "dom7")
+
+
+Cmaj7 = NamedChord("C", "maj7")
+Csmaj7 = Dfmaj7 = NamedChord("Cs", "maj7")
+Dmaj7 = NamedChord("D", "maj7")
+Dsmaj7 = Efmaj7 = NamedChord("Ds", "maj7")
+Emaj7 = NamedChord("E", "maj7")
+Fmaj7 = NamedChord("F", "maj7")
+Fsmaj7 = Gfmaj7 =  NamedChord("Fs", "maj7")
+Gmaj7 = NamedChord("G", "maj7")
+Gsmaj7 = Afmaj7 = NamedChord("Gs", "maj7")
+Amaj7 = NamedChord("A", "maj7")
+Asmaj7 = Bfmaj7 = NamedChord("As", "maj7")
+Bmaj7 = NamedChord("B", "maj7")
+
+
 CM7s5 = NamedChord("C", "M7s5")
-C9 = NamedChord("C", "_9")
-C11 = NamedChord("C", "_11")
-C13 = NamedChord("C", "_13")
+CsM7s5 = DfM7s5 = NamedChord("Cs", "M7s5")
+DM7s5 = NamedChord("D", "M7s5")
+DsM7s5 = EfM7s5 = NamedChord("Ds", "M7s5")
+EM7s5 = NamedChord("E", "M7s5")
+FM7s5 = NamedChord("F", "M7s5")
+FsM7s5 = GfM7s5 =  NamedChord("Fs", "M7s5")
+GM7s5 = NamedChord("G", "M7s5")
+GsM7s5 = AfM7s5 = NamedChord("Gs", "M7s5")
+AM7s5 = NamedChord("A", "M7s5")
+AsM7s5 = BfM7s5 = NamedChord("As", "M7s5")
+BM7s5 = NamedChord("B", "M7s5")
+
+
+C9 = NamedChord("C", "9")
+Cs9 = Df9 = NamedChord("Cs", "9")
+D9 = NamedChord("D", "9")
+Ds9 = Ef9 = NamedChord("Ds", "9")
+E9 = NamedChord("E", "9")
+F9 = NamedChord("F", "9")
+Fs9 = Gf9 =  NamedChord("Fs", "9")
+G9 = NamedChord("G", "9")
+Gs9 = Af9 = NamedChord("Gs", "9")
+A9 = NamedChord("A", "9")
+As9 = Bf9 = NamedChord("As", "9")
+B9 = NamedChord("B", "9")
+
+
+C11 = NamedChord("C", "11")
+Cs11 = Df11 = NamedChord("Cs", "11")
+D11 = NamedChord("D", "11")
+Ds11 = Ef11 = NamedChord("Ds", "11")
+E11 = NamedChord("E", "11")
+F11 = NamedChord("F", "11")
+Fs11 = Gf11 =  NamedChord("Fs", "11")
+G11 = NamedChord("G", "11")
+Gs11 = Af11 = NamedChord("Gs", "11")
+A11 = NamedChord("A", "11")
+As11 = Bf11 = NamedChord("As", "11")
+B11 = NamedChord("B", "11")
+
+
+C13 = NamedChord("C", "13")
+Cs13 = Df13 = NamedChord("Cs", "13")
+D13 = NamedChord("D", "13")
+Ds13 = Ef13 = NamedChord("Ds", "13")
+E13 = NamedChord("E", "13")
+F13 = NamedChord("F", "13")
+Fs13 = Gf13 =  NamedChord("Fs", "13")
+G13 = NamedChord("G", "13")
+Gs13 = Af13 = NamedChord("Gs", "13")
+A13 = NamedChord("A", "13")
+As13 = Bf13 = NamedChord("As", "13")
+B13 = NamedChord("B", "13")
+
+
 Cmaj9 = NamedChord("C", "maj9")
+Csmaj9 = Dfmaj9 = NamedChord("Cs", "maj9")
+Dmaj9 = NamedChord("D", "maj9")
+Dsmaj9 = Efmaj9 = NamedChord("Ds", "maj9")
+Emaj9 = NamedChord("E", "maj9")
+Fmaj9 = NamedChord("F", "maj9")
+Fsmaj9 = Gfmaj9 =  NamedChord("Fs", "maj9")
+Gmaj9 = NamedChord("G", "maj9")
+Gsmaj9 = Afmaj9 = NamedChord("Gs", "maj9")
+Amaj9 = NamedChord("A", "maj9")
+Asmaj9 = Bfmaj9 = NamedChord("As", "maj9")
+Bmaj9 = NamedChord("B", "maj9")
+
+
 Cmaj11 = NamedChord("C", "maj11")
+Csmaj11 = Dfmaj11 = NamedChord("Cs", "maj11")
+Dmaj11 = NamedChord("D", "maj11")
+Dsmaj11 = Efmaj11 = NamedChord("Ds", "maj11")
+Emaj11 = NamedChord("E", "maj11")
+Fmaj11 = NamedChord("F", "maj11")
+Fsmaj11 = Gfmaj11 =  NamedChord("Fs", "maj11")
+Gmaj11 = NamedChord("G", "maj11")
+Gsmaj11 = Afmaj11 = NamedChord("Gs", "maj11")
+Amaj11 = NamedChord("A", "maj11")
+Asmaj11 = Bfmaj11 = NamedChord("As", "maj11")
+Bmaj11 = NamedChord("B", "maj11")
+
+
 Cmaj13 = NamedChord("C", "maj13")
+Csmaj13 = Dfmaj13 = NamedChord("Cs", "maj13")
+Dmaj13 = NamedChord("D", "maj13")
+Dsmaj13 = Efmaj13 = NamedChord("Ds", "maj13")
+Emaj13 = NamedChord("E", "maj13")
+Fmaj13 = NamedChord("F", "maj13")
+Fsmaj13 = Gfmaj13 =  NamedChord("Fs", "maj13")
+Gmaj13 = NamedChord("G", "maj13")
+Gsmaj13 = Afmaj13 = NamedChord("Gs", "maj13")
+Amaj13 = NamedChord("A", "maj13")
+Asmaj13 = Bfmaj13 = NamedChord("As", "maj13")
+Bmaj13 = NamedChord("B", "maj13")
+
+
 Cmin9 = NamedChord("C", "min9")
+Csmin9 = Dfmin9 = NamedChord("Cs", "min9")
+Dmin9 = NamedChord("D", "min9")
+Dsmin9 = Efmin9 = NamedChord("Ds", "min9")
+Emin9 = NamedChord("E", "min9")
+Fmin9 = NamedChord("F", "min9")
+Fsmin9 = Gfmin9 =  NamedChord("Fs", "min9")
+Gmin9 = NamedChord("G", "min9")
+Gsmin9 = Afmin9 = NamedChord("Gs", "min9")
+Amin9 = NamedChord("A", "min9")
+Asmin9 = Bfmin9 = NamedChord("As", "min9")
+Bmin9 = NamedChord("B", "min9")
+
+
 Cmin11 = NamedChord("C", "min11")
+Csmin11 = Dfmin11 = NamedChord("Cs", "min11")
+Dmin11 = NamedChord("D", "min11")
+Dsmin11 = Efmin11 = NamedChord("Ds", "min11")
+Emin11 = NamedChord("E", "min11")
+Fmin11 = NamedChord("F", "min11")
+Fsmin11 = Gfmin11 =  NamedChord("Fs", "min11")
+Gmin11 = NamedChord("G", "min11")
+Gsmin11 = Afmin11 = NamedChord("Gs", "min11")
+Amin11 = NamedChord("A", "min11")
+Asmin11 = Bfmin11 = NamedChord("As", "min11")
+Bmin11 = NamedChord("B", "min11")
+
+
 Cmin13 = NamedChord("C", "min13")
+Csmin13 = Dfmin13 = NamedChord("Cs", "min13")
+Dmin13 = NamedChord("D", "min13")
+Dsmin13 = Efmin13 = NamedChord("Ds", "min13")
+Emin13 = NamedChord("E", "min13")
+Fmin13 = NamedChord("F", "min13")
+Fsmin13 = Gfmin13 =  NamedChord("Fs", "min13")
+Gmin13 = NamedChord("G", "min13")
+Gsmin13 = Afmin13 = NamedChord("Gs", "min13")
+Amin13 = NamedChord("A", "min13")
+Asmin13 = Bfmin13 = NamedChord("As", "min13")
+Bmin13 = NamedChord("B", "min13")
+
+
 Csus4 = NamedChord("C", "sus4")
+Cssus4 = Dfsus4 = NamedChord("Cs", "sus4")
+Dsus4 = NamedChord("D", "sus4")
+Dssus4 = Efsus4 = NamedChord("Ds", "sus4")
+Esus4 = NamedChord("E", "sus4")
+Fsus4 = NamedChord("F", "sus4")
+Fssus4 = Gfsus4 =  NamedChord("Fs", "sus4")
+Gsus4 = NamedChord("G", "sus4")
+Gssus4 = Afsus4 = NamedChord("Gs", "sus4")
+Asus4 = NamedChord("A", "sus4")
+Assus4 = Bfsus4 = NamedChord("As", "sus4")
+Bsus4 = NamedChord("B", "sus4")
+
+
 Csus2 = NamedChord("C", "sus2")
+Cssus2 = Dfsus2 = NamedChord("Cs", "sus2")
+Dsus2 = NamedChord("D", "sus2")
+Dssus2 = Efsus2 = NamedChord("Ds", "sus2")
+Esus2 = NamedChord("E", "sus2")
+Fsus2 = NamedChord("F", "sus2")
+Fssus2 = Gfsus2 =  NamedChord("Fs", "sus2")
+Gsus2 = NamedChord("G", "sus2")
+Gssus2 = Afsus2 = NamedChord("Gs", "sus2")
+Asus2 = NamedChord("A", "sus2")
+Assus2 = Bfsus2 = NamedChord("As", "sus2")
+Bsus2 = NamedChord("B", "sus2")
 
-"""
-_raise = lambda l,i : [ [e+i for e in k] for k in l]
 
-Csmaj = Dfmaj = _raise(Cmaj, 1)
-Dmaj = _raise(Cmaj, 2)
-Dsmaj = Efmaj = _raise(Cmaj, 3)
-Emaj = _raise(Cmaj, 4)
-Fmaj = _raise(Cmaj, 5)
-Fsmaj = Gfmaj =  _raise(Cmaj, 6)
-Gmaj = _raise(Cmaj, 7)
-Gsmaj = Afmaj = _raise(Cmaj, 8)
-Amaj = _raise(Cmaj, 9)
-Asmaj = Bfmaj = _raise(Cmaj, 10)
-Bmaj = _raise(Cmaj, 11)
-
-Csmin = Dfmin = _raise(Cmin, 1)
-Dmin = _raise(Cmin, 2)
-Dsmin = Efmin = _raise(Cmin, 3)
-Emin = _raise(Cmin, 4)
-Fmin = _raise(Cmin, 5)
-Fsmin = Gfmin =  _raise(Cmin, 6)
-Gmin = _raise(Cmin, 7)
-Gsmin = Afmin = _raise(Cmin, 8)
-Amin = _raise(Cmin, 9)
-Asmin = Bfmin = _raise(Cmin, 10)
-Bmin = _raise(Cmin, 11)
-
-Csaug = Dfaug = _raise(Caug, 1)
-Daug = _raise(Caug, 2)
-Dsaug = Efaug = _raise(Caug, 3)
-Eaug = _raise(Caug, 4)
-Faug = _raise(Caug, 5)
-Fsaug = Gfaug =  _raise(Caug, 6)
-Gaug = _raise(Caug, 7)
-Gsaug = Afaug = _raise(Caug, 8)
-Aaug = _raise(Caug, 9)
-Asaug = Bfaug = _raise(Caug, 10)
-Baug = _raise(Caug, 11)
-
-Csdim = Dfdim = _raise(Cdim, 1)
-Ddim = _raise(Cdim, 2)
-Dsdim = Efdim = _raise(Cdim, 3)
-Edim = _raise(Cdim, 4)
-Fdim = _raise(Cdim, 5)
-Fsdim = Gfdim =  _raise(Cdim, 6)
-Gdim = _raise(Cdim, 7)
-Gsdim = Afdim = _raise(Cdim, 8)
-Adim = _raise(Cdim, 9)
-Asdim = Bfdim = _raise(Cdim, 10)
-Bdim = _raise(Cdim, 11)
-
-Csdim7 = Dfdim7 = _raise(Cdim7, 1)
-Ddim7 = _raise(Cdim7, 2)
-Dsdim7 = Efdim7 = _raise(Cdim7, 3)
-Edim7 = _raise(Cdim7, 4)
-Fdim7 = _raise(Cdim7, 5)
-Fsdim7 = Gfdim7 =  _raise(Cdim7, 6)
-Gdim7 = _raise(Cdim7, 7)
-Gsdim7 = Afdim7 = _raise(Cdim7, 8)
-Adim7 = _raise(Cdim7, 9)
-Asdim7 = Bfdim7 = _raise(Cdim7, 10)
-Bdim7 = _raise(Cdim7, 11)
-
-Csm7f5 = Dfm7f5 = _raise(Cm7f5, 1)
-Dm7f5 = _raise(Cm7f5, 2)
-Dsm7f5 = Efm7f5 = _raise(Cm7f5, 3)
-Em7f5 = _raise(Cm7f5, 4)
-Fm7f5 = _raise(Cm7f5, 5)
-Fsm7f5 = Gfm7f5 =  _raise(Cm7f5, 6)
-Gm7f5 = _raise(Cm7f5, 7)
-Gsm7f5 = Afm7f5 = _raise(Cm7f5, 8)
-Am7f5 = _raise(Cm7f5, 9)
-Asm7f5 = Bfm7f5 = _raise(Cm7f5, 10)
-Bm7f5 = _raise(Cm7f5, 11)
-
-Csmin7 = Dfmin7 = _raise(Cmin7, 1)
-Dmin7 = _raise(Cmin7, 2)
-Dsmin7 = Efmin7 = _raise(Cmin7, 3)
-Emin7 = _raise(Cmin7, 4)
-Fmin7 = _raise(Cmin7, 5)
-Fsmin7 = Gfmin7 =  _raise(Cmin7, 6)
-Gmin7 = _raise(Cmin7, 7)
-Gsmin7 = Afmin7 = _raise(Cmin7, 8)
-Amin7 = _raise(Cmin7, 9)
-Asmin7 = Bfmin7 = _raise(Cmin7, 10)
-Bmin7 = _raise(Cmin7, 11)
-
-CsmM7 = DfmM7 = _raise(CmM7, 1)
-DmM7 = _raise(CmM7, 2)
-DsmM7 = EfmM7 = _raise(CmM7, 3)
-EmM7 = _raise(CmM7, 4)
-FmM7 = _raise(CmM7, 5)
-FsmM7 = GfmM7 =  _raise(CmM7, 6)
-GmM7 = _raise(CmM7, 7)
-GsmM7 = AfmM7 = _raise(CmM7, 8)
-AmM7 = _raise(CmM7, 9)
-AsmM7 = BfmM7 = _raise(CmM7, 10)
-BmM7 = _raise(CmM7, 11)
-
-Csdom7 = Dfdom7 = _raise(Cdom7, 1)
-Ddom7 = _raise(Cdom7, 2)
-Dsdom7 = Efdom7 = _raise(Cdom7, 3)
-Edom7 = _raise(Cdom7, 4)
-Fdom7 = _raise(Cdom7, 5)
-Fsdom7 = Gfdom7 =  _raise(Cdom7, 6)
-Gdom7 = _raise(Cdom7, 7)
-Gsdom7 = Afdom7 = _raise(Cdom7, 8)
-Adom7 = _raise(Cdom7, 9)
-Asdom7 = Bfdom7 = _raise(Cdom7, 10)
-Bdom7 = _raise(Cdom7, 11)
-
-Csmaj7 = Dfmaj7 = _raise(Cmaj7, 1)
-Dmaj7 = _raise(Cmaj7, 2)
-Dsmaj7 = Efmaj7 = _raise(Cmaj7, 3)
-Emaj7 = _raise(Cmaj7, 4)
-Fmaj7 = _raise(Cmaj7, 5)
-Fsmaj7 = Gfmaj7 =  _raise(Cmaj7, 6)
-Gmaj7 = _raise(Cmaj7, 7)
-Gsmaj7 = Afmaj7 = _raise(Cmaj7, 8)
-Amaj7 = _raise(Cmaj7, 9)
-Asmaj7 = Bfmaj7 = _raise(Cmaj7, 10)
-Bmaj7 = _raise(Cmaj7, 11)
-
-Csaug7 = Dfaug7 = _raise(Caug7, 1)
-Daug7 = _raise(Caug7, 2)
-Dsaug7 = Efaug7 = _raise(Caug7, 3)
-Eaug7 = _raise(Caug7, 4)
-Faug7 = _raise(Caug7, 5)
-Fsaug7 = Gfaug7 =  _raise(Caug7, 6)
-Gaug7 = _raise(Caug7, 7)
-Gsaug7 = Afaug7 = _raise(Caug7, 8)
-Aaug7 = _raise(Caug7, 9)
-Asaug7 = Bfaug7 = _raise(Caug7, 10)
-Baug7 = _raise(Caug7, 11)
-
-CsM7s5 = DfM7s5 = _raise(CM7s5, 1)
-DM7s5 = _raise(CM7s5, 2)
-DsM7s5 = EfM7s5 = _raise(CM7s5, 3)
-EM7s5 = _raise(CM7s5, 4)
-FM7s5 = _raise(CM7s5, 5)
-FsM7s5 = GfM7s5 =  _raise(CM7s5, 6)
-GM7s5 = _raise(CM7s5, 7)
-GsM7s5 = AfM7s5 = _raise(CM7s5, 8)
-AM7s5 = _raise(CM7s5, 9)
-AsM7s5 = BfM7s5 = _raise(CM7s5, 10)
-BM7s5 = _raise(CM7s5, 11)
-
-Cs9 = Df9 = _raise(C9, 1)
-D9 = _raise(C9, 2)
-Ds9 = Ef9 = _raise(C9, 3)
-E9 = _raise(C9, 4)
-F9 = _raise(C9, 5)
-Fs9 = Gf9 =  _raise(C9, 6)
-G9 = _raise(C9, 7)
-Gs9 = Af9 = _raise(C9, 8)
-A9 = _raise(C9, 9)
-As9 = Bf9 = _raise(C9, 10)
-B9 = _raise(C9, 11)
-
-Csmaj9 = Dfmaj9 = _raise(Cmaj9, 1)
-Dmaj9 = _raise(Cmaj9, 2)
-Dsmaj9 = Efmaj9 = _raise(Cmaj9, 3)
-Emaj9 = _raise(Cmaj9, 4)
-Fmaj9 = _raise(Cmaj9, 5)
-Fsmaj9 = Gfmaj9 =  _raise(Cmaj9, 6)
-Gmaj9 = _raise(Cmaj9, 7)
-Gsmaj9 = Afmaj9 = _raise(Cmaj9, 8)
-Amaj9 = _raise(Cmaj9, 9)
-Asmaj9 = Bfmaj9 = _raise(Cmaj9, 10)
-Bmaj9 = _raise(Cmaj9, 11)
-
-Csmin9 = Dfmin9 = _raise(Cmin9, 1)
-Dmin9 = _raise(Cmin9, 2)
-Dsmin9 = Efmin9 = _raise(Cmin9, 3)
-Emin9 = _raise(Cmin9, 4)
-Fmin9 = _raise(Cmin9, 5)
-Fsmin9 = Gfmin9 =  _raise(Cmin9, 6)
-Gmin9 = _raise(Cmin9, 7)
-Gsmin9 = Afmin9 = _raise(Cmin9, 8)
-Amin9 = _raise(Cmin9, 9)
-Asmin9 = Bfmin9 = _raise(Cmin9, 10)
-Bmin9 = _raise(Cmin9, 11)
-
-Cs11 = Df11 = _raise(C11, 1)
-D11 = _raise(C11, 2)
-Ds11 = Ef11 = _raise(C11, 3)
-E11 = _raise(C11, 4)
-F11 = _raise(C11, 5)
-Fs11 = Gf11 =  _raise(C11, 6)
-G11 = _raise(C11, 7)
-Gs11 = Af11 = _raise(C11, 8)
-A11 = _raise(C11, 9)
-As11 = Bf11 = _raise(C11, 10)
-B11 = _raise(C11, 11)
-
-Csmaj11 = Dfmaj11 = _raise(Cmaj11, 1)
-Dmaj11 = _raise(Cmaj11, 2)
-Dsmaj11 = Efmaj11 = _raise(Cmaj11, 3)
-Emaj11 = _raise(Cmaj11, 4)
-Fmaj11 = _raise(Cmaj11, 5)
-Fsmaj11 = Gfmaj11 =  _raise(Cmaj11, 6)
-Gmaj11 = _raise(Cmaj11, 7)
-Gsmaj11 = Afmaj11 = _raise(Cmaj11, 8)
-Amaj11 = _raise(Cmaj11, 9)
-Asmaj11 = Bfmaj11 = _raise(Cmaj11, 10)
-Bmaj11 = _raise(Cmaj11, 11)
-
-Csmin11 = Dfmin11 = _raise(Cmin11, 1)
-Dmin11 = _raise(Cmin11, 2)
-Dsmin11 = Efmin11 = _raise(Cmin11, 3)
-Emin11 = _raise(Cmin11, 4)
-Fmin11 = _raise(Cmin11, 5)
-Fsmin11 = Gfmin11 =  _raise(Cmin11, 6)
-Gmin11 = _raise(Cmin11, 7)
-Gsmin11 = Afmin11 = _raise(Cmin11, 8)
-Amin11 = _raise(Cmin11, 9)
-Asmin11 = Bfmin11 = _raise(Cmin11, 10)
-Bmin11 = _raise(Cmin11, 11)
-
-Cs13 = Df13 = _raise(C13, 1)
-D13 = _raise(C13, 2)
-Ds13 = Ef13 = _raise(C13, 3)
-E13 = _raise(C13, 4)
-F13 = _raise(C13, 5)
-Fs13 = Gf13 =  _raise(C13, 6)
-G13 = _raise(C13, 7)
-Gs13 = Af13 = _raise(C13, 8)
-A13 = _raise(C13, 9)
-As13 = Bf13 = _raise(C13, 10)
-B13 = _raise(C13, 11)
-
-Csmaj13 = Dfmaj13 = _raise(Cmaj13, 1)
-Dmaj13 = _raise(Cmaj13, 2)
-Dsmaj13 = Efmaj13 = _raise(Cmaj13, 3)
-Emaj13 = _raise(Cmaj13, 4)
-Fmaj13 = _raise(Cmaj13, 5)
-Fsmaj13 = Gfmaj13 =  _raise(Cmaj13, 6)
-Gmaj13 = _raise(Cmaj13, 7)
-Gsmaj13 = Afmaj13 = _raise(Cmaj13, 8)
-Amaj13 = _raise(Cmaj13, 9)
-Asmaj13 = Bfmaj13 = _raise(Cmaj13, 10)
-Bmaj13 = _raise(Cmaj13, 11)
-
-Csmin13 = Dfmin13 = _raise(Cmin13, 1)
-Dmin13 = _raise(Cmin13, 2)
-Dsmin13 = Efmin13 = _raise(Cmin13, 3)
-Emin13 = _raise(Cmin13, 4)
-Fmin13 = _raise(Cmin13, 5)
-Fsmin13 = Gfmin13 =  _raise(Cmin13, 6)
-Gmin13 = _raise(Cmin13, 7)
-Gsmin13 = Afmin13 = _raise(Cmin13, 8)
-Amin13 = _raise(Cmin13, 9)
-Asmin13 = Bfmin13 = _raise(Cmin13, 10)
-Bmin13 = _raise(Cmin13, 11)
-
-Cssus4 = Dfsus4 = _raise(Csus4, 1)
-Dsus4 = _raise(Csus4, 2)
-Dssus4 = Efsus4 = _raise(Csus4, 3)
-Esus4 = _raise(Csus4, 4)
-Fsus4 = _raise(Csus4, 5)
-Fssus4 = Gfsus4 =  _raise(Csus4, 6)
-Gsus4 = _raise(Csus4, 7)
-Gssus4 = Afsus4 = _raise(Csus4, 8)
-Asus4 = _raise(Csus4, 9)
-Assus4 = Bfsus4 = _raise(Csus4, 10)
-Bsus4 = _raise(Csus4, 11)
-
-Cssus2 = Dfsus2 = _raise(Csus2, 1)
-Dsus2 = _raise(Csus2, 2)
-Dssus2 = Efsus2 = _raise(Csus2, 3)
-Esus2 = _raise(Csus2, 4)
-Fsus2 = _raise(Csus2, 5)
-Fssus2 = Gfsus2 =  _raise(Csus2, 6)
-Gsus2 = _raise(Csus2, 7)
-Gssus2 = Afsus2 = _raise(Csus2, 8)
-Asus2 = _raise(Csus2, 9)
-Assus2 = Bfsus2 = _raise(Csus2, 10)
-Bsus2 = _raise(Csus2, 11)
-
-chord_choices = [
+CHORDS = chord_choices = [
     A11, A13, A9, AM7s5, Aaug, Aaug7, Adim, Adim7, Adom7, Af11, Af13, Af9, AfM7s5, Afaug, Afaug7,
     Afdim, Afdim7, Afdom7, Afm7f5, AfmM7, Afmaj, Afmaj11, Afmaj13, Afmaj7, Afmaj9, Afmin, Afmin11, Afmin13,
     Afmin7, Afmin9, Afsus2, Afsus4, Am7f5, AmM7, Amaj, Amaj11, Amaj13, Amaj7, Amaj9, Amin, Amin11, Amin13,
@@ -430,7 +480,3 @@ chord_choices = [
 ]
 
 
-
-
-del _raise
-"""
