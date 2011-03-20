@@ -1,3 +1,13 @@
+
+
+
+
+###############
+# Scales as list of MidiNotes.
+# I think classes that mirror this would be better.
+#
+
+
 from txbeatlounge.music.notes import *
 
 # Scale definitions and function

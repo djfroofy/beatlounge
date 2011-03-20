@@ -1,3 +1,5 @@
+
+from txbeatlounge.utils import minmax
 from txbeatlounge.music.constants import twelve_tone_equal_440
 from txbeatlounge.music.freq import offsets
 
@@ -29,6 +31,20 @@ class MidiNote(object):
 
     # SEQUENCE, for rilz.
 
+    @property
+    def min(self):
+        num = self.value
+        while num >= 12:
+            num -= 12
+        return num
+
+    @property
+    def max(self):
+        num = self.value
+        while num < 116:
+            num += 12
+        return num
+
     def __iter__(self):
         """
         Octaves from the root until the highest, < 127
@@ -51,7 +67,18 @@ class MidiNote(object):
             n -= 12
 
     def __getitem__(self, num):
-        return MidiNote(self.value + num*12)
+        num = minmax(self.value + num*12, low=self.min, high=self.max)
+        return MidiNote(num)
+
+    def __getslice__(self, i, j):
+        n = self.value + i*12
+        lim = self.value + j*12
+        lim = min(lim, 128)
+        ret = []
+        while n < lim:
+            ret.append(MidiNote(n))
+            n += 12
+        return ret
 
     def __len__(self):
         n = 0
@@ -88,6 +115,22 @@ class MidiNote(object):
 
     def __ge__(self, other):
         return int(self) >= int(other)
+
+    """
+    # Not thinking that we need to implement any of these.
+    # Maybe there is something to do with them?
+    # There are more: http://docs.python.org/reference/datamodel.html#emulating-numeric-types
+    object.__mul__(self, other)
+    object.__floordiv__(self, other)
+    object.__mod__(self, other)
+    object.__divmod__(self, other)
+    object.__pow__(self, other[, modulo])
+    object.__lshift__(self, other)
+    object.__rshift__(self, other)
+    object.__and__(self, other)
+    object.__xor__(self, other)
+    object.__or__(self, other)
+    """
 
 
     # FREQUENCIES are the thing.
