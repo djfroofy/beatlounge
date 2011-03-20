@@ -2,11 +2,19 @@ import random
 
 from twisted.python import reflect
 
-minmax = lambda num,low=0,high=127: min([high, max([low, num])])
 
-# some backwards compat - because i'm such a nice guy 
+minmax = lambda num,low=0,high=127: min([high, max([low, num])])
 min_max = minmax
 
+
+def flattenLists(li):
+    """
+    Takes a list of lists and returns a flat list of the submembers
+    """
+    ret = []
+    for l in li:
+        ret.extend(l)
+    return ret
 
 
 def ranProb(li, p):

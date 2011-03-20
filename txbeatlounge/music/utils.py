@@ -4,8 +4,6 @@ Some things to interconvert txbeatlounge.music.<notes|scales|chords>
 Theoretically .. for now it's just stuff I didn't want crowding my namespaces.
 """
 
-
-
 def notesStringsForList(li):
     """
     Pass in a list and get out the str() letters that are in there.
@@ -40,14 +38,6 @@ def notesStringsForList(li):
 
     return set(retD.keys())
 
-def flattenLists(li):
-    """
-    Takes a list of lists and returns a flat list of the submembers
-    """
-    ret = []
-    for l in li:
-        ret.extend(l)
-    return ret
 
 
 _midi = lambda v : (v > 127) and (v - 12) or v

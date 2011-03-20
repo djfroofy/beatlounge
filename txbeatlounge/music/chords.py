@@ -1,5 +1,6 @@
 from twisted.python import log
 
+from txbeatlounge.utils import flattenLists
 from txbeatlounge.music import notes, constants
 
 
@@ -11,14 +12,14 @@ flavs = {
 "dim7": [0,3,6,9,12],
 "m7f5": [0,3,6,10,12],
 "min7": [0,3,7,10,12],
-"CmM7": [0,3,7,11,12],
+"mM7": [0,3,7,11,12],
 "dom7": [0,4,7,10,12],
 "maj7": [0,4,7,11,12],
 "aug7": [0,4,8,10,12],
-"m7s5": [0,4,8,11,12],
-"_9": [0,4,7,10,12,14],
-"_11": [0,4,7,10,12,14,17],
-"_13": [0,4,7,10,12,14,17,21],
+"M7s5": [0,4,8,11,12],
+"9": [0,4,7,10,12,14],
+"11": [0,4,7,10,12,14,17],
+"13": [0,4,7,10,12,14,17,21],
 "maj9": [0,4,7,11,12,14],
 "maj11": [0,4,7,11,12,14,17],
 "maj13": [0,4,7,11,12,14,17,21],
@@ -39,7 +40,7 @@ class RootedChord(object):
         self.flav = flav
         #log.msg(flav)
         self.proto = flavs[flav]
-        self.list = [notes.MidiNote(root+n) for n in self.proto]
+        self.list = [notes.MidiNote(root+n) for n in self.proto if 0 <= (root+n) < 128]
 
     def __repr__(self):
         return repr(self.list)
@@ -86,6 +87,15 @@ class NamedChord(object):
     def __getitem__(self, i):
         return self.lists[i]
 
+    def __contains__(self, prospect):
+        """
+        WARNING: This method is inconsistent with __iter__/__getitem__.
+        It's a convenience to be able to say ``9 in chords.Amaj``.
+
+        "for x in y: ..." and "x in y" are supposed to talk about the same elements x.
+        """
+        return prospect in self.flat
+
     def transpose(self, i):
         return [n.transpose(i) for n in self]
 
@@ -102,6 +112,11 @@ class NamedChord(object):
             else:
                 break
         return ret
+
+    @property
+    def flat(self):
+        """return self.lists as a flat list"""
+        return list(set(flattenLists(self)))
 
 
 # Major
@@ -191,8 +206,6 @@ Gsaug7 = Afaug7 = NamedChord("Gs", "aug7")
 Aaug7 = NamedChord("A", "aug7")
 Asaug7 = Bfaug7 = NamedChord("As", "aug7")
 Baug7 = NamedChord("B", "aug7")
-
-
 
 
 # Minor 7, flat 5
@@ -433,6 +446,7 @@ Gssus2 = Afsus2 = NamedChord("Gs", "sus2")
 Asus2 = NamedChord("A", "sus2")
 Assus2 = Bfsus2 = NamedChord("As", "sus2")
 Bsus2 = NamedChord("B", "sus2")
+
 
 CHORDS = chord_choices = [
     A11, A13, A9, AM7s5, Aaug, Aaug7, Adim, Adim7, Adom7, Af11, Af13, Af9, AfM7s5, Afaug, Afaug7,

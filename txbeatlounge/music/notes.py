@@ -28,6 +28,9 @@ class MidiNote(object):
     def __str__(self):
         return repr(self)
 
+    def __hash__(self):
+        return hash(self.value)
+
 
     # SEQUENCE, for rilz.
 
