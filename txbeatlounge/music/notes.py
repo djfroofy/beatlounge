@@ -163,6 +163,7 @@ class MidiNote(object):
             fs.append(note.freq(intone))
         return fs
 
+
 C = MidiNote(0)
 Cs = Df = MidiNote(1)
 D = MidiNote(2)
