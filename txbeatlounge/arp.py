@@ -4,13 +4,18 @@ import random
 
 from zope.interface import Interface, Attribute, implements
 
-from txbeatlounge.utils import getClock 
+from txbeatlounge.utils import getClock
+
+
+__all__ = [
+    'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp', 'RandomArp', 'ArpSwitcher', 'OctaveArp',
+]
 
 
 class IArp(Interface):
 
     values =  Attribute("Values to arpeggiate")
-    
+
     def reset(values):
         """
         Reset `values` to the given list.
@@ -20,7 +25,7 @@ class IArp(Interface):
         """
         Get the next value in the arpeggiation.
         """
-    
+
 
 class BaseArp(object):
     implements(IArp)
@@ -79,7 +84,7 @@ class IndexedArp(BaseArp):
         return v
 
 class AscArp(IndexedArp):
-   
+
     def sort(self, values):
         return sortNumeric(values)
 
@@ -135,7 +140,7 @@ class ArpSwitcher(BaseArp):
         self.arp.reset(values)
         self.values = values
         self.count = len(self.values)
-    
+
     def reset(self, values):
         self.values = values
         self.arp.reset(values)

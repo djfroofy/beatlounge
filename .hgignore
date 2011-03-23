@@ -10,4 +10,5 @@ _trial_temp
 .coverage
 coverage.d
 *.log
+html
 

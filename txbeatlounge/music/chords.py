@@ -5,29 +5,29 @@ from txbeatlounge.music import notes, constants
 
 
 flavs = {
-"maj": [0,4,7,12],
-"min": [0,3,7,12],
-"aug": [0,4,8,12],
-"dim": [0,3,6,12],
-"dim7": [0,3,6,9,12],
-"m7f5": [0,3,6,10,12],
-"min7": [0,3,7,10,12],
-"mM7": [0,3,7,11,12],
-"dom7": [0,4,7,10,12],
-"maj7": [0,4,7,11,12],
-"aug7": [0,4,8,10,12],
-"M7s5": [0,4,8,11,12],
-"9": [0,4,7,10,12,14],
-"11": [0,4,7,10,12,14,17],
-"13": [0,4,7,10,12,14,17,21],
-"maj9": [0,4,7,11,12,14],
-"maj11": [0,4,7,11,12,14,17],
-"maj13": [0,4,7,11,12,14,17,21],
-"min9": [0,3,7,10,12,14],
-"min11": [0,3,7,10,12,14,17],
-"min13": [0,3,7,10,12,14,17,21],
-"sus2": [0,2,7,12],
-"sus4": [0,5,7,12],
+    "maj": [0,4,7,12],
+    "min": [0,3,7,12],
+    "aug": [0,4,8,12],
+    "dim": [0,3,6,12],
+    "dim7": [0,3,6,9,12],
+    "m7f5": [0,3,6,10,12],
+    "min7": [0,3,7,10,12],
+    "mM7": [0,3,7,11,12],
+    "dom7": [0,4,7,10,12],
+    "maj7": [0,4,7,11,12],
+    "aug7": [0,4,8,10,12],
+    "M7s5": [0,4,8,11,12],
+    "9": [0,4,7,10,12,14],
+    "11": [0,4,7,10,12,14,17],
+    "13": [0,4,7,10,12,14,17,21],
+    "maj9": [0,4,7,11,12,14],
+    "maj11": [0,4,7,11,12,14,17],
+    "maj13": [0,4,7,11,12,14,17,21],
+    "min9": [0,3,7,10,12,14],
+    "min11": [0,3,7,10,12,14,17],
+    "min13": [0,3,7,10,12,14,17,21],
+    "sus2": [0,2,7,12],
+    "sus4": [0,5,7,12],
 }
 
 class RootedChord(object):
@@ -54,6 +54,12 @@ class RootedChord(object):
 
     def __getitem__(self, i):
         return self.list[i]
+
+    def __add__(self, other):
+        return list(self) + list(other)
+
+    def __radd__(self, other):
+        return self + other
 
     def transpose(self, i):
         return [n+i for n in self]
@@ -125,6 +131,19 @@ class NamedChord(object):
     def flat(self):
         """return self.lists as a flat list"""
         return list(set(flattenLists(self)))
+
+    @property
+    def letters(self):
+        ret = []
+        for n in self[0]:
+            ret.append(notes.keys_rev[int(n)])
+        return set(ret)
+
+    def len_intersect(self, other):
+        return len(self.intersect(other))
+
+    def intersect(self, other):
+        return self.letters.intersection(other.letters)
 
 
 _midi = lambda v : (v > 127) and (v - 12) or v

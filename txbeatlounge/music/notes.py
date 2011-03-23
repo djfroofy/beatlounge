@@ -4,6 +4,11 @@ from txbeatlounge.music.constants import twelve_tone_equal_440
 from txbeatlounge.music.freq import offsets
 
 
+__all__ = [
+    'MidiNote', 'C', 'Cs', 'Df', 'D', 'Ds', 'Ef', 'E', 'F', 'Fs', 'Gf', 'G', 'Gs', 'Af', 'A', 'As', 'Bf', 'B',
+    'keys', 'keys_rev',
+]
+
 class MidiNote(object):
     """
     int is an immutable value type and whatnot.  so, this is some kind of frowned upon idea, subclassing int.
@@ -98,8 +103,14 @@ class MidiNote(object):
     def __add__(self, other):
         return self.__class__(int(other)+int(self))
 
+    def __radd__(self, other):
+        return self + other
+
     def __sub__(self, other):
         return self.__class__(int(self)-int(other))
+
+    def __rsub__(self, other):
+        return MidiNote(int(other) - int(self))
 
     def __lt__(self, other):
         return int(self) < int(other)
@@ -183,5 +194,13 @@ keys = {'C':0, 'Df':1, 'Cs':1, 'D':2, 'Ds':3, 'Ef':3,
 
 # ok, maybe we can just use the sharps as canonical?
 keys_rev = dict((v,k) for k,v in keys.iteritems() if 'f' not in k)
+
+more = {}
+for k,v in keys_rev.iteritems():
+    more[k+12] = v
+    more[k+24] = v
+
+keys_rev.update(more)
+del k,v
 
 
