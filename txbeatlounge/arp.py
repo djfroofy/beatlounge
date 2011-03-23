@@ -8,12 +8,9 @@ from txbeatlounge.utils import getClock
 
 
 __all__ = [
-    'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp', 'RandomArp', 'ArpSwitcher', 'OctaveArp',
+    'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
+    'RandomArp', 'ArpSwitcher', 'OctaveArp',
 ]
-
-
-__all__ = [ 'IArp', 'AscArp', 'DescArp', 'OrderedArp', 'ArpSwitcher',
-            'OctaveArp', 'RandomArp']
 
 
 class IArp(Interface):
