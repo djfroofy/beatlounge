@@ -4,42 +4,43 @@ from txbeatlounge.utils import flattenLists
 from txbeatlounge.music import notes, constants
 
 
-flavs = {
-    "maj": [0,4,7,12],
-    "min": [0,3,7,12],
-    "aug": [0,4,8,12],
-    "dim": [0,3,6,12],
-    "dim7": [0,3,6,9,12],
-    "m7f5": [0,3,6,10,12],
-    "min7": [0,3,7,10,12],
-    "mM7": [0,3,7,11,12],
-    "dom7": [0,4,7,10,12],
-    "maj7": [0,4,7,11,12],
-    "aug7": [0,4,8,10,12],
-    "M7s5": [0,4,8,11,12],
-    "9": [0,4,7,10,12,14],
-    "11": [0,4,7,10,12,14,17],
-    "13": [0,4,7,10,12,14,17,21],
-    "maj9": [0,4,7,11,12,14],
-    "maj11": [0,4,7,11,12,14,17],
-    "maj13": [0,4,7,11,12,14,17,21],
-    "min9": [0,3,7,10,12,14],
-    "min11": [0,3,7,10,12,14,17],
-    "min13": [0,3,7,10,12,14,17,21],
-    "sus2": [0,2,7,12],
-    "sus4": [0,5,7,12],
+protoflavs = {
+    "maj": [0, 4, 7],
+    "min": [0, 3, 7],
+    "aug": [0, 4, 8],
+    "dim": [0, 3, 6],
+    "dim7": [0, 3, 6, 9],
+    "m7f5": [0, 3, 6, 10],
+    "min7": [0, 3, 7, 10],
+    "mM7": [0, 3, 7, 11],
+    "dom7": [0, 4, 7, 10],
+    "maj7": [0, 4, 7, 11],
+    "aug7": [0, 4, 8, 10],
+    "M7s5": [0, 4, 8, 11],
+    "9": [0, 4, 7, 10, 14],
+    "11": [0, 4, 7, 10, 14, 17],
+    "13": [0, 4, 7, 10, 14, 17, 21],
+    "maj9": [0, 4, 7, 11, 14],
+    "maj11": [0, 4, 7, 11, 14, 17],
+    "maj13": [0, 4, 7, 11, 14, 17, 21],
+    "min9": [0, 3, 7, 10, 14],
+    "min11": [0, 3, 7, 10, 14, 17],
+    "min13": [0, 3, 7, 10, 14, 17, 21],
+    "sus2": [0, 2, 7],
+    "sus4": [0, 5, 7],
 }
 
 class RootedChord(object):
 
     def __init__(self, root=57, flav="maj"):
+
         if root > 115 or root < 0:
             log.msg(root)
             raise ValueError("root must be between 0 and 115 (maybe less)")
+
         self.root = root
         self.flav = flav
-        #log.msg(flav)
-        self.proto = flavs[flav]
+        self.proto = protoflavs[flav]
         self.list = [notes.MidiNote(root+n) for n in self.proto if 0 <= (root+n) < 128]
 
     def __repr__(self):
