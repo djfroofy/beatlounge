@@ -2,6 +2,9 @@
 
 
 
+
+
+
 ###############
 # Scales as list of MidiNotes.
 # I think classes that mirror this would be better.
@@ -18,7 +21,10 @@ def keyScale(scale, key='C', octave=0):
     return [ n + base + octave for n in scale ]
 
 
+#############
 # pentatonic
+#############
+
 
 majorpenta = pentatonic = [ C[0], D[0], E[0], G[0], A[0],  ]
 minorpenta = [ C[0], Ef[0], F[0], G[0], Bf[0],  ] 

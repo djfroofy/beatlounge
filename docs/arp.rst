@@ -24,17 +24,17 @@ and ``OctaveArp`` are currently included (maybe more, check the ``__all__``).
     127
     >>> v()
     110
-    >>> v.reset([1,2,3])
+    >>> v.reset([100, 20, 30])
     >>> v()
-    2
+    20
     >>> v()
-    1
+    100
     >>> v()
-    3
+    30
     >>> v()
-    2
+    20
     >>> v()
-    1
+    100
  
    
 The ``ArpSwitcher`` is probably the most useful b/c, in addition to being able to reset the sequence, 
