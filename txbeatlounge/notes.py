@@ -18,51 +18,51 @@ B = [11, 23, 35, 47, 59, 71, 83, 95, 107, 119]
 MIDI_NOTES = [C, Df, D, Ef, E, F, Gf, G, Af, A, Bf, B]
 
 keys = {'C':0, 'Df':1, 'Cs':1, 'D':2, 'Ds':3, 'Ef':3,
-        'E':4, 'F':5, 'Fs':6, 'Gf':6, 'G':7, 'Gs':8,
-        'Af':8, 'A':9, 'As':10, 'Bf':10, 'B':11}
+        'E':4, 'F':5, 'Fs':6, 'Gf':6, 'G':7, 'Gs':8,
+        'Af':8, 'A':9, 'As':10, 'Bf':10, 'B':11}
 
 def notesStringsForList(li):
-    """
-    Pass in a list and get out the str() letters that are in there.
-    """
+    """
+    Pass in a list and get out the str() letters that are in there.
+    """
 
-    retD = {}
-    for note in li:
-        if note in C:
-            retD['C'] = True
-        elif note in Df:
-            retD['Df'] = True
-        elif note in D:
-            retD['D'] = True
-        elif note in Ef:
-            retD['Ef'] = True
-        elif note in E:
-            retD['E'] = True
-        elif note in F:
-            retD['F'] = True
-        elif note in Gf:
-            retD['Gf'] = True
-        elif note in G:
-            retD['G'] = True
-        elif note in Af:
-            retD['Af'] = True
-        elif note in A:
-            retD['A'] = True
-        elif note in Bf:
-            retD['Bf'] = True
-        elif note in B:
-            retD['B'] = True
+    retD = {}
+    for note in li:
+        if note in C:
+            retD['C'] = True
+        elif note in Df:
+            retD['Df'] = True
+        elif note in D:
+            retD['D'] = True
+        elif note in Ef:
+            retD['Ef'] = True
+        elif note in E:
+            retD['E'] = True
+        elif note in F:
+            retD['F'] = True
+        elif note in Gf:
+            retD['Gf'] = True
+        elif note in G:
+            retD['G'] = True
+        elif note in Af:
+            retD['Af'] = True
+        elif note in A:
+            retD['A'] = True
+        elif note in Bf:
+            retD['Bf'] = True
+        elif note in B:
+            retD['B'] = True
 
-    return set(retD.keys())
+    return set(retD.keys())
 
 def flattenLists(li):
-    """
-    Takes a list of lists and returns a flat list of the submembers
-    """
-    ret = []
-    for l in li:
-        ret.extend(l)
-    return ret
+    """
+    Takes a list of lists and returns a flat list of the submembers
+    """
+    ret = []
+    for l in li:
+        ret.extend(l)
+    return ret
 
 
 
@@ -135,7 +135,7 @@ Dmaj = _raise(Cmaj, 2)
 Dsmaj = Efmaj = _raise(Cmaj, 3)
 Emaj = _raise(Cmaj, 4)
 Fmaj = _raise(Cmaj, 5)
-Fsmaj = Gfmaj =  _raise(Cmaj, 6)
+Fsmaj = Gfmaj =  _raise(Cmaj, 6)
 Gmaj = _raise(Cmaj, 7)
 Gsmaj = Afmaj = _raise(Cmaj, 8)
 Amaj = _raise(Cmaj, 9)
@@ -147,7 +147,7 @@ Dmin = _raise(Cmin, 2)
 Dsmin = Efmin = _raise(Cmin, 3)
 Emin = _raise(Cmin, 4)
 Fmin = _raise(Cmin, 5)
-Fsmin = Gfmin =  _raise(Cmin, 6)
+Fsmin = Gfmin =  _raise(Cmin, 6)
 Gmin = _raise(Cmin, 7)
 Gsmin = Afmin = _raise(Cmin, 8)
 Amin = _raise(Cmin, 9)
@@ -159,7 +159,7 @@ Daug = _raise(Caug, 2)
 Dsaug = Efaug = _raise(Caug, 3)
 Eaug = _raise(Caug, 4)
 Faug = _raise(Caug, 5)
-Fsaug = Gfaug =  _raise(Caug, 6)
+Fsaug = Gfaug =  _raise(Caug, 6)
 Gaug = _raise(Caug, 7)
 Gsaug = Afaug = _raise(Caug, 8)
 Aaug = _raise(Caug, 9)
@@ -171,7 +171,7 @@ Ddim = _raise(Cdim, 2)
 Dsdim = Efdim = _raise(Cdim, 3)
 Edim = _raise(Cdim, 4)
 Fdim = _raise(Cdim, 5)
-Fsdim = Gfdim =  _raise(Cdim, 6)
+Fsdim = Gfdim =  _raise(Cdim, 6)
 Gdim = _raise(Cdim, 7)
 Gsdim = Afdim = _raise(Cdim, 8)
 Adim = _raise(Cdim, 9)
@@ -183,7 +183,7 @@ Ddim7 = _raise(Cdim7, 2)
 Dsdim7 = Efdim7 = _raise(Cdim7, 3)
 Edim7 = _raise(Cdim7, 4)
 Fdim7 = _raise(Cdim7, 5)
-Fsdim7 = Gfdim7 =  _raise(Cdim7, 6)
+Fsdim7 = Gfdim7 =  _raise(Cdim7, 6)
 Gdim7 = _raise(Cdim7, 7)
 Gsdim7 = Afdim7 = _raise(Cdim7, 8)
 Adim7 = _raise(Cdim7, 9)
@@ -195,7 +195,7 @@ Dm7f5 = _raise(Cm7f5, 2)
 Dsm7f5 = Efm7f5 = _raise(Cm7f5, 3)
 Em7f5 = _raise(Cm7f5, 4)
 Fm7f5 = _raise(Cm7f5, 5)
-Fsm7f5 = Gfm7f5 =  _raise(Cm7f5, 6)
+Fsm7f5 = Gfm7f5 =  _raise(Cm7f5, 6)
 Gm7f5 = _raise(Cm7f5, 7)
 Gsm7f5 = Afm7f5 = _raise(Cm7f5, 8)
 Am7f5 = _raise(Cm7f5, 9)
@@ -207,7 +207,7 @@ Dmin7 = _raise(Cmin7, 2)
 Dsmin7 = Efmin7 = _raise(Cmin7, 3)
 Emin7 = _raise(Cmin7, 4)
 Fmin7 = _raise(Cmin7, 5)
-Fsmin7 = Gfmin7 =  _raise(Cmin7, 6)
+Fsmin7 = Gfmin7 =  _raise(Cmin7, 6)
 Gmin7 = _raise(Cmin7, 7)
 Gsmin7 = Afmin7 = _raise(Cmin7, 8)
 Amin7 = _raise(Cmin7, 9)
@@ -219,7 +219,7 @@ DmM7 = _raise(CmM7, 2)
 DsmM7 = EfmM7 = _raise(CmM7, 3)
 EmM7 = _raise(CmM7, 4)
 FmM7 = _raise(CmM7, 5)
-FsmM7 = GfmM7 =  _raise(CmM7, 6)
+FsmM7 = GfmM7 =  _raise(CmM7, 6)
 GmM7 = _raise(CmM7, 7)
 GsmM7 = AfmM7 = _raise(CmM7, 8)
 AmM7 = _raise(CmM7, 9)
@@ -231,7 +231,7 @@ Ddom7 = _raise(Cdom7, 2)
 Dsdom7 = Efdom7 = _raise(Cdom7, 3)
 Edom7 = _raise(Cdom7, 4)
 Fdom7 = _raise(Cdom7, 5)
-Fsdom7 = Gfdom7 =  _raise(Cdom7, 6)
+Fsdom7 = Gfdom7 =  _raise(Cdom7, 6)
 Gdom7 = _raise(Cdom7, 7)
 Gsdom7 = Afdom7 = _raise(Cdom7, 8)
 Adom7 = _raise(Cdom7, 9)
@@ -243,7 +243,7 @@ Dmaj7 = _raise(Cmaj7, 2)
 Dsmaj7 = Efmaj7 = _raise(Cmaj7, 3)
 Emaj7 = _raise(Cmaj7, 4)
 Fmaj7 = _raise(Cmaj7, 5)
-Fsmaj7 = Gfmaj7 =  _raise(Cmaj7, 6)
+Fsmaj7 = Gfmaj7 =  _raise(Cmaj7, 6)
 Gmaj7 = _raise(Cmaj7, 7)
 Gsmaj7 = Afmaj7 = _raise(Cmaj7, 8)
 Amaj7 = _raise(Cmaj7, 9)
@@ -255,7 +255,7 @@ Daug7 = _raise(Caug7, 2)
 Dsaug7 = Efaug7 = _raise(Caug7, 3)
 Eaug7 = _raise(Caug7, 4)
 Faug7 = _raise(Caug7, 5)
-Fsaug7 = Gfaug7 =  _raise(Caug7, 6)
+Fsaug7 = Gfaug7 =  _raise(Caug7, 6)
 Gaug7 = _raise(Caug7, 7)
 Gsaug7 = Afaug7 = _raise(Caug7, 8)
 Aaug7 = _raise(Caug7, 9)
@@ -267,7 +267,7 @@ DM7s5 = _raise(CM7s5, 2)
 DsM7s5 = EfM7s5 = _raise(CM7s5, 3)
 EM7s5 = _raise(CM7s5, 4)
 FM7s5 = _raise(CM7s5, 5)
-FsM7s5 = GfM7s5 =  _raise(CM7s5, 6)
+FsM7s5 = GfM7s5 =  _raise(CM7s5, 6)
 GM7s5 = _raise(CM7s5, 7)
 GsM7s5 = AfM7s5 = _raise(CM7s5, 8)
 AM7s5 = _raise(CM7s5, 9)
@@ -279,7 +279,7 @@ D9 = _raise(C9, 2)
 Ds9 = Ef9 = _raise(C9, 3)
 E9 = _raise(C9, 4)
 F9 = _raise(C9, 5)
-Fs9 = Gf9 =  _raise(C9, 6)
+Fs9 = Gf9 =  _raise(C9, 6)
 G9 = _raise(C9, 7)
 Gs9 = Af9 = _raise(C9, 8)
 A9 = _raise(C9, 9)
@@ -291,7 +291,7 @@ Dmaj9 = _raise(Cmaj9, 2)
 Dsmaj9 = Efmaj9 = _raise(Cmaj9, 3)
 Emaj9 = _raise(Cmaj9, 4)
 Fmaj9 = _raise(Cmaj9, 5)
-Fsmaj9 = Gfmaj9 =  _raise(Cmaj9, 6)
+Fsmaj9 = Gfmaj9 =  _raise(Cmaj9, 6)
 Gmaj9 = _raise(Cmaj9, 7)
 Gsmaj9 = Afmaj9 = _raise(Cmaj9, 8)
 Amaj9 = _raise(Cmaj9, 9)
@@ -303,7 +303,7 @@ Dmin9 = _raise(Cmin9, 2)
 Dsmin9 = Efmin9 = _raise(Cmin9, 3)
 Emin9 = _raise(Cmin9, 4)
 Fmin9 = _raise(Cmin9, 5)
-Fsmin9 = Gfmin9 =  _raise(Cmin9, 6)
+Fsmin9 = Gfmin9 =  _raise(Cmin9, 6)
 Gmin9 = _raise(Cmin9, 7)
 Gsmin9 = Afmin9 = _raise(Cmin9, 8)
 Amin9 = _raise(Cmin9, 9)
@@ -315,7 +315,7 @@ D11 = _raise(C11, 2)
 Ds11 = Ef11 = _raise(C11, 3)
 E11 = _raise(C11, 4)
 F11 = _raise(C11, 5)
-Fs11 = Gf11 =  _raise(C11, 6)
+Fs11 = Gf11 =  _raise(C11, 6)
 G11 = _raise(C11, 7)
 Gs11 = Af11 = _raise(C11, 8)
 A11 = _raise(C11, 9)
@@ -327,7 +327,7 @@ Dmaj11 = _raise(Cmaj11, 2)
 Dsmaj11 = Efmaj11 = _raise(Cmaj11, 3)
 Emaj11 = _raise(Cmaj11, 4)
 Fmaj11 = _raise(Cmaj11, 5)
-Fsmaj11 = Gfmaj11 =  _raise(Cmaj11, 6)
+Fsmaj11 = Gfmaj11 =  _raise(Cmaj11, 6)
 Gmaj11 = _raise(Cmaj11, 7)
 Gsmaj11 = Afmaj11 = _raise(Cmaj11, 8)
 Amaj11 = _raise(Cmaj11, 9)
@@ -339,7 +339,7 @@ Dmin11 = _raise(Cmin11, 2)
 Dsmin11 = Efmin11 = _raise(Cmin11, 3)
 Emin11 = _raise(Cmin11, 4)
 Fmin11 = _raise(Cmin11, 5)
-Fsmin11 = Gfmin11 =  _raise(Cmin11, 6)
+Fsmin11 = Gfmin11 =  _raise(Cmin11, 6)
 Gmin11 = _raise(Cmin11, 7)
 Gsmin11 = Afmin11 = _raise(Cmin11, 8)
 Amin11 = _raise(Cmin11, 9)
@@ -351,7 +351,7 @@ D13 = _raise(C13, 2)
 Ds13 = Ef13 = _raise(C13, 3)
 E13 = _raise(C13, 4)
 F13 = _raise(C13, 5)
-Fs13 = Gf13 =  _raise(C13, 6)
+Fs13 = Gf13 =  _raise(C13, 6)
 G13 = _raise(C13, 7)
 Gs13 = Af13 = _raise(C13, 8)
 A13 = _raise(C13, 9)
@@ -363,7 +363,7 @@ Dmaj13 = _raise(Cmaj13, 2)
 Dsmaj13 = Efmaj13 = _raise(Cmaj13, 3)
 Emaj13 = _raise(Cmaj13, 4)
 Fmaj13 = _raise(Cmaj13, 5)
-Fsmaj13 = Gfmaj13 =  _raise(Cmaj13, 6)
+Fsmaj13 = Gfmaj13 =  _raise(Cmaj13, 6)
 Gmaj13 = _raise(Cmaj13, 7)
 Gsmaj13 = Afmaj13 = _raise(Cmaj13, 8)
 Amaj13 = _raise(Cmaj13, 9)
@@ -375,7 +375,7 @@ Dmin13 = _raise(Cmin13, 2)
 Dsmin13 = Efmin13 = _raise(Cmin13, 3)
 Emin13 = _raise(Cmin13, 4)
 Fmin13 = _raise(Cmin13, 5)
-Fsmin13 = Gfmin13 =  _raise(Cmin13, 6)
+Fsmin13 = Gfmin13 =  _raise(Cmin13, 6)
 Gmin13 = _raise(Cmin13, 7)
 Gsmin13 = Afmin13 = _raise(Cmin13, 8)
 Amin13 = _raise(Cmin13, 9)
@@ -387,7 +387,7 @@ Dsus4 = _raise(Csus4, 2)
 Dssus4 = Efsus4 = _raise(Csus4, 3)
 Esus4 = _raise(Csus4, 4)
 Fsus4 = _raise(Csus4, 5)
-Fssus4 = Gfsus4 =  _raise(Csus4, 6)
+Fssus4 = Gfsus4 =  _raise(Csus4, 6)
 Gsus4 = _raise(Csus4, 7)
 Gssus4 = Afsus4 = _raise(Csus4, 8)
 Asus4 = _raise(Csus4, 9)
@@ -399,7 +399,7 @@ Dsus2 = _raise(Csus2, 2)
 Dssus2 = Efsus2 = _raise(Csus2, 3)
 Esus2 = _raise(Csus2, 4)
 Fsus2 = _raise(Csus2, 5)
-Fssus2 = Gfsus2 =  _raise(Csus2, 6)
+Fssus2 = Gfsus2 =  _raise(Csus2, 6)
 Gsus2 = _raise(Csus2, 7)
 Gssus2 = Afsus2 = _raise(Csus2, 8)
 Asus2 = _raise(Csus2, 9)
@@ -446,110 +446,110 @@ del _raise
 _midi = lambda v : (v > 127) and (v - 12) or v
 
 def invert(chord, inversion=1):
-    if inversion < 0 or inversion > 4:
-        raise ValueError('inversion argument must be one of: 0, 1, 2, 3, 4')
-    if not inversion:
-        return chord
-    first = _midi(chord[0] + 12)
-    second = chord[1]
-    third = chord[2]
-    if inversion >= 2:
-        second = _midi(chord[1] + 12)
-    if inversion >= 3:
-        third = _midi(chord[2] + 12)
-    if len(chord) >= 4:
-        fourth = chord[3]
-        if inversion >= 4:
-            fourth = _midi(chord[3] + 12)
-    if len(chord) == 3:
-        return [ first, second, third ]
-    return [ first, second, third, fourth ] + chord[4:]
+    if inversion < 0 or inversion > 4:
+        raise ValueError('inversion argument must be one of: 0, 1, 2, 3, 4')
+    if not inversion:
+        return chord
+    first = _midi(chord[0] + 12)
+    second = chord[1]
+    third = chord[2]
+    if inversion >= 2:
+        second = _midi(chord[1] + 12)
+    if inversion >= 3:
+        third = _midi(chord[2] + 12)
+    if len(chord) >= 4:
+        fourth = chord[3]
+        if inversion >= 4:
+            fourth = _midi(chord[3] + 12)
+    if len(chord) == 3:
+        return [ first, second, third ]
+    return [ first, second, third, fourth ] + chord[4:]
 
 
 
 # Scale definitions and function
 
 def keyScale(scale, key='C', octave=0):
-    base = keys[key]
-    octave = octave * 12
-    return [ n + base + octave for n in scale ]
+    base = keys[key]
+    octave = octave * 12
+    return [ n + base + octave for n in scale ]
 
 
 # pentatonic
 
-majorpenta = pentatonic = [ C[0], D[0], E[0], G[0], A[0],  ]
-minorpenta = [ C[0], Ef[0], F[0], G[0], Bf[0],  ] 
-egyptpenta = suspenta = [ C[0], D[0], F[0], G[0], Bf[0],  ]
-bluesminor = mangong = [ C[0], Ef[0], F[0], Af[0], Bf[0],  ]
-bluesmajor = ritusen = [ C[0], D[0], F[0], G[0], A[0],  ] 
-insen = [ C[0], Df[0], F[0], G[0], Bf[0],  ]
-hirajoshi = hirachoshi = [ C[0], D[0], Ef[0], G[0], Af[0],  ]
-iwato = [ C[0], Df[0], F[0], Gf[0], Bf[0],  ]  
-kumoi = [ C[0], Df[0], F[0], G[0], Af[0],  ]
+majorpenta = pentatonic = [ C[0], D[0], E[0], G[0], A[0],  ]
+minorpenta = [ C[0], Ef[0], F[0], G[0], Bf[0],  ] 
+egyptpenta = suspenta = [ C[0], D[0], F[0], G[0], Bf[0],  ]
+bluesminor = mangong = [ C[0], Ef[0], F[0], Af[0], Bf[0],  ]
+bluesmajor = ritusen = [ C[0], D[0], F[0], G[0], A[0],  ] 
+insen = [ C[0], Df[0], F[0], G[0], Bf[0],  ]
+hirajoshi = hirachoshi = [ C[0], D[0], Ef[0], G[0], Af[0],  ]
+iwato = [ C[0], Df[0], F[0], Gf[0], Bf[0],  ]  
+kumoi = [ C[0], Df[0], F[0], G[0], Af[0],  ]
 
 # hexatonic
 
-wholetone = [ C[0], D[0], E[0], Fs[0], Gs[0], As[0],  ]
-augmented = [ C[0], Ef[0], E[0], G[0], Gs[0], B[0],  ]
-prometheus = [ C[0], D[0], E[0], Fs[0], A[0], Bf[0],  ]
-blues = [ C[0], Ef[0], F[0], Fs[0], G[0], Bf[0],  ]
-tritone = [ C[0], Df[0], E[0], Gf[0], G[0], Bf[0],  ]
-tstritone = twoSemitoneTritone = [ C[0], Df[0], D[0], Fs[0], G[0], Bf[0],  ]
+wholetone = [ C[0], D[0], E[0], Fs[0], Gs[0], As[0],  ]
+augmented = [ C[0], Ef[0], E[0], G[0], Gs[0], B[0],  ]
+prometheus = [ C[0], D[0], E[0], Fs[0], A[0], Bf[0],  ]
+blues = [ C[0], Ef[0], F[0], Fs[0], G[0], Bf[0],  ]
+tritone = [ C[0], Df[0], E[0], Gf[0], G[0], Bf[0],  ]
+tstritone = twoSemitoneTritone = [ C[0], Df[0], D[0], Fs[0], G[0], Bf[0],  ]
 
 # heptatonic
 
-major = ionian = [ C[0], D[0], E[0], F[0], G[0], A[0], B[0],  ]
-melodic = melodiciMinor = [ C[0], D[0], Ef[0], F[0], G[0], A[0], B[0],  ]
-dorian = [ C[0], D[0], Ef[0], F[0], G[0], A[0], Bf[0],  ]
-aeolian = naturalMinor = [ C[0], D[0], Ef[0], F[0], G[0], Af[0], Bf[0],  ]
-mixolydian = [ C[0], D[0], E[0], F[0], G[0], A[0], Bf[0],  ]
-lydian = [ C[0], D[0], E[0], Fs[0], G[0], A[0], B[0],  ]
-byzantine = hungarian = egyptian = [ C[0], D[0], Ef[0], Fs[0], G[0], Af[0], B[0],  ] 
-phrygian = [ C[0], Df[0], Ef[0], F[0], G[0], Af[0], Bf[0],  ]
-phrygianDominant = [ C[0], Df[0], E[0], F[0], G[0], Af[0], Bf[0],  ]
-locrian = [ C[0], Df[0], Ef[0], F[0], Gf[0], Af[0], Bf[0],  ]  
-arabic = [ C[0], Df[0], E[0], F[0], G[0], Af[0], B[0],  ]
+major = ionian = [ C[0], D[0], E[0], F[0], G[0], A[0], B[0],  ]
+melodic = melodiciMinor = [ C[0], D[0], Ef[0], F[0], G[0], A[0], B[0],  ]
+dorian = [ C[0], D[0], Ef[0], F[0], G[0], A[0], Bf[0],  ]
+aeolian = naturalMinor = [ C[0], D[0], Ef[0], F[0], G[0], Af[0], Bf[0],  ]
+mixolydian = [ C[0], D[0], E[0], F[0], G[0], A[0], Bf[0],  ]
+lydian = [ C[0], D[0], E[0], Fs[0], G[0], A[0], B[0],  ]
+byzantine = hungarian = egyptian = [ C[0], D[0], Ef[0], Fs[0], G[0], Af[0], B[0],  ] 
+phrygian = [ C[0], Df[0], Ef[0], F[0], G[0], Af[0], Bf[0],  ]
+phrygianDominant = [ C[0], Df[0], E[0], F[0], G[0], Af[0], Bf[0],  ]
+locrian = [ C[0], Df[0], Ef[0], F[0], Gf[0], Af[0], Bf[0],  ]  
+arabic = [ C[0], Df[0], E[0], F[0], G[0], Af[0], B[0],  ]
 
 # ocotatonic
 
-diminished = [ C[0], D[0], Ef[0], F[0], Gf[0], Af[0], A[0], B[0],  ]
+diminished = [ C[0], D[0], Ef[0], F[0], Gf[0], Af[0], A[0], B[0],  ]
 
 def getChordsFromNote(note="C"):
-    import txbeatlounge
-    chords = []
-    for candidate in chord_choices:
-        if any([n in flattenLists(candidate) for n in getattr(txbeatlounge.notes, note)]):
-            chords.append(candidate)
-    return chords
+    import txbeatlounge
+    chords = []
+    for candidate in chord_choices:
+        if any([n in flattenLists(candidate) for n in getattr(txbeatlounge.notes, note)]):
+            chords.append(candidate)
+    return chords
 
 key_strings = ["C", "Df", "D", "Ef", "E", "F", "Gf", "G", "Af", "A", "Bf", "B"]
 
 scale_strings = (
-    "majorpenta", "minorpenta", "suspenta", "mangong", "ritusen", "insen", "hirajoshi",
-    "iwato", "kumoi", "wholetone", "augmented", "prometheus", "blues", "tritone",
-    "tstritone", "major", "melodic", "dorian", "aeolian", "mixolydian", "lydian",
-    "byzantine", "phrygian", "phrygianDominant", "locrian", "arabic"
+    "majorpenta", "minorpenta", "suspenta", "mangong", "ritusen", "insen", "hirajoshi",
+    "iwato", "kumoi", "wholetone", "augmented", "prometheus", "blues", "tritone",
+    "tstritone", "major", "melodic", "dorian", "aeolian", "mixolydian", "lydian",
+    "byzantine", "phrygian", "phrygianDominant", "locrian", "arabic"
 )
 
 def getScalesKeysFromNote(note="C"):
-    import txbeatlounge
-    scale_keys = []
-    for scale_string in scale_strings:
-        scale = getattr(txbeatlounge.notes, scale_string)
-        for key in key_strings:
-            scale = keyScale(scale, key)
-            if any([n in scale for n in getattr(txbeatlounge.notes, note)]):
-                scale_keys.append((scale_string, key))
-    return scale_keys
+    import txbeatlounge
+    scale_keys = []
+    for scale_string in scale_strings:
+        scale = getattr(txbeatlounge.notes, scale_string)
+        for key in key_strings:
+            scale = keyScale(scale, key)
+            if any([n in scale for n in getattr(txbeatlounge.notes, note)]):
+                scale_keys.append((scale_string, key))
+    return scale_keys
 
 
 twelve_tone_equal_440 = [440*(2**(i/Decimal(12))) for i in range(-57,71)]
 
 def freqForNote(note="C"):
-    import txbeatlounge
-    freqs = []
-    for n in getattr(txbeatlounge.notes, note):
-        freqs.append(twelve_tone_equal_440[n])
-    return freqs
+    import txbeatlounge
+    freqs = []
+    for n in getattr(txbeatlounge.notes, note):
+        freqs.append(twelve_tone_equal_440[n])
+    return freqs
 
 
