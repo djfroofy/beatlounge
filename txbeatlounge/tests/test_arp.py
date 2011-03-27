@@ -4,7 +4,8 @@ from twisted.trial.unittest import TestCase
 
 from txbeatlounge import arp
 from txbeatlounge.player import N
-from txbeatlounge.arp import AscArp, DescArp, OrderedArp, RandomArp, OctaveArp
+from txbeatlounge.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
+    Adder)
 
 class ArpTests(TestCase):
 
@@ -178,7 +179,27 @@ class ArpTests(TestCase):
               13, 14, 15, 16,
               25, 26, 27, 28 ])
 
-
+    def test_adder(self):
+        arpeggio = []
+        octaveArp = OctaveArp(AscArp(), [1,2,3,4])
+        adder = Adder(octaveArp)
+        for i in range(16):
+            arpeggio.append(adder())
+        self.assertEquals(arpeggio,
+            [ 1, 2, 3, 4,
+              13, 14, 15, 16,
+              25, 26, 27, 28,
+              37, 38, 39, 40 ])
+        adder.amount = 2
+        arpeggio = []
+        for i in range(16):
+            arpeggio.append(adder())
+        self.assertEquals(arpeggio,
+            [ v+2 for v in
+                [ 1, 2, 3, 4,
+                  13, 14, 15, 16,
+                  25, 26, 27, 28,
+                  37, 38, 39, 40 ]])
 
 
 

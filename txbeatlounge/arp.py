@@ -9,7 +9,7 @@ from txbeatlounge.utils import getClock
 
 __all__ = [
     'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
-    'RandomArp', 'ArpSwitcher', 'OctaveArp',
+    'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder',
 ]
 
 
@@ -135,7 +135,9 @@ class RandomArp(BaseArp):
 
 class ArpSwitcher(BaseArp):
 
-    def __init__(self, arp, values):
+    def __init__(self, arp, values=None):
+        if values is None:
+            values = arp.values
         self.arp = arp
         self.arp.reset(values)
         self.values = values
@@ -157,7 +159,7 @@ class ArpSwitcher(BaseArp):
 
 class OctaveArp(ArpSwitcher):
 
-    def __init__(self, arp, values, octaves=3, direction=1, oscillate=False):
+    def __init__(self, arp, values=None, octaves=3, direction=1, oscillate=False):
         ArpSwitcher.__init__(self, arp, values)
         self.octaves = octaves
         self.currentOctave = 0
@@ -184,5 +186,21 @@ class OctaveArp(ArpSwitcher):
                 self.currentOctave = 0
         return v
 
+
+class Adder(ArpSwitcher):
+    """
+    A simple wrapper over an Arp instance which will add `amount` to the
+    value returned by the wrapped `arp`. The configured `amount`
+    can be changed on the fly while the arp is being called.
+    """
+
+    def __init__(self, arp, values=None):
+        ArpSwitcher.__init__(self, arp, values)
+        self.amount = 0
+
+    def __call__(self):
+        v = exhaustCall(self.arp())
+        if v is not None:
+            return self.amount + v
 
 
