@@ -84,7 +84,7 @@ class IndexedArp(BaseArp):
         v = self.values[self.index]
         self.index += self.direction
         self.index = self.index % self.count
-        return v
+        return exhaustCall(v)
 
 class AscArp(IndexedArp):
 
@@ -163,26 +163,26 @@ class OctaveArp(ArpSwitcher):
         self.currentOctave = 0
         self.index = 0
         if direction == -1:
-            self.currentOctave = -1
+            self.currentOctave = octaves
         self.direction = direction
         self.oscillate = oscillate
 
 
     def __call__(self):
         v = exhaustCall(self.arp())
+        if v is not None:
+            v += (self.currentOctave * 12)
         self.index += 1
         self.index = self.index % self.count
         if self.index == 0:
             self.currentOctave += self.direction
             if self.octaves:
                 self.currentOctave = self.currentOctave % (self.octaves + 1)
-                if self.oscillate and self.currentOctave == 0:
+                if self.oscillate and self.currentOctave in (0, self.octaves):
                     self.direction *= -1
             else:
                 self.currentOctave = 0
-        if v is None:
-            return
-        return v + (self.currentOctave * 12)
+        return v
 
 
 
