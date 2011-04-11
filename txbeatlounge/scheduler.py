@@ -36,7 +36,7 @@ class Beat(_BeatBase):
     If we are the third 1/32 of the first measure:
 
         (0, 0, 0, 1, 3)
-    """    
+    """
 
     def __repr__(self):
         return ('Beat(measure=%s, quarter=%s, eighth=%s, sixteenth=%s, '
@@ -57,21 +57,21 @@ class Meter(object):
         self._quarters_per_measure = self.length * self.number / (self.division / 4.)
         self._hash = hash((self.length, self.division, self.number))
         self.ticksPerMeasure = int(24 * self.length * 4. / self.division * self.number)
-        
+
 
     def beat(self, ticks):
         """
         Return Beat tuple based on the given ticks.
-        
+
         ticks: the clock ticks (BeatClock.ticks)
         """
         measure, ticks = divmod(ticks, self.ticksPerMeasure)
         if not ticks:
             return Beat(measure, 0, 0, 0, 0)
-        quarter, ticks = divmod(ticks, self.ticksPerMeasure / self._quarters_per_measure) 
+        quarter, ticks = divmod(ticks, self.ticksPerMeasure / self._quarters_per_measure)
         if not ticks:
             return Beat(measure, int(quarter), 0, 0, 0)
-        eighth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 2)) 
+        eighth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 2))
         if not ticks:
             return Beat(measure, int(quarter), int(eighth), 0, 0)
         sixteenth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 4))
@@ -202,7 +202,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
                 pool = fsynth.QuadPool()
             else:
                 try:
-                    self.synthChannels = int(self.synthChannels) 
+                    self.synthChannels = int(self.synthChannels)
                 except ValueError:
                     raise ValueError('synthChannels should be one of mono, stereo, quad or an integer')
                 synths = dict( (n, fsynth.Synth) for n in range(self.synthChannels) )
@@ -259,7 +259,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
                 t += tpm
             delta = t - ct
 
-        # Do some catchup 
+        # Do some catchup
         for i in range(delta):
             if DEBUG:
                 log.msg('Catch up tick: %d' % i)
@@ -282,7 +282,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         if DEBUG:
             log.msg('Reset ticks to %s' % tick)
         self.ticks = tick
-        
+
 
     def seconds(self):
         """
@@ -318,7 +318,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         """
         meter = self.meters[0]
         ticks = _ticks(measures, meter, self)
-        self.callLater(ticks, f, *a, **kw)    
+        self.callLater(ticks, f, *a, **kw)
 
     def nudge(self, pause=0.1):
         """
@@ -395,7 +395,7 @@ def measuresToTicks(measures, meter=standardMeter):
     """
     short alias: mtt
 
-    Convert measures to ticks. Measures can either be a float or a tuple consisting of 
+    Convert measures to ticks. Measures can either be a float or a tuple consisting of
     the number of whole measures followed by the number of quarter notes. The meter
     can be specified to aid conversion of measures to ticks since the number of ticks
     per measure are dependent on the meter (4/4 contains 96, whereas 3/4 contains 72,
@@ -444,12 +444,12 @@ def _ticks(measures, meter, clock):
 class ScheduledEvent(object):
     """
     A ScheduledEvent is a wrapper around a callable which
-    can be scheduled at a future date with calls repeated for a given 
+    can be scheduled at a future date with calls repeated for a given
     interval until stopped.
-    """  
- 
+    """
+
     meter = None
- 
+
     def __init__(self, clock, _f, *args, **kwargs):
         self.clock = clock
         self.call = (_f, args, kwargs)
@@ -457,12 +457,12 @@ class ScheduledEvent(object):
     def startLater(self, measures=1, frequency=0.25, ticks=None, meter=None):
         """
         Begin calling our callable after measures (or raw ticks if specified).
-        Frequency is the interval in measures to repeat calls to our callable. 
+        Frequency is the interval in measures to repeat calls to our callable.
         If a meter is given, this will be used as the basis for converting measures and frequency
-        to ticks; otherwise the events bound meter of the clock's default meter are used 
+        to ticks; otherwise the events bound meter of the clock's default meter are used
         for conversion.
 
-        (See measuresToTicks for details on how measures and frequency are converted to clock ticks).   
+        (See measuresToTicks for details on how measures and frequency are converted to clock ticks).
         """
         if measures < 0:
             raise ValueError("measures must be greater than zero")
@@ -495,10 +495,10 @@ class ScheduledEvent(object):
         Stop calling the callable after measures.
 
         If a meter is given, this will be used as the basis for converting measures and frequency
-        to ticks; otherwise the events bound meter of the clock's default meter are used 
+        to ticks; otherwise the events bound meter of the clock's default meter are used
         for conversion.
-            
-        (See measuresToTicks for details on how measures are converted to clock ticks).   
+
+        (See measuresToTicks for details on how measures are converted to clock ticks).
         """
 
         meter = meter or self.meter or self.clock.meters[0]
