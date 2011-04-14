@@ -1,4 +1,6 @@
 
+from twisted.python import log
+
 class _Debug(object):
     debug = False
 
@@ -14,4 +16,9 @@ DEBUG = _Debug()
 
 def setDebug(debug):
     DEBUG.debug = bool(debug)
+
+
+def debug(message):
+    if DEBUG:
+        log.msg(message)
 
