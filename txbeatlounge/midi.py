@@ -4,67 +4,84 @@ from twisted.python import failure, log
 import pypm
 
 from txbeatlounge.utils import getClock
-from txbeatlounge.debug import DEBUG
+from txbeatlounge.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
            'ClockSender', 'DemoHandler', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler', ]
 
 class PypmWrapper:
 
-    inputs = ()
-    outputs = ()
+    initialized = False
+    inputs = []
+    outputs = []
+    deviceMap = {}
+    inputNames = {}
+    outputNames = {}
+    _channels = {}
 
-    def initialize(self):
+    @classmethod
+    def initialize(cls):
+        if cls.initialized:
+            return
         pypm.Initialize()
-        self.outputs = []
-        self.inputs = []
-        self.deviceMap = {}
-        self._gatherDeviceInfo()
+        cls._gatherDeviceInfo()
+        cls.initialized = True
 
-    def _gatherDeviceInfo(self):
+    @classmethod
+    def _gatherDeviceInfo(cls):
         for devno in range(pypm.CountDevices()):
             info = pypm.GetDeviceInfo(devno)
 
-            m = self.deviceMap.setdefault(info[1], {'output':None, 'input':None})
+            m = cls.deviceMap.setdefault(info[1], {'output':None, 'input':None})
             if info[3]:
-                self.outputs.append(devno)
+                cls.outputs.append(devno)
                 m['output'] = devno
             if info[2]:
-                self.inputs.append(devno)
+                cls.inputs.append(devno)
                 m['input'] = devno
-        self.inputNames = dict((v['input'],k) for (k,v) in self.deviceMap.items()
+        cls.inputNames = dict((v['input'],k) for (k,v) in cls.deviceMap.items()
                                 if v['input'] is not None)
-        self.outputNames = dict((v['output'],k) for (k,v) in self.deviceMap.items()
+        cls.outputNames = dict((v['output'],k) for (k,v) in cls.deviceMap.items()
                                 if v['output'] is not None)
 
-    def getInput(self, dev):
-        if type(dev) is int:
-            return pypm.Input(self.inputs[dev])
-        return pypm.Input(self.deviceMap[dev]['input'])
+    @classmethod
+    def getInput(cls, dev):
+        no = dev
+        if isinstance(dev, basestring):
+            no = cls.deviceMap[dev]['input']
+        key = ('input', no)
+        if key not in cls._channels:
+            cls._channels[key] = pypm.Input(no)
+        return cls._channels[key]
 
 
-    def getOutput(self, dev):
-        if type(dev) is int:
-            return pypm.Output(self.outputs[dev])
-        return pypm.Output(self.deviceMap[dev]['output'])
+    @classmethod
+    def getOutput(cls, dev):
+        no = dev
+        if isinstance(dev, basestring):
+            no = cls.deviceMap[dev]['output']
+        key = ('output', no)
+        if key not in cls._channels:
+            cls._channels[key] = pypm.Output(no)
+        return cls._channels[key]
 
-    def printDeviceSummary(self, printer=None):
+    @classmethod
+    def printDeviceSummary(cls, printer=None):
         if printer is None:
             def printer(line):
                 print line
         printer('Inputs:')
         for devno in self.inputs:
-            printer('... %d %r' % (devno, self.inputNames[devno]))
+            printer('... %d %r' % (devno, cls.inputNames[devno]))
         printer('Outputs:')
         for devno in self.outputs:
-            printer('... %d %r' % (devno, self.outputNames[devno]))
+            printer('... %d %r' % (devno, cls.outputNames[devno]))
 
 
-pypmwrap = PypmWrapper()
-initialize = init = pypmwrap.initialize
-getInput = pypmwrap.getInput
-getOutput = pypmwrap.getOutput
-printDeviceSummary = pypmwrap.printDeviceSummary
+initialize = init = PypmWrapper.initialize
+getInput = PypmWrapper.getInput
+getOutput = PypmWrapper.getOutput
+printDeviceSummary = PypmWrapper.printDeviceSummary
 
 FUNCTIONS = {}
 FUNCTION_ARITY = {}
@@ -134,7 +151,7 @@ class MidiHandler(object):
             channel = int(channel[4:])
             method = getattr(self, type.lower(), None)
             if method is None:
-                log.msg('No handler for midi event of type: %s' % type)
+                debug('No handler for midi event of type: %s' % type)
             method(channel, *args)
 
     def noteon(self, channel, note, velocity, timestamp):
@@ -164,7 +181,7 @@ class DemoHandler(object):
                 self.instr.stopnote(arg1)
             else:
                 func = FUNCTIONS.get(func, '?')
-                log.msg('Ingoring midi function: %s' % func)
+                debug('Ingoring midi function: %s' % func)
         except:
             f = failure.Failure()
             log.err(f)
@@ -178,18 +195,18 @@ class ChordHandler(MidiHandler):
         self._chord = []
 
     def noteon(self, channel, note, velocity, timestamp):
-        log.msg('noteon channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
+        debug('noteon channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
         if note not in self._chord:
             self._chord.append(note)
-            log.msg('calling %s' % self.callback)
+            debug('calling %s' % self.callback)
             self.callback(list(self._chord))
 
     def noteoff(self, channel, note, velocity, timestamp):
-        log.msg('noteoff channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
+        debug('noteoff channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
         if note in self._chord:
             self._chord.remove(note)
             if not self.sustain:
-                log.msg('calling %s' % self.callback)
+                debug('calling %s' % self.callback)
                 self.callback(list(self._chord))
 
 
