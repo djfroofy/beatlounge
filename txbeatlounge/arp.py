@@ -4,6 +4,8 @@ import random
 
 from zope.interface import Interface, Attribute, implements
 
+from twisted.python import log
+
 from txbeatlounge.utils import getClock
 
 
@@ -78,9 +80,17 @@ class IndexedArp(BaseArp):
             if factor != 1:
                 self.index = int(self.index * factor)
                 self.index = self.index % self.count
+                if self.index == self.count:
+                    self.index -= 1
+            elif self.index >= self.count:
+                self.index = self.index % self.count
         self.values = values
 
     def __call__(self):
+        if not self.values:
+            return
+        if self.index >= len(self.values):
+            self.reset(self.values)
         v = self.values[self.index]
         self.index += self.direction
         self.index = self.index % self.count
@@ -171,6 +181,8 @@ class OctaveArp(ArpSwitcher):
 
 
     def __call__(self):
+        if not self.count:
+            return
         v = exhaustCall(self.arp())
         if v is not None:
             v += (self.currentOctave * 12)

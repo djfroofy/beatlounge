@@ -201,5 +201,9 @@ class ArpTests(TestCase):
                   25, 26, 27, 28,
                   37, 38, 39, 40 ]])
 
-
+    def test_empty_arps(self):
+        for klass in (AscArp, DescArp, OrderedArp):
+            a = klass([])
+            for i in range(4):
+                n = a()
 
