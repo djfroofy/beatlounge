@@ -23,9 +23,7 @@ class MidiNote(object):
     def __init__(self, value=0):
         if not 0 <= value < 128:
             raise ValueError("Value must be between 0 and 127 inclusive")
-        self.value = value
-        # this is bad:
-        #int.__init__(self, value)
+        self.value = int(value)
 
     def __repr__(self):
         return "MidiNote(%s)" % self.value
@@ -70,7 +68,7 @@ class MidiNote(object):
         """
 
         n = self.value
-        while n > 0:
+        while n >= 0:
             yield MidiNote(n)
             n -= 12
 
