@@ -71,10 +71,10 @@ class PypmWrapper:
             def printer(line):
                 print line
         printer('Inputs:')
-        for devno in self.inputs:
+        for devno in cls.inputs:
             printer('... %d %r' % (devno, cls.inputNames[devno]))
         printer('Outputs:')
-        for devno in self.outputs:
+        for devno in cls.outputs:
             printer('... %d %r' % (devno, cls.outputNames[devno]))
 
 
