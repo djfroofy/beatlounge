@@ -6,7 +6,7 @@ from zope.interface import Interface, Attribute, implements
 
 from twisted.python import log
 
-from txbeatlounge.utils import getClock
+from txbeatlounge.utils import getClock, exhaustCall
 from txbeatlounge.debug import DEBUG
 from txbeatlounge.filters import BaseFilter
 from txbeatlounge.scheduler import mtt
@@ -32,18 +32,18 @@ class INotePlayer(IPlayer):
 
 
 class IChordPlayer(IPlayer):
-    chordFactory = Attribute('Callable to get the current chord to play')   
+    chordFactory = Attribute('Callable to get the current chord to play')
 
 
 class IPlayable(Interface):
-    
+
     def startPlaying(node=None):
         pass
 
     def stopPlaying(node=None):
         pass
 
-    
+
 class PlayableMixin(object):
     implements(IPlayable)
     clock = getClock()
@@ -51,7 +51,7 @@ class PlayableMixin(object):
     def startPlaying(self, node=None):
         self._playSchedule = self.clock.schedule(self.play).startLater(
             0, self.interval)
-   
+
     def stopPlaying(self, node=None):
         se = self._playSchedule
         # Stop one tick before the next measure -
@@ -132,7 +132,7 @@ Player = NotePlayer
 
 class ChordPlayer(BasePlayer):
     implements(IChordPlayer)
-    
+
     def __init__(self, instr, chordFactory, velocity, stop=lambda : None, clock=None,
                  interval=None):
         super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
@@ -144,6 +144,84 @@ class ChordPlayer(BasePlayer):
         return self.chordFactory()
 
 START = None
+
+class SchedulePlayer(PlayableMixin):
+    """
+    This takes a callable schedule factory which returns a list of tuples in
+    the following form:
+
+        (when, note, velocity, sustain)
+
+    * "when" is the relatives ticks from the time in ticks  when play() is
+      called to play the note
+    * "note" is the note to play
+    * "velocity" is the attack velocity to play the note with
+    * "sustain" is the duration in ticks  before calling noteoff
+
+    All of the above may also be a callable (possibly chaining other callables
+    as well).
+
+    Here is a simple example:
+
+        def simpleScheduleFactory():
+            return [
+                (mtt(0.000), 60, 95, mtt(1.00)),
+                (mtt(0.250), 64, 70, mtt(0.50)),
+                (mtt(0.875), 48, 93, mtt(0.25)), ]
+
+        player = scheduleFactory(instr, simpleScheduleFactory, interval=1)
+        player.startPlaying()
+
+    With the above setup, the player will on every measure play note 60 (middle
+    C) on the first quarter note with velocity 95 and sustain for 1 measure, note
+    64 on the second quater with velocity 70 and sustain for a half duration, and
+    note 48 on the last eighth with velocity 93 and sustain for a quarter duration.
+    """
+
+    def __init__(self, instr, scheduleFactory, interval=0.25, clock=None, type='note'):
+        self.scheduleFactory = scheduleFactory
+        self.instr = instr
+        self.interval = interval
+        self.clock = getClock(clock)
+        if type == 'note':
+            self._on_method = lambda c, v: self.instr.playnote(c, v)
+            self._off_method = lambda c: self.instr.stopnote(c)
+        elif type == 'chord':
+            self._on_method = lambda c, v : self.instr.playchord(c, v)
+            self._off_method = lambda  c : self.instr.stopchord(c)
+        else:
+            raise ValueError('Invalid player type "%s"' % type)
+
+    def play(self):
+        schedule = self.scheduleFactory()
+        self._advance(0, schedule)
+
+    def _advance(self, last, schedule, event=None):
+        if event is not None:
+            (note, vel, sustain) = event
+            note = exhaustCall(note)
+            vel = exhaustCall(vel)
+            sustain = exhaustCall(sustain)
+            self._on_method(note, vel)
+            if sustain is not None:
+                self.clock.callLater(sustain, self._off_method, note)
+        if schedule:
+            event = schedule.pop(0)
+            when, event = exhaustCall(event[0]), event[1:]
+            delta = when - last
+            if delta < 0:
+                log.err('scheduled value in past? relative last tick=%d, when=%d' % (last, when))
+            else:
+                # TODO It would be nice to not do this and instead override callLater
+                # to ensure it really makes a call synchronously. (or maybe that's
+                # a horrible idea since it could run into maximum recursion).
+                #
+                #
+                if not delta:
+                    self._advance(when, schedule, event)
+                else:
+                    self.clock.callLater(delta, self._advance, when, schedule, event)
+
 
 class Conductor(object):
     """
@@ -158,7 +236,7 @@ class Conductor(object):
     An example score graph and conductor:
 
         score = { START: 'a',
-                 'a': { 'players' : [player1, player2], 'duration': 2, 
+                 'a': { 'players' : [player1, player2], 'duration': 2,
                         'transitions' : ['a', 'b']},
                  'b': { 'players' : [player1, player3], 'duration': 1,
                         'transitions' : ['a']} }
@@ -168,7 +246,7 @@ class Conductor(object):
     In the above example, the conductor once started will play player1 and
     player2 for 2 measures, then transition to itself or the next node 'b' with
     50/50 chance of either. When node 'b' is stated player1 and player3 with play
-    for one measure and then always transition back to 'a'. 
+    for one measure and then always transition back to 'a'.
     """
 
     def __init__(self, scoreGraph, clock=None):
@@ -181,7 +259,7 @@ class Conductor(object):
     def start(self):
         """
         Start the conductor.
-        
+
         (Note that the actual start time is generally after two measures a 1
         measure pause to resume at the start of the next measure and then an additional
         measure before the the players begin after the initial call to startPlaying())
@@ -246,10 +324,10 @@ snd = noteFactory
 
 
 class _Nothing(object):
-    
+
     def __str__(self):
         return 'N'
-    
+
     def __repr__(self):
         return 'N'
 
@@ -306,7 +384,7 @@ def randomWalk(sounds, startIndex=None):
             if random.randint(0, 1):
                 direction *= -1
         index += direction
-rw = randomWalk 
+rw = randomWalk
 
 
 def weighted(*notes):
@@ -314,12 +392,12 @@ def weighted(*notes):
     for (note, weight) in notes:
         ws.extend([note for w in range(weight)])
     random.shuffle(ws)
-    return ws 
+    return ws
 w = weighted
 
 def Weight(*weights):
     ws = weighted(*weights)
-    return R(*ws) 
+    return R(*ws)
 
 W = Weight
 
@@ -338,7 +416,7 @@ class Shifter(object):
     def __init__(self, gen=None):
         self.gen = gen
         self.amount = 0
-    
+
     def shift(self, gen=None):
         self.gen = gen or self.gen
         return iter(self)
@@ -375,7 +453,7 @@ T = demisemiquaver = thirtysecond
 
 
 def sequence(schedule, length=8):
-    filler = [ N ] 
+    filler = [ N ]
     notes = [ ]
     last = 0
     for (note, when) in schedule:
@@ -404,9 +482,9 @@ class callMemo:
     def __call__(self, *a, **kw):
         self.currentValue = self._func(*a, **kw)
         return self.currentValue
-       
+
 cm = callMemo
-  
+
 
 def explode(notes, factor=2):
     notes2 = []
@@ -438,7 +516,7 @@ def cut(notes, aprob=0.25, bprob=0.25):
             #print 'cutting quarter way'
             if random.random() <= bprob:
                 slice = _cut(notes[m+m/2:])
-                notes = notes[:m+m/2] + slice 
+                notes = notes[:m+m/2] + slice
             else:
                 slice = _cut(notes[m:m+m/2])
                 notes = notes[:m] + slice + notes[m+m/2:]
@@ -453,7 +531,7 @@ def cut(notes, aprob=0.25, bprob=0.25):
             #print 'cutting quarter way'
             if random.random() <= bprob:
                 slice = _cut(notes[:m/2])
-                notes = slice + notes[m/2:] 
+                notes = slice + notes[m/2:]
             else:
                 slice = _cut(notes[m/2:m])
                 notes = notes[:m/2] + slice + notes[m:]
@@ -526,7 +604,7 @@ class StepSequencer(PlayableMixin):
     def setStep(self, beat, note, on_off):
         if DEBUG:
             log.msg('[StepSequencer.setStep] setting %dx%d=%d' % (beat, note, on_off))
-        self.on_off[beat][note] = on_off    
+        self.on_off[beat][note] = on_off
 
     def play(self):
         v = self.velocity[self.step]
