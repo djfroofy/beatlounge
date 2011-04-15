@@ -28,13 +28,6 @@ You can run unit tests with trial:
     trial txbeatlounge
 
 
-Future
-------
-
-beatlounge continues to grow and morph and gradually canabilize itself in a quest
-towards world domination and unimaginable profit.
-
-
 For rilz.
 
 
