@@ -178,11 +178,15 @@ class SchedulePlayer(PlayableMixin):
     note 48 on the last eighth with velocity 93 and sustain for a quarter duration.
     """
 
-    def __init__(self, instr, scheduleFactory, interval=0.25, clock=None, type='note'):
+    def __init__(self, instr, scheduleFactory, interval=0.25, clock=None,
+                 type='note', meter=None):
         self.scheduleFactory = scheduleFactory
         self.instr = instr
         self.interval = interval
         self.clock = getClock(clock)
+        self.meter = meter
+        if meter is None:
+            self.meter = self.clock.meters[0]
         if type == 'note':
             self._on_method = lambda c, v: self.instr.playnote(c, v)
             self._off_method = lambda c: self.instr.stopnote(c)

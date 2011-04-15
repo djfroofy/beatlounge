@@ -443,6 +443,15 @@ class SchedulePlayerTests(TestCase, ClockRunner):
              ('note', 264, 64),
              ('note', 312, 60)])
 
+    def test_stopPlaying(self):
+        self.schedulePlayer1.startPlaying()
+        self.runTicks(24)
+        self.schedulePlayer1.stopPlaying()
+        self.runTicks(72+96)
+        self.assertEquals(self.instr1.plays,
+            [('note', 0, 60, 95),
+             ('note', 24, 64, 70),
+             ('note', 84, 48, 93)])
 
     def test_schedule_player_with_bad_type(self):
         self.assertRaises(ValueError, SchedulePlayer,
