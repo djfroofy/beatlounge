@@ -129,7 +129,7 @@ class MidiDispatcher(object):
         self.handlers = handlers
 
     def start(self):
-        self._event = self.clock.schedule(self).startLater(1, 1/96.)
+        self._event = self.clock.schedule(self).startLater(0, 1/96.)
 
     def __call__(self):
         for message in self.midiInput.Read(32):
@@ -151,7 +151,7 @@ class MidiHandler(object):
             channel = int(channel[4:])
             method = getattr(self, type.lower(), None)
             if method is None:
-                debug('No handler for midi event of type: %s' % type)
+                debug('No handler defined for midi event of type: %s' % type)
             method(channel, *args)
 
     def noteon(self, channel, note, velocity, timestamp):
@@ -160,11 +160,19 @@ class MidiHandler(object):
     def noteoff(self, channel, note, velocity, timestamp):
         pass
 
-    def polyaftertouch(self, channel, note, pressure, timestamp):
-        pass
 
 
-    # TODO define some others
+#class NoteOnOffHandler(MidiHandler):
+#
+#    def __init__(self, instr):
+#        self.instr = instr
+#
+#    def noteon(self, channel, note, velocity, timestamp):
+#        self.instrs[channel].playnote(note, velocity)
+#
+#    def noteoff(self, channel, note, velocity, timestamp):
+#        self.instrs[channel].stopnote(note)
+
 
 class DemoHandler(object):
 
