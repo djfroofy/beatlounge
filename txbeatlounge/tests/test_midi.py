@@ -9,7 +9,7 @@ try:
     import pypm
     from txbeatlounge.midi import PypmWrapper, init, getInput, getOutput
     from txbeatlounge.midi import MidiHandler, MidiDispatcher
-    from txbeatlounge.midi import NoteOnOffHandler
+    from txbeatlounge.midi import NoteOnOffHandler, ChordHandler
     from txbeatlounge.midi import printDeviceSummary
     from txbeatlounge.midi import (NOTEON_CHAN1, NOTEON_CHAN2,
         NOTEOFF_CHAN1, NOTEOFF_CHAN2,
@@ -158,3 +158,55 @@ class NoteOnOffHandlerTests(TestCase):
         self.failIf(self.instr2.plays)
         self.failIf(self.instr1.stops)
         self.failIf(self.instr2.stops)
+
+
+class ChordHandlerTests(TestCase):
+
+    def setUp(self):
+        self.chords = []
+        self.handler = ChordHandler(self.callback)
+
+    def callback(self, chord):
+        self.chords.append(chord)
+
+    def test_noteon(self):
+        self.handler.noteon(1, 60, 120, 0)
+        self.assertEquals(self.chords, [[60]])
+        self.handler.noteon(1, 64, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64]])
+        self.handler.noteon(1, 67, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67]])
+
+    def test_noteoff(self):
+        self.handler.noteon(1, 60, 120, 0)
+        self.assertEquals(self.chords, [[60]])
+        self.handler.noteon(1, 64, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64]])
+        self.handler.noteon(1, 67, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67]])
+        self.chords[:] = []
+        self.handler.noteoff(1, 60, 120, 0)
+        self.assertEquals(self.chords, [[64, 67]],)
+        self.handler.noteoff(1, 64, 120, 0)
+        self.assertEquals(self.chords, [[64, 67], [67]])
+        self.handler.noteoff(1, 67, 120, 0)
+        self.assertEquals(self.chords, [[64, 67], [67], []])
+
+    def test_noteoff_with_sustain(self):
+        self.handler.sustain = 1
+        self.handler.noteon(1, 60, 120, 0)
+        self.assertEquals(self.chords, [[60]])
+        self.handler.noteon(1, 64, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64]])
+        self.handler.noteon(1, 67, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67]])
+        self.handler.noteoff(1, 60, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67]])
+        self.handler.noteon(1, 48, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48]])
+        self.handler.noteoff(1, 64, 120, 0)
+        self.handler.noteoff(1, 67, 120, 0)
+        self.handler.noteoff(1, 48, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48]])
+        self.handler.noteon(1, 52, 120, 0)
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48], [52]])
