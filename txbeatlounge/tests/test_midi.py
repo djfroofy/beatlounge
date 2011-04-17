@@ -10,6 +10,7 @@ try:
     from txbeatlounge.midi import PypmWrapper, init, getInput, getOutput
     from txbeatlounge.midi import MidiHandler, MidiDispatcher
     from txbeatlounge.midi import NoteOnOffHandler, ChordHandler
+    from txbeatlounge.midi import ClockSender
     from txbeatlounge.midi import printDeviceSummary
     from txbeatlounge.midi import (NOTEON_CHAN1, NOTEON_CHAN2,
         NOTEOFF_CHAN1, NOTEOFF_CHAN2,
@@ -210,3 +211,41 @@ class ChordHandlerTests(TestCase):
         self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48]])
         self.handler.noteon(1, 52, 120, 0)
         self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48], [52]])
+
+
+class FakeMidiOutput:
+
+    def __init__(self):
+        self._buffer = []
+
+    def Write(self, message):
+        self._buffer.append(message)
+
+
+class FakeTime:
+
+    def __init__(self, clock):
+        self.clock = clock
+
+    def Time(self):
+        return self.clock.ticks
+
+class ClockSenderTests(TestCase, ClockRunner):
+
+    def setUp(self):
+        checkPypm()
+        self.clock = BeatClock(120, reactor=TestReactor())
+        self.patch(pypm, 'Time', FakeTime(self.clock).Time)
+        self.midiout = FakeMidiOutput()
+        self.clockSender = ClockSender(self.midiout, clock=self.clock)
+        self.clockSender.start()
+
+    def test_sends(self):
+        self.runTicks(96)
+        self.assertEquals(self.midiout._buffer, [[[[250], 96]], [[[248], 96]]])
+        self.midiout._buffer[:] = []
+        self.runTicks(1)
+        self.assertEquals(self.midiout._buffer, [[[[248], 97]]])
+        self.midiout._buffer[:] = []
+        self.runTicks(1)
+        self.assertEquals(self.midiout._buffer, [[[[248], 98]]])
