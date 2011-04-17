@@ -7,7 +7,8 @@ from txbeatlounge.utils import getClock
 from txbeatlounge.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
-           'ClockSender', 'DemoHandler', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler', ]
+           'ClockSender', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler',
+           'NoteOnOffHandler' ]
 
 class PypmWrapper:
 
@@ -183,27 +184,6 @@ class NoteOnOffHandler(MidiHandler):
 
     def noteoff(self, channel, note, velocity, timestamp):
         self.instrs.get(channel, _DummyInstrument).stopnote(note)
-
-
-class DemoHandler(object):
-
-    def __init__(self, instr):
-        self.instr = instr
-
-    def __call__(self, message):
-        try:
-            packet, ms = message
-            func, arg1, arg2, wth = packet
-            if func == NOTEON_CHAN1:
-                self.instr.playnote(arg1, arg2)
-            elif func == NOTEOFF_CHAN1:
-                self.instr.stopnote(arg1)
-            else:
-                func = FUNCTIONS.get(func, '?')
-                debug('Ingoring midi function: %s' % func)
-        except:
-            f = failure.Failure()
-            log.err(f)
 
 
 class ChordHandler(MidiHandler):
