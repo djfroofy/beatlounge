@@ -9,13 +9,16 @@ try:
     import pypm
     from txbeatlounge.midi import PypmWrapper, init, getInput, getOutput
     from txbeatlounge.midi import MidiHandler, MidiDispatcher
+    from txbeatlounge.midi import NoteOnOffHandler
     from txbeatlounge.midi import printDeviceSummary
     from txbeatlounge.midi import (NOTEON_CHAN1, NOTEON_CHAN2,
-        NOTEOFF_CHAN1, NOTEOFF_CHAN2)
+        NOTEOFF_CHAN1, NOTEOFF_CHAN2,
+        NOTEON_CHAN3, NOTEOFF_CHAN3)
 except ImportError:
     pypm = None
 
 from txbeatlounge.testlib import ClockRunner, TestReactor
+from txbeatlounge.tests.test_player import TestInstrument
 
 def checkPypm():
     if pypm is None:
@@ -91,6 +94,7 @@ class TestHandler(MidiHandler):
 class MidiDispatcherTests(TestCase, ClockRunner):
 
     def setUp(self):
+        checkPypm()
         self.meters = [ Meter(4,4), Meter(3,4) ]
         self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
         self.midiin = FakeMidiInput()
@@ -118,3 +122,39 @@ class MidiDispatcherTests(TestCase, ClockRunner):
         self.runTicks(1)
         self.failIf(self.handler.events)
 
+
+class NoteOnOffHandlerTests(TestCase):
+
+    def setUp(self):
+        checkPypm()
+        self.clock = BeatClock(135, reactor=TestReactor())
+        self.instr1 = TestInstrument(self.clock)
+        self.instr2 = TestInstrument(self.clock)
+        self.handler = NoteOnOffHandler({1:self.instr1, 2:self.instr2})
+
+
+    def test_noteon(self):
+        self.handler([[NOTEON_CHAN1, 60, 120, 0],1])
+        self.assertEquals(self.instr1.plays, [('note', 0, 60, 120)])
+        self.failIf(self.instr2.plays)
+
+        self.handler([[NOTEON_CHAN2, 75, 127, 0],2])
+        self.assertEquals(self.instr1.plays, [('note', 0, 60, 120)])
+        self.assertEquals(self.instr2.plays, [('note', 0, 75, 127)])
+
+    def test_noteoff(self):
+        self.handler([[NOTEOFF_CHAN1, 60, 120, 0],1])
+        self.assertEquals(self.instr1.stops, [('note', 0, 60)])
+        self.failIf(self.instr2.stops)
+
+        self.handler([[NOTEOFF_CHAN2, 75, 127, 0],2])
+        self.assertEquals(self.instr1.stops, [('note', 0, 60)])
+        self.assertEquals(self.instr2.stops, [('note', 0, 75)])
+
+    def test_wrong_channel(self):
+        self.handler([[NOTEON_CHAN3, 60, 120, 0],1])
+        self.handler([[NOTEOFF_CHAN3, 60, 120, 0],1])
+        self.failIf(self.instr1.plays)
+        self.failIf(self.instr2.plays)
+        self.failIf(self.instr1.stops)
+        self.failIf(self.instr2.stops)

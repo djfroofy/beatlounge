@@ -9,7 +9,7 @@ from twisted.trial.unittest import TestCase
 from txbeatlounge.player import NotePlayer, ChordPlayer, Player, noteFactory, N, R
 from txbeatlounge.player import INotePlayer, IChordPlayer, randomPhrase, sequence, Q
 from txbeatlounge.player import Conductor, START
-from txbeatlounge.player import explode, cut, callMemo 
+from txbeatlounge.player import explode, cut, callMemo
 from txbeatlounge.scheduler import BeatClock, Meter, mtt
 from txbeatlounge.filters import BaseFilter, Stepper
 from txbeatlounge.testlib import TestReactor, ClockRunner
@@ -50,7 +50,7 @@ class TestFilter(BaseFilter):
 
 
 class PlayerTests(TestCase, ClockRunner):
-    
+
     def setUp(self):
         self.meters = [ Meter(4,4), Meter(3,4) ]
         self.meterStandard = self.meters[0]
@@ -64,7 +64,7 @@ class PlayerTests(TestCase, ClockRunner):
         self.chordPlayerFilter = TestFilter(100)
         self.chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3]])), self.chordPlayerFilter,
                                      clock=self.clock, interval=0.125)
-        
+
 
     def test_interfaces(self):
         verifyClass(INotePlayer, NotePlayer)
@@ -170,7 +170,7 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 0, 1, 100),
             ('note', 1, 1, 100),]
         self.assertEquals(self.instr1.plays, expectedPlays)
-        
+
 
     def test_generatorsAreWrapperInNoteFactory(self):
         c = cycle([1,2])
@@ -210,7 +210,7 @@ class PlayerTests(TestCase, ClockRunner):
         expectedPlays = [('note', 0, 0, 120), ('note', 24, 1, 120),
                          ('note', 48, 0, 120), ('note', 72, 1, 120),
                          ('note', 96, 0, 120)]
-        self.assertEquals(self.instr1.plays, expectedPlays) 
+        self.assertEquals(self.instr1.plays, expectedPlays)
 
 
 
@@ -226,7 +226,7 @@ class PlayerTests(TestCase, ClockRunner):
                          ('note', 48, 0, 110), ('note', 72, 1, 100),
                          ('note', 96, 0, 127)]
         self.assertEquals(self.instr1.plays, expectedPlays)
-        
+
 
     def test_startPlayingBeginsAtNextMeasure(self):
         self.runTicks(1)
@@ -235,7 +235,7 @@ class PlayerTests(TestCase, ClockRunner):
         expectedPlays = [('note', 96, 0, 120), ('note', 120, 1, 120),
                          ('note', 144, 0, 120), ('note', 168, 1, 120),
                          ('note', 192, 0, 120)]
-        self.assertEquals(self.instr1.plays, expectedPlays) 
+        self.assertEquals(self.instr1.plays, expectedPlays)
 
     def test_stopPlaying(self):
         self.notePlayer.startPlaying('a')
@@ -244,11 +244,11 @@ class PlayerTests(TestCase, ClockRunner):
         self.runTicks(96 * 2)
         expectedPlays = [('note', 0, 0, 120), ('note', 24, 1, 120),
                          ('note', 48, 0, 120), ('note', 72, 1, 120)]
-        self.assertEquals(self.instr1.plays, expectedPlays) 
+        self.assertEquals(self.instr1.plays, expectedPlays)
 
 
 class ConductorTests(TestCase, ClockRunner):
-    
+
     def setUp(self):
         self.meters = [ Meter(3,4) ]
         self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
@@ -369,7 +369,7 @@ class UtilityTests(TestCase):
             return chosen[0]
 
         self.patch(random, 'choice', choose)
-        
+
         g = randomPhrase(*phrases)
         self.assertEquals(g.next(), 1)
         self.assertEquals(g.next(), 2)
@@ -384,7 +384,7 @@ class UtilityTests(TestCase):
 
     def test_randomPhrasesLength(self):
         g = randomPhrase(3, (1,2,3), (4,5,6))
-        
+
         self.assertRaises(ValueError, randomPhrase, 4, (1,2,3,4), (5,6,7,8,9))
 
         def choose(phrases):
@@ -445,10 +445,10 @@ class UtilityTests(TestCase):
             cur += 1
             values.append(f.currentValue)
         self.assertEquals(values, [1,2])
-       
 
 
 
 
-        
+
+
 

@@ -162,16 +162,27 @@ class MidiHandler(object):
 
 
 
-#class NoteOnOffHandler(MidiHandler):
-#
-#    def __init__(self, instr):
-#        self.instr = instr
-#
-#    def noteon(self, channel, note, velocity, timestamp):
-#        self.instrs[channel].playnote(note, velocity)
-#
-#    def noteoff(self, channel, note, velocity, timestamp):
-#        self.instrs[channel].stopnote(note)
+class _DummyInstrument:
+
+    @classmethod
+    def playnote(cls, note, velocity):
+        pass
+
+    @classmethod
+    def stopnote(cls, note):
+        pass
+
+
+class NoteOnOffHandler(MidiHandler):
+
+    def __init__(self, instrs):
+        self.instrs = instrs
+
+    def noteon(self, channel, note, velocity, timestamp):
+        self.instrs.get(channel, _DummyInstrument).playnote(note, velocity)
+
+    def noteoff(self, channel, note, velocity, timestamp):
+        self.instrs.get(channel, _DummyInstrument).stopnote(note)
 
 
 class DemoHandler(object):
