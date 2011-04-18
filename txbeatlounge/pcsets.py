@@ -18,3 +18,6 @@ class PitchClassSet:
     def invert(self, amount):
         return PitchClassSet([12-n for n in self.notes])
 
+    def octave(self, octave=0):
+        return [ n + 12 * octave for n in self.notes ]
+

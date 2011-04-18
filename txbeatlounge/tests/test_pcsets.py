@@ -23,3 +23,9 @@ class PitchClassSetTests(TestCase):
         pcs_inv3 = self.pcs.invert(3)
         self.assertEquals(pcs_inv3.notes, set([0,5,8]))
 
+    def test_ocatve(self):
+        octave = self.pcs.octave()
+        self.assertEquals(octave, [0,4,7])
+        octave1 = self.pcs.octave(1)
+        self.assertEquals(octave1, [12,16,19])
+
