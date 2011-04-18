@@ -13,11 +13,12 @@ from txbeatlounge.scheduler import mtt
 
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
-    'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf', 'generateSounds',
-    'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
-    'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
-    'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
-    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W']
+    'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf',
+    'generateSounds', 'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw',
+    'StepSequencer', 'SchedulePlayer', 'weighted', 'w', 'Shifter', 'quarter', 'Q',
+    'eighth', 'E', 'quaver', 'sixteenth', 'S', 'semiquaver', 'thirtysecond', 'T',
+    'demisemiquaver', 'sequence', 'seq', 'cut', 'explode', 'lcycle', 'Conductor',
+    'START', 'callMemo', 'cm', 'Weight', 'W']
 
 
 class IPlayer(Interface):
