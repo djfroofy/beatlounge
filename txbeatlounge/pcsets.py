@@ -15,3 +15,6 @@ class PitchClassSet:
     def transpose(self, amount):
         return PitchClassSet([ n + amount for n in self.notes ])
 
+    def invert(self, amount):
+        return PitchClassSet([12-n for n in self.notes])
+

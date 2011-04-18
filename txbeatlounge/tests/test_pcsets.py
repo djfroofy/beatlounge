@@ -19,3 +19,7 @@ class PitchClassSetTests(TestCase):
         pcs6 = self.pcs.transpose(6)
         self.assertEquals(pcs6.notes, set([1,6,10]))
 
+    def test_invert(self):
+        pcs_inv3 = self.pcs.invert(3)
+        self.assertEquals(pcs_inv3.notes, set([0,5,8]))
+
