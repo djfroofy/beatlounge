@@ -12,5 +12,6 @@ class PitchClassSet:
     def __repr__(self):
         return 'PitchClassSet(%r)' % list(sorted(self.notes))
 
-
+    def transpose(self, amount):
+        return PitchClassSet([ n + amount for n in self.notes ])
 
