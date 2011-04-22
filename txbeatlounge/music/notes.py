@@ -14,10 +14,8 @@ class MidiNote(object):
     int is an immutable value type and whatnot.  so, this is some kind of frowned upon idea, subclassing int.
     <strike>However, these MidiNotes are immutable value types, so let's try.</strike>
 
-    We want the note to act like a sequence, as well, however.
-    You can iterate over the octaves above, or "index" the octave.
-
-    You probably shouldn't subclass this thing.
+    Acts like an integer with some util methods to get frequency, related notes,
+    compare if another note is in the same octave.
     """
 
     def __init__(self, value=0):
@@ -33,64 +31,6 @@ class MidiNote(object):
 
     def __hash__(self):
         return hash(self.value)
-
-
-    # SEQUENCE, for rilz.
-
-    @property
-    def min(self):
-        num = self.value
-        while num >= 12:
-            num -= 12
-        return num
-
-    @property
-    def max(self):
-        num = self.value
-        while num < 116:
-            num += 12
-        return num
-
-    def __iter__(self):
-        """
-        Octaves from the root until the highest, < 127
-        eg 60,72,84 ...
-        """
-
-        n = self.value
-        while n < 128:
-            yield MidiNote(n)
-            n += 12
-
-    def __reversed__(self):
-        """
-        Octaves > 0, MidiNotes, eg 60,48,36,24 ..
-        """
-
-        n = self.value
-        while n >= 0:
-            yield MidiNote(n)
-            n -= 12
-
-    def __getitem__(self, num):
-        num = minmax(self.value + num*12, low=self.min, high=self.max)
-        return MidiNote(num)
-
-    def __getslice__(self, i, j):
-        n = self.value + i*12
-        lim = self.value + j*12
-        lim = min(lim, 128)
-        ret = []
-        while n < lim:
-            ret.append(MidiNote(n))
-            n += 12
-        return ret
-
-    def __len__(self):
-        n = 0
-        for i in self:
-            n += 1
-        return n
 
 
     # INTEGER, it is.
@@ -128,22 +68,6 @@ class MidiNote(object):
     def __ge__(self, other):
         return int(self) >= int(other)
 
-    """
-    # Not thinking that we need to implement any of these.
-    # Maybe there is something to do with them?
-    # There are more: http://docs.python.org/reference/datamodel.html#emulating-numeric-types
-    object.__mul__(self, other)
-    object.__floordiv__(self, other)
-    object.__mod__(self, other)
-    object.__divmod__(self, other)
-    object.__pow__(self, other[, modulo])
-    object.__lshift__(self, other)
-    object.__rshift__(self, other)
-    object.__and__(self, other)
-    object.__xor__(self, other)
-    object.__or__(self, other)
-    """
-
 
     # FREQUENCIES are the thing.
 
@@ -165,26 +89,18 @@ class MidiNote(object):
 
         return note*intone
 
-    def freqs(self, intone=None):
-        fs = []
-        for n in self:
-            note = MidiNote(int(n))
-            fs.append(note.freq(intone))
-        return fs
-
-
-C = MidiNote(0)
-Cs = Df = MidiNote(1)
-D = MidiNote(2)
-Ds = Ef = MidiNote(3)
-E = MidiNote(4)
-F = MidiNote(5)
-Fs = Gf = MidiNote(6)
-G = MidiNote(7)
-Gs = Af = MidiNote(8)
-A = MidiNote(9)
-As = Bf = MidiNote(10)
-B = MidiNote(11)
+C = [MidiNote(n) for n in range(0, 127, 12)]
+Cs = Df = [MidiNote(n) for n in range(1, 127, 12)]
+D = [MidiNote(n) for n in range(2, 127, 12)]
+Ds = Ef = [MidiNote(n) for n in range(3, 127, 12)]
+E = [MidiNote(n) for n in range(4, 127, 12)]
+F = [MidiNote(n) for n in range(5, 127, 12)]
+Fs = Gf = [MidiNote(n) for n in range(6, 127, 12)]
+G = [MidiNote(n) for n in range(7, 127, 12)]
+Gs = Af = [MidiNote(n) for n in range(8, 127, 12)]
+A = [MidiNote(n) for n in range(9, 127, 12)]
+As = Bf = [MidiNote(n) for n in range(10, 127, 12)]
+B = [MidiNote(n) for n in range(11, 127, 12)]
 
 keys = {'C':0, 'Df':1, 'Cs':1, 'D':2, 'Ds':3, 'Ef':3,
         'E':4, 'F':5, 'Fs':6, 'Gf':6, 'G':7, 'Gs':8,
