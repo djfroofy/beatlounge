@@ -1,17 +1,19 @@
 # Arpegiattors
 
+from pprint import pformat
 import random
 
 from zope.interface import Interface, Attribute, implements
 
 from twisted.python import log
 
+from txbeatlounge.debug import DEBUG
 from txbeatlounge.utils import getClock
 
 
 __all__ = [
     'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
-    'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder',
+    'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder', 'PhraseRecordingArp',
 ]
 
 
@@ -199,6 +201,74 @@ class OctaveArp(ArpSwitcher):
         return v
 
 
+
+class PhraseRecordingArp(BaseArp):
+
+    def __init__(self, phraseSize=4, rhythmArp=None, noteArp=None, velocityArp=None,
+                 sustainArp=None, clock=None, meter=None):
+        self.rhythmArp = self._defaultArp(rhythmArp)
+        self.noteArp = self._defaultArp(noteArp)
+        self.velocityArp = self._defaultArp(velocityArp)
+        self.sustainArp = self._defaultArp(sustainArp)
+        self.clock = defaulClock(clock)
+        if meter is None:
+            meter = self.clock.meters[0]
+        self.meter = meter
+        self._eraseTape()
+        self.phrase = []
+
+    def _defaultArp(self, arp):
+        if arp:
+            return arp
+        arp = OrderedArp()
+        return arp
+
+    def __call__(self):
+        measure = self.meter.measures(self.clock.ticks)
+        if measure % phraseSize == 0:
+            self._resetRecording()
+        return self.phrase
+
+    def _resetRecording(self):
+        whens = self._tape['whens']
+        notes = self._tape['notes']
+        velocities = self._tape['velocities']
+        sustains = self._tape['sustains']
+        if DEBUG:
+            log.msg('>tape===\n%s' % pformat(self._tape))
+        self._eraseTape()
+        if whens:
+            self.rhythmArp.reset(whens)
+            self.noteArp.reset(notes)
+            self.velocityArp.reset(velocities)
+            sus = [0] * len(self.whens)
+            for (ontick, onnote, sustain) in sustains:
+                index = self._tape['indexes'.get((ontick, onnote)]
+                sus[index] = sustain
+            self.sustainArp.reset(sus)
+            self.phrase = [self.rhythmArp, self.noteArp,
+                           self.velocityArp, self.sustainArp] * len(self.whens)
+            if DEBUG:
+                log.msg('>phrase===\n%s' % pformat(self.phrase))
+
+    def _eraseTape(self):
+        self._tape = {'whens':[], 'notes':[], 'velocities':[], 'sustains':[], 'indexes':{}}
+
+    def recordWhen(self, ticks):
+        self._tape['whens'].append(ticks)
+
+    def recordNote(self, note):
+        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['note'])
+        self._tape['note'].append(note)
+
+    def recordVelocity(self, velocity):
+        self._tape['velocity'].append(velocity)
+
+    def recordSustain(self, ontick, onnote, sustain):
+        # meh this is not correct yet
+        self._tape['sustain'].append((ontick, onnote, sustain))
+
+
 class Adder(ArpSwitcher):
     """
     A simple wrapper over an Arp instance which will add `amount` to the
@@ -214,5 +284,6 @@ class Adder(ArpSwitcher):
         v = exhaustCall(self.arp())
         if v is not None:
             return self.amount + v
+
 
 

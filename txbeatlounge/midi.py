@@ -8,7 +8,8 @@ from txbeatlounge.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
            'ClockSender', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler',
-           'NoteOnOffHandler' ]
+           'NoteOnOffHandler', 'NoteOnHandler', 'VelocityOnHandler',
+           'RhythmHandler' ]
 
 class PypmWrapper:
     """
@@ -289,6 +290,53 @@ class ChordHandler(MidiHandler):
             if not self.sustain:
                 debug('calling %s' % self.callback)
                 self.callback(list(self._chord))
+
+
+
+class _ValueNotifier(MidiHandler):
+
+    def __init__(self, callback, clock=None):
+        self.clock = getClock(clock)
+        self.callback = callback
+
+
+class RhythmHandler(_ValueNotifier):
+    """
+    Captures timing information
+    """
+
+    errorSustain = 0
+
+    def __init__(self, callback, sustainCallback, clock=None):
+        _ValueNotifier.__init__(self, callback, clock)
+        self.sustainCallback = sustainCallback
+        self._noteon = {}
+
+    def noteon(self, channel, note, velocity, timestamp):
+        # todo - something smarter could be done with the timestamp
+        # probably memoing some offset with our ticks - i dunno maybe
+        # not needed
+        ticks = self.clock.ticks
+        self._noteon[note] = ticks
+        self.callback(ticks)
+
+    def noteoff(self, channel, note, velocity, timestamp):
+        ticks = self.clock.ticks
+        ontick = self._noteon.get(note, ticks - self.errorSustain)
+        sustain = ticks - ontick
+        self.sustainCallback(ontick, sustain)
+
+
+class NoteOnHandler(_ValueNotifier):
+
+    def noteon(self, channel, note, velocity, timestamp):
+        self.callback(note)
+
+
+class VelocityOnHandler(_ValueNotifier):
+
+    def noteon(self, channel, note, velocity, timestamp):
+        self.callback(velocity)
 
 
 class ClockSender(object):
