@@ -115,3 +115,12 @@ def buildNamespace(*modules):
     return d
 
 
+def exhaustCall(v):
+    """
+    Get an uncallable value at the end of a call chain or `v` itself
+    if `v` is not callable.
+    """
+    while callable(v):
+        v = v()
+    return v
+

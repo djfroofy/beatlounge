@@ -324,7 +324,7 @@ class RhythmHandler(_ValueNotifier):
         ticks = self.clock.ticks
         ontick = self._noteon.get(note, ticks - self.errorSustain)
         sustain = ticks - ontick
-        self.sustainCallback(ontick, sustain)
+        self.sustainCallback(ontick, note, sustain)
 
 
 class NoteOnHandler(_ValueNotifier):

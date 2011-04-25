@@ -7,7 +7,7 @@ from zope.interface import Interface, Attribute, implements
 
 from twisted.python import log
 
-from txbeatlounge.debug import DEBUG
+from txbeatlounge.debug import debug, DEBUG
 from txbeatlounge.utils import getClock
 
 
@@ -206,14 +206,16 @@ class PhraseRecordingArp(BaseArp):
 
     def __init__(self, phraseSize=4, rhythmArp=None, noteArp=None, velocityArp=None,
                  sustainArp=None, clock=None, meter=None):
+        self.phraseSize = phraseSize
         self.rhythmArp = self._defaultArp(rhythmArp)
         self.noteArp = self._defaultArp(noteArp)
         self.velocityArp = self._defaultArp(velocityArp)
         self.sustainArp = self._defaultArp(sustainArp)
-        self.clock = defaulClock(clock)
+        self.clock = getClock(clock)
         if meter is None:
             meter = self.clock.meters[0]
         self.meter = meter
+        self._measureStartTicks = self.clock.ticks
         self._eraseTape()
         self.phrase = []
 
@@ -224,16 +226,22 @@ class PhraseRecordingArp(BaseArp):
         return arp
 
     def __call__(self):
-        measure = self.meter.measures(self.clock.ticks)
-        if measure % phraseSize == 0:
-            self._resetRecording()
-        return self.phrase
+        measure = self.meter.measure(self.clock.ticks)
+        self._measureStartTicks = self.clock.ticks
+        #debug('called %d' % measure)
+        #debug('modulus %d' % (measure % self.phraseSize))
+        #if measure % self.phraseSize == 0:
+        #debug('resetting recording')
+        self._resetRecording()
+        #log.msg('the phrase:\n%s' % pformat(self.phrase))
+        return list(self.phrase)
 
     def _resetRecording(self):
         whens = self._tape['whens']
         notes = self._tape['notes']
         velocities = self._tape['velocities']
         sustains = self._tape['sustains']
+        indexes = self._tape['indexes']
         if DEBUG:
             log.msg('>tape===\n%s' % pformat(self._tape))
         self._eraseTape()
@@ -241,13 +249,19 @@ class PhraseRecordingArp(BaseArp):
             self.rhythmArp.reset(whens)
             self.noteArp.reset(notes)
             self.velocityArp.reset(velocities)
-            sus = [0] * len(self.whens)
+            sus = [24] * len(whens)
             for (ontick, onnote, sustain) in sustains:
-                index = self._tape['indexes'.get((ontick, onnote)]
-                sus[index] = sustain
+                index = indexes.get((ontick, onnote))
+                if index is not None:
+                    sus[index] = sustain
+                else:
+                    log.err('no index for tick=%s note=%s' % (ontick, onnote))
             self.sustainArp.reset(sus)
-            self.phrase = [self.rhythmArp, self.noteArp,
-                           self.velocityArp, self.sustainArp] * len(self.whens)
+
+            # meh . forgive me here
+            self.phrase = zip(whens, notes, velocities, sus)
+            #self.phrase = [(self.rhythmArp, self.noteArp,
+            #               self.velocityArp, self.sustainArp) for i in range(len(whens))]
             if DEBUG:
                 log.msg('>phrase===\n%s' % pformat(self.phrase))
 
@@ -255,18 +269,18 @@ class PhraseRecordingArp(BaseArp):
         self._tape = {'whens':[], 'notes':[], 'velocities':[], 'sustains':[], 'indexes':{}}
 
     def recordWhen(self, ticks):
-        self._tape['whens'].append(ticks)
+        self._tape['whens'].append(ticks - self._measureStartTicks)
 
     def recordNote(self, note):
-        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['note'])
-        self._tape['note'].append(note)
+        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['notes'])
+        self._tape['notes'].append(note)
 
     def recordVelocity(self, velocity):
-        self._tape['velocity'].append(velocity)
+        self._tape['velocities'].append(velocity)
 
     def recordSustain(self, ontick, onnote, sustain):
         # meh this is not correct yet
-        self._tape['sustain'].append((ontick, onnote, sustain))
+        self._tape['sustains'].append((ontick, onnote, sustain))
 
 
 class Adder(ArpSwitcher):
