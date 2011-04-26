@@ -230,7 +230,7 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         self.runTicks(12)
         phraseRecorder.recordNoteOff(60)
         self.runTicks(96)
-        phraseRecorder.recordNoteOn(64, 90) 
+        phraseRecorder.recordNoteOn(64, 90)
         self.runTicks(48)
         phraseRecorder.recordNoteOn(67, 90)
         self.runTicks(72)
@@ -242,7 +242,7 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         phrase = phraseRecorder()
         self.assertEquals(phrase,
             [(24, 60, 110, 12), (132, 64, 90, 250), (180, 67, 90, 72)])
-        
+
         self.runTicks(96 * 4)
         phrase = phraseRecorder()
         self.assertEquals(phrase,
@@ -254,27 +254,17 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         todo - we should handle noteoff from past phrases better - maybe
         adjust corresponding sustain in the past recorded phrase somehow.
         """
-        
         clock, phraseRecorder = self.clock, self.phraseRecorder
-        
         phraseRecorder.recordNoteOn(60, 120)
-
         self.runTicks(96)
-
         phrase = phraseRecorder()
         self.assertEquals(phrase, [(0, 60, 120, 24)])
-
         self.runTicks(24)
-
         phraseRecorder.recordNoteOff(60)
-
         self.runTicks(72)
-
         phrase = phraseRecorder()
-
         self.failIf(self.flushLoggedErrors())
+        # note how the past phrase got updated with a prolonged sustain
+        self.assertEquals(phrase, [(0, 60, 120, 120)])
 
-        
-    test_noteoff_from_past_phrase.todo = ('We do not do anything now to handle noteoff '
-                                          'events occuring after recording stops')
 

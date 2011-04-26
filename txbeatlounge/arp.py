@@ -207,6 +207,8 @@ class PhraseRecordingArp(BaseArp):
     def __init__(self, clock=None):
         self.clock = getClock(clock)
         self._phraseStartTicks = self.clock.ticks
+        self._last_tape = None
+        self._tape = {}
         self._eraseTape()
         self.phrase = []
 
@@ -224,6 +226,12 @@ class PhraseRecordingArp(BaseArp):
         if DEBUG:
             log.msg('>tape===\n%s' % pformat(self._tape))
         self._eraseTape()
+        if not self._tape['whens'] and (self._last_tape and self._last_tape['dirty']):
+            whens = self._last_tape['whens']
+            notes = self._last_tape['notes']
+            velocities = self._last_tape['velocities']
+            sustains = self._last_tape['sustains']
+            indexes = self._last_tape['indexes']
         if whens:
             sus = [24] * len(whens)
             for (ontick, onnote, sustain) in sustains:
@@ -238,6 +246,9 @@ class PhraseRecordingArp(BaseArp):
                 log.msg('>phrase===\n%s' % pformat(self.phrase))
 
     def _eraseTape(self):
+        if self._tape and self._tape['whens']:
+            self._last_tape = dict(self._tape)
+            self._last_tape['dirty'] = False
         self._tape = {'whens':[], 'notes':[], 'velocities':[],
                       'sustains':[], 'indexes':{}, 'last_ticks': {}}
 
@@ -253,15 +264,21 @@ class PhraseRecordingArp(BaseArp):
 
 
     def recordNoteOff(self, note):
-        last = self._tape['last_ticks'].get(note, None)
+        tape = self._tape
+        last = tape['last_ticks'].get(note, None)
         if last is None:
-            # todo: do something kind of smart here besides log an error
-            log.err(ValueError(
-                    'woops, i have not seen noteon event in current '
-                    'phrase for note: %s' % note))
-            return
+            if self._last_tape:
+                last = self._last_tape['last_ticks'].get(note, None)
+                debug('got last tick from past recording: %s' % last)
+                if last is None:
+                    log.err(ValueError(
+                            'woops, i have not seen noteon event in current '
+                            'or last phrase for note: %s' % note))
+                    return
+            tape = self._last_tape
+            tape['dirty'] = True
         sustain = self.clock.ticks - last
-        self._tape['sustains'].append((last, note, sustain))
+        tape['sustains'].append((last, note, sustain))
 
 
 
