@@ -231,27 +231,38 @@ class PhraseRecordingArp(BaseArp):
                 if index is not None:
                     sus[index] = sustain
                 else:
-                    log.err('no index for tick=%s note=%s' % (ontick, onnote))
+                    log.err(ValueError(
+                        'no index for tick=%s note=%s' % (ontick, onnote)))
             self.phrase = zip(whens, notes, velocities, sus)
             if DEBUG:
                 log.msg('>phrase===\n%s' % pformat(self.phrase))
 
     def _eraseTape(self):
-        self._tape = {'whens':[], 'notes':[], 'velocities':[], 'sustains':[], 'indexes':{}}
+        self._tape = {'whens':[], 'notes':[], 'velocities':[],
+                      'sustains':[], 'indexes':{}, 'last_ticks': {}}
 
-    def recordWhen(self, ticks):
+
+    def recordNoteOn(self, note, velocity=100, ticks=None):
+        if ticks is None:
+            ticks = self.clock.ticks
+        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['notes'])
+        self._tape['last_ticks'][note] = self.clock.ticks
+        self._tape['notes'].append(note)
+        self._tape['velocities'].append(velocity)
         self._tape['whens'].append(ticks - self._phraseStartTicks)
 
-    def recordNote(self, note):
-        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['notes'])
-        self._tape['notes'].append(note)
 
-    def recordVelocity(self, velocity):
-        self._tape['velocities'].append(velocity)
+    def recordNoteOff(self, note):
+        last = self._tape['last_ticks'].get(note, None)
+        if last is None:
+            # todo: do something kind of smart here besides log an error
+            log.err(ValueError(
+                    'woops, i have not seen noteon event in current '
+                    'phrase for note: %s' % note))
+            return
+        sustain = self.clock.ticks - last
+        self._tape['sustains'].append((last, note, sustain))
 
-    def recordSustain(self, ontick, onnote, sustain):
-        # meh this is not correct yet
-        self._tape['sustains'].append((ontick, onnote, sustain))
 
 
 class Adder(ArpSwitcher):

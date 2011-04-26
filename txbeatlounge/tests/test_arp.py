@@ -226,28 +226,55 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         self.failIf(list(phrase))
 
         self.runTicks(24)
-        phraseRecorder.recordNote(60)
-        phraseRecorder.recordWhen(clock.ticks)
-        phraseRecorder.recordVelocity(110)
+        phraseRecorder.recordNoteOn(60, 110)
         self.runTicks(12)
-        phraseRecorder.recordSustain(24, 60, 12)
+        phraseRecorder.recordNoteOff(60)
         self.runTicks(96)
-        phraseRecorder.recordNote(64)
-        phraseRecorder.recordWhen(clock.ticks)
-        phraseRecorder.recordVelocity(90)
+        phraseRecorder.recordNoteOn(64, 90) 
         self.runTicks(48)
-        phraseRecorder.recordNote(67)
-        phraseRecorder.recordWhen(clock.ticks)
-        phraseRecorder.recordVelocity(90)
+        phraseRecorder.recordNoteOn(67, 90)
         self.runTicks(72)
-        phraseRecorder.recordSustain(132, 64, clock.ticks-132)
+        phraseRecorder.recordNoteOff(67)
         self.runTicks(130)
-        phraseRecorder.recordSustain(252, 67, clock.ticks-252)
+        phraseRecorder.recordNoteOff(64)
         self.runTicks(2)
 
         phrase = phraseRecorder()
-        self.fail('This is shit and needs a better api for the sustain part ... seriously')
+        self.assertEquals(phrase,
+            [(24, 60, 110, 12), (132, 64, 90, 250), (180, 67, 90, 72)])
+        
+        self.runTicks(96 * 4)
+        phrase = phraseRecorder()
+        self.assertEquals(phrase,
+            [(24, 60, 110, 12), (132, 64, 90, 250), (180, 67, 90, 72)])
 
-    test_phrase_recording.todo = 'Total shit'
 
+    def test_noteoff_from_past_phrase(self):
+        """
+        todo - we should handle noteoff from past phrases better - maybe
+        adjust corresponding sustain in the past recorded phrase somehow.
+        """
+        
+        clock, phraseRecorder = self.clock, self.phraseRecorder
+        
+        phraseRecorder.recordNoteOn(60, 120)
+
+        self.runTicks(96)
+
+        phrase = phraseRecorder()
+        self.assertEquals(phrase, [(0, 60, 120, 24)])
+
+        self.runTicks(24)
+
+        phraseRecorder.recordNoteOff(60)
+
+        self.runTicks(72)
+
+        phrase = phraseRecorder()
+
+        self.failIf(self.flushLoggedErrors())
+
+        
+    test_noteoff_from_past_phrase.todo = ('We do not do anything now to handle noteoff '
+                                          'events occuring after recording stops')
 

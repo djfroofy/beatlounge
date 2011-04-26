@@ -9,7 +9,7 @@ try:
     import pypm
     from txbeatlounge.midi import PypmWrapper, init, getInput, getOutput
     from txbeatlounge.midi import MidiHandler, MidiDispatcher
-    from txbeatlounge.midi import NoteOnOffHandler, ChordHandler
+    from txbeatlounge.midi import NoteOnOffHandler, ChordHandler, NoteEventHandler
     from txbeatlounge.midi import ClockSender
     from txbeatlounge.midi import printDeviceSummary
     from txbeatlounge.midi import (NOTEON_CHAN1, NOTEON_CHAN2,
@@ -249,3 +249,27 @@ class ClockSenderTests(TestCase, ClockRunner):
         self.midiout._buffer[:] = []
         self.runTicks(1)
         self.assertEquals(self.midiout._buffer, [[[[248], 98]]])
+
+
+class NoteEventHandlerTests(TestCase):
+
+
+    def setUp(self):
+        self.events = []
+        self.handler = NoteEventHandler(self.noteon, self.noteoff)
+
+    def noteon(self, note, velocity):
+        self.events.append(('noteon', note, velocity))
+
+    def noteoff(self, note):
+        self.events.append(('noteoff', note))
+
+
+    def test_noteonoff_events(self):
+        self.handler.noteon(1, 60, 120, 0)
+        self.handler.noteon(1, 64, 100, 0)
+        self.handler.noteoff(1, 60, 120, 0)
+        self.assertEquals(self.events, [
+                ('noteon', 60, 120), ('noteon', 64, 100), ('noteoff', 60)])
+
+

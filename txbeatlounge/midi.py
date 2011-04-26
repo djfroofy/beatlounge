@@ -222,7 +222,7 @@ class _DummyInstrument:
         pass
 
 
-class NoteOnOffHandler(MidiHandler):
+class MonitorHandler(MidiHandler):
     """
     A simple MidiHandler which takes a mapping of channels to instruments.
     """
@@ -246,6 +246,7 @@ class NoteOnOffHandler(MidiHandler):
         """
         self.instrs.get(channel, _DummyInstrument).stopnote(note)
 
+NoteOnOffHandler = MonitorHandler
 
 class ChordHandler(MidiHandler):
     """
@@ -292,51 +293,30 @@ class ChordHandler(MidiHandler):
                 self.callback(list(self._chord))
 
 
-
-class _ValueNotifier(MidiHandler):
-
-    def __init__(self, callback, clock=None):
-        self.clock = getClock(clock)
-        self.callback = callback
-
-
-class RhythmHandler(_ValueNotifier):
+class NoteEventHandler(MidiHandler):
     """
-    Captures timing information
+    A generic note event handler which sends noteon/noteoff events to some
+    registered callbacks. Note that that noteon callback should take two arguments
+    (note, velocity) and noteoff callback should take one argument (note).
     """
 
-    errorSustain = 0
-
-    def __init__(self, callback, sustainCallback, clock=None):
-        _ValueNotifier.__init__(self, callback, clock)
-        self.sustainCallback = sustainCallback
-        self._noteon = {}
+    def __init__(self, noteonCallback, noteoffCallback):
+        self.noteonCallback = noteonCallback
+        self.noteoffCallback = noteoffCallback
 
     def noteon(self, channel, note, velocity, timestamp):
-        # todo - something smarter could be done with the timestamp
-        # probably memoing some offset with our ticks - i dunno maybe
-        # not needed
-        ticks = self.clock.ticks
-        self._noteon[note] = ticks
-        self.callback(ticks)
+        """
+        Call noteonCallback with the note and velocity.
+        """
+        # todo - maybe do something smarter with the timestamp
+        # ... like normalize to ticks
+        self.noteonCallback(note, velocity)
 
     def noteoff(self, channel, note, velocity, timestamp):
-        ticks = self.clock.ticks
-        ontick = self._noteon.get(note, ticks - self.errorSustain)
-        sustain = ticks - ontick
-        self.sustainCallback(ontick, note, sustain)
-
-
-class NoteOnHandler(_ValueNotifier):
-
-    def noteon(self, channel, note, velocity, timestamp):
-        self.callback(note)
-
-
-class VelocityOnHandler(_ValueNotifier):
-
-    def noteon(self, channel, note, velocity, timestamp):
-        self.callback(velocity)
+        """
+        Call noteoffCallback with the note.
+        """
+        self.noteoffCallback(note)
 
 
 class ClockSender(object):
