@@ -8,8 +8,7 @@ from txbeatlounge.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
            'ClockSender', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler',
-           'NoteOnOffHandler', 'NoteOnHandler', 'VelocityOnHandler',
-           'RhythmHandler' ]
+           'MonitorHandler', 'NoteEventHandler' ]
 
 class PypmWrapper:
     """
