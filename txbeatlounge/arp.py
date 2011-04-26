@@ -213,7 +213,7 @@ class PhraseRecordingArp(BaseArp):
         self.phrase = []
 
     def __call__(self):
-        self._phraseStartTicks = self.clock.ticks
+        self.elapsed = self._phraseStartTicks = self.clock.ticks
         self._resetRecording()
         return list(self.phrase)
 
@@ -226,14 +226,15 @@ class PhraseRecordingArp(BaseArp):
         if DEBUG:
             log.msg('>tape===\n%s' % pformat(self._tape))
         self._eraseTape()
-        if not self._tape['whens'] and (self._last_tape and self._last_tape['dirty']):
+        if not whens and (self._last_tape and self._last_tape['dirty']):
             whens = self._last_tape['whens']
             notes = self._last_tape['notes']
             velocities = self._last_tape['velocities']
             sustains = self._last_tape['sustains']
             indexes = self._last_tape['indexes']
+            self._last_tape['dirty'] = True
         if whens:
-            sus = [24] * len(whens)
+            sus = [None] * len(whens)
             for (ontick, onnote, sustain) in sustains:
                 index = indexes.get((ontick, onnote))
                 if index is not None:
@@ -242,6 +243,7 @@ class PhraseRecordingArp(BaseArp):
                     log.err(ValueError(
                         'no index for tick=%s note=%s' % (ontick, onnote)))
             self.phrase = zip(whens, notes, velocities, sus)
+            self.phrase = [ (w,n,v,s or self.elapsed - w) for (w,n,v,s) in self.phrase ]
             if DEBUG:
                 log.msg('>phrase===\n%s' % pformat(self.phrase))
 
