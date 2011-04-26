@@ -1,11 +1,14 @@
+from pprint import pformat
 from itertools import cycle
 
 from twisted.trial.unittest import TestCase
 
+from txbeatlounge.testlib import ClockRunner, TestReactor
 from txbeatlounge import arp
 from txbeatlounge.player import N
+from txbeatlounge.scheduler import BeatClock
 from txbeatlounge.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
-    Adder)
+    Adder, PhraseRecordingArp)
 
 class ArpTests(TestCase):
 
@@ -206,4 +209,45 @@ class ArpTests(TestCase):
             a = klass([])
             for i in range(4):
                 n = a()
+
+
+class PhraseRecordingArpTests(TestCase, ClockRunner):
+
+    def setUp(self):
+        self.clock = BeatClock(135, reactor=TestReactor())
+        self.phraseRecorder = PhraseRecordingArp(self.clock)
+
+
+    def test_phrase_recording(self):
+        clock, phraseRecorder = self.clock, self.phraseRecorder
+
+        self.runTicks(96 * 4)
+        phrase = phraseRecorder()
+        self.failIf(list(phrase))
+
+        self.runTicks(24)
+        phraseRecorder.recordNote(60)
+        phraseRecorder.recordWhen(clock.ticks)
+        phraseRecorder.recordVelocity(110)
+        self.runTicks(12)
+        phraseRecorder.recordSustain(24, 60, 12)
+        self.runTicks(96)
+        phraseRecorder.recordNote(64)
+        phraseRecorder.recordWhen(clock.ticks)
+        phraseRecorder.recordVelocity(90)
+        self.runTicks(48)
+        phraseRecorder.recordNote(67)
+        phraseRecorder.recordWhen(clock.ticks)
+        phraseRecorder.recordVelocity(90)
+        self.runTicks(72)
+        phraseRecorder.recordSustain(132, 64, clock.ticks-132)
+        self.runTicks(130)
+        phraseRecorder.recordSustain(252, 67, clock.ticks-252)
+        self.runTicks(2)
+
+        phrase = phraseRecorder()
+        self.fail('This is shit and needs a better api for the sustain part ... seriously')
+
+    test_phrase_recording.todo = 'Total shit'
+
 
