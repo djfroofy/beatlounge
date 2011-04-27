@@ -269,3 +269,19 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         self.assertEquals(phrase, [(0, 60, 120, 120)])
 
 
+    def test_phrase_killing(self):
+        clock, phraseRecorder = self.clock, self.phraseRecorder
+        phraseRecorder.recordNoteOn(60, 120)
+        self.runTicks(48)
+        phraseRecorder.recordNoteOff(60)
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        self.assertEquals(phrase, [(0,60,120,48)])
+        phraseRecorder.phrase = []
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        self.failIf(phrase)
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        self.failIf(phrase)
+
