@@ -457,6 +457,48 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         self.assertRaises(ValueError, SchedulePlayer,
             self.instr1, lambda : [], 1, self.clock, 'bad')
 
+
+    def test_schedule_is_generative(self):
+        def gen():
+            for i in range(12):
+                yield (0 + i * 6, (5 * i) % 12, 100+i, 24)
+        schedulePlayer = SchedulePlayer(self.instr1, lambda : gen(),
+                                        interval=1, clock=self.clock)
+        schedulePlayer.startPlaying()
+        self.runTicks(96)
+        self.assert_(self.instr1.plays)
+        expected_plays = [('note', 0, 0, 100),
+                 ('note', 6, 5, 101),
+                 ('note', 12, 10, 102),
+                 ('note', 18, 3, 103),
+                 ('note', 24, 8, 104),
+                 ('note', 30, 1, 105),
+                 ('note', 36, 6, 106),
+                 ('note', 42, 11, 107),
+                 ('note', 48, 4, 108),
+                 ('note', 54, 9, 109),
+                 ('note', 60, 2, 110),
+                 ('note', 66, 7, 111),
+                 ('note', 96, 0, 100)]
+        self.assertEquals(self.instr1.plays, expected_plays)
+        expected_stops = [('note', 24, 0),
+                 ('note', 30, 5),
+                 ('note', 36, 10),
+                 ('note', 42, 3),
+                 ('note', 48, 8),
+                 ('note', 54, 1),
+                 ('note', 60, 6),
+                 ('note', 66, 11),
+                 ('note', 72, 4),
+                 ('note', 78, 9),
+                 ('note', 84, 2),
+                 ('note', 90, 7)]
+        self.assertEquals(self.instr1.stops, expected_stops)
+
+
+
+
+
 class UtilityTests(TestCase):
 
     def test_noteFactory(self):
