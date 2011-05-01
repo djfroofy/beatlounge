@@ -4,105 +4,156 @@ from twisted.python import failure, log
 import pypm
 
 from txbeatlounge.utils import getClock
-
+from txbeatlounge.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
-           'ClockSender', 'DemoHandler', 'MidiDispatcher', 'FUNCTIONS']
+           'ClockSender', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler',
+           'NoteOnOffHandler' ]
 
 class PypmWrapper:
+    """
+    Simple wrapper around pypm calls which caches inputs and outputs.
+    """
 
-    inputs = ()
-    outputs = ()
+    initialized = False
+    inputs = []
+    outputs = []
+    deviceMap = {}
+    inputNames = {}
+    outputNames = {}
+    _channels = {}
 
-    def initialize(self):
+    @classmethod
+    def initialize(cls):
+        """
+        Initialize pypm if not already initialized.
+        """
+        if cls.initialized:
+            return
         pypm.Initialize()
-        self.outputs = []
-        self.inputs = []
-        self.deviceMap = {}
-        self._gatherDeviceInfo()
+        cls._gatherDeviceInfo()
+        cls.initialized = True
 
-    def _gatherDeviceInfo(self):
+    @classmethod
+    def _gatherDeviceInfo(cls):
         for devno in range(pypm.CountDevices()):
             info = pypm.GetDeviceInfo(devno)
-            
-            m = self.deviceMap.setdefault(info[1], {'output':None, 'input':None})
+
+            m = cls.deviceMap.setdefault(info[1], {'output':None, 'input':None})
             if info[3]:
-                self.outputs.append(devno)
+                cls.outputs.append(devno)
                 m['output'] = devno
             if info[2]:
-                self.inputs.append(devno)
+                cls.inputs.append(devno)
                 m['input'] = devno
-        self.inputNames = dict((v['input'],k) for (k,v) in self.deviceMap.items()
+        cls.inputNames = dict((v['input'],k) for (k,v) in cls.deviceMap.items()
                                 if v['input'] is not None)
-        self.outputNames = dict((v['output'],k) for (k,v) in self.deviceMap.items()
+        cls.outputNames = dict((v['output'],k) for (k,v) in cls.deviceMap.items()
                                 if v['output'] is not None)
 
-    def getInput(self, dev):
-        if type(dev) is int:
-            return pypm.Input(self.inputs[dev])
-        return pypm.Input(self.deviceMap[dev]['input'])
+    @classmethod
+    def getInput(cls, dev):
+        """
+        Get an input with devive number 'dev' - dev may also be string matching
+        the target device. If the input was previously loaded this will return
+        the cached device.
+        """
+        no = dev
+        if isinstance(dev, basestring):
+            no = cls.deviceMap[dev]['input']
+        key = ('input', no)
+        if key not in cls._channels:
+            cls._channels[key] = pypm.Input(no)
+        return cls._channels[key]
 
 
-    def getOutput(self, dev):
-        if type(dev) is int:
-            return pypm.Output(self.outputs[dev])
-        return pypm.Output(self.deviceMap[dev]['output'])
+    @classmethod
+    def getOutput(cls, dev):
+        """
+        Get an output with devive number 'dev' - dev may also be string matching
+        the target device. If the output was previously loaded this will return
+        the cached device.
+        """
+        no = dev
+        if isinstance(dev, basestring):
+            no = cls.deviceMap[dev]['output']
+        key = ('output', no)
+        if key not in cls._channels:
+            cls._channels[key] = pypm.Output(no)
+        return cls._channels[key]
 
-    def printDeviceSummary(self, printer=None):
+    @classmethod
+    def printDeviceSummary(cls, printer=None):
+        """
+        Print device summary - inputs followed by outputs.
+        """
         if printer is None:
             def printer(line):
                 print line
         printer('Inputs:')
-        for devno in self.inputs:
-            printer('... %d %r' % (devno, self.inputNames[devno]))
+        for devno in cls.inputs:
+            printer('... %d %r' % (devno, cls.inputNames[devno]))
         printer('Outputs:')
-        for devno in self.outputs:
-            printer('... %d %r' % (devno, self.outputNames[devno]))
-            
+        for devno in cls.outputs:
+            printer('... %d %r' % (devno, cls.outputNames[devno]))
 
-pypmwrap = PypmWrapper()
-initialize = init = pypmwrap.initialize
-getInput = pypmwrap.getInput
-getOutput = pypmwrap.getOutput
-printDeviceSummary = pypmwrap.printDeviceSummary
+
+initialize = init = PypmWrapper.initialize
+getInput = PypmWrapper.getInput
+getOutput = PypmWrapper.getOutput
+printDeviceSummary = PypmWrapper.printDeviceSummary
 
 FUNCTIONS = {}
+FUNCTION_ARITY = {}
 
 g = globals()
-def a(name, v):
+def a(name, arity, v):
     g[name] = v
     FUNCTIONS[v] = name
-    __all__.append(name) 
+    FUNCTION_ARITY[v] = arity
+    __all__.append(name)
 
 for i in range(16):
     no = i + 1
-    a('NOTEOFF_CHAN%d' % no, 0x80 + i)
-    a('NOTEON_CHAN%d' % no, 0x90 + i)
-    a('POLYAFTERTOUCH_CHAN%d' % no, 0xA0 + i)
-    a('CONTROLCHANGE_CHAN%d' % no, 0xB0 + i)
-    a('PROGRAMCHANGE_CHAN%d' % no, 0xC0 + i)
-    a('CHANAFTERTOUCH_CHAN%d' % no, 0xD0 + i)
-    a('PITCHWHEEL_CHAN%d' % no, 0xE0 + i)
+    a('NOTEOFF_CHAN%d' % no, 2, 0x80 + i)
+    a('NOTEON_CHAN%d' % no, 2, 0x90 + i)
+    a('POLYAFTERTOUCH_CHAN%d' % no, 2, 0xA0 + i)
+    a('CONTROLCHANGE_CHAN%d' % no, 2, 0xB0 + i)
+    a('PROGRAMCHANGE_CHAN%d' % no, 2, 0xC0 + i)
+    a('CHANAFTERTOUCH_CHAN%d' % no, 2, 0xD0 + i)
+    a('PITCHWHEEL_CHAN%d' % no, 2, 0xE0 + i)
 
-a('SYSTEMEXCL', 0xf0)
-a('MTC_QFRAME', 0xf1)
-a('SONGPOSPOINTER', 0xf2)
-a('SONGSELECT', 0xF3)
-a('RESERVED1', 0xF4)
-a('RESERVED2', 0xF5)
-a('TUNEREQ', 0xF6)
-a('EOX',  0xF7)
-a('TIMINGCLOCK', 0xF8)
-a('RESERVED3', 0xF9)
-a('START',  0xFA)
-a('CONTINUE', 0xFB)
-a('STOP', 0xFC)
-a('ACTIVESENSING', 0xFE)
-a('SYSTEMRESET', 0xFF)
+a('SYSTEMEXCL', 2, 0xf0)
+a('MTC_QFRAME', 2, 0xf1)
+a('SONGPOSPOINTER', 2, 0xf2)
+a('SONGSELECT', 2, 0xF3)
+a('RESERVED1', 2, 0xF4)
+a('RESERVED2', 2, 0xF5)
+a('TUNEREQ', 2, 0xF6)
+a('EOX',  2, 0xF7)
+a('TIMINGCLOCK', 2, 0xF8)
+a('RESERVED3', 2, 0xF9)
+a('START',  2, 0xFA)
+a('CONTINUE', 2, 0xFB)
+a('STOP', 2, 0xFC)
+a('ACTIVESENSING', 2, 0xFE)
+a('SYSTEMRESET', 2, 0xFF)
 
 del a, g
 
 class MidiDispatcher(object):
+    """
+    Dispatcher for events received from a midi input channel.
+
+    Example usage:
+
+        init()
+        input = getInput(3)
+        def debug_event(event):
+            print event
+        disp = MidiDispatcher(input, [debug_event, NoteOnOffHandler(instr)])
+        disp.start()
+    """
 
     def __init__(self, midiInput, handlers, clock=None):
         self.clock = getClock(clock)
@@ -110,35 +161,141 @@ class MidiDispatcher(object):
         self.handlers = handlers
 
     def start(self):
-        self._event = self.clock.schedule(self).startLater(1, 1/96.)
+        """
+        Start the MidiDispatcher - this will schedule an event to call
+        all it's handlers every tick with any buffered events.
+        """
+        self._event = self.clock.schedule(self).startLater(0, 1/96.)
 
     def __call__(self):
+        """
+        Call all our handlers with buffered events (max of 32 per call
+        are processed).
+        """
         for message in self.midiInput.Read(32):
             for call in self.handlers:
                 call(message)
 
 
-class DemoHandler(object):
-
-    def __init__(self, instr):
-        self.instr = instr
+class MidiHandler(object):
 
     def __call__(self, message):
-        try:
-            packet, ms = message
-            func, arg1, arg2, wth = packet
-            if func == NOTEON_CHAN1:
-                self.instr.playnote(arg1, arg2)
-            elif func == NOTEOFF_CHAN1:
-                self.instr.stopnote(arg1)
-            else:
-                func = FUNCTIONS.get(func, '?')
-                log.msg('Ingoring midi function: %s' % func)
-        except:
-            f = failure.Failure()
-            log.err(f)
+        """
+        Parse method and call method on self based on midi function. For example
+        if function is NOTEON_CHAN1, this will call our method noteon(), etc. If
+        a message has a channel as part of it's function, this will be the first
+        argument. After the first optional channel argument, remaining positional
+        arguments are passed to the method in the same order as specified in MIDI.
+        Not all MIDI functions need to be supplied or implemented in a subclass.
+        """
+        packet, timestamp = message
+        func, arg1, arg2, _pad = packet
+        args = [ arg1, arg2 ][:FUNCTION_ARITY.get(func, 0)]
+        args.append(timestamp)
+        funcname = FUNCTIONS[func]
+        tokens = funcname.split('_')
+        if len(tokens) == 2:
+            type, channel = tokens
+            channel = int(channel[4:])
+            method = getattr(self, type.lower(), None)
+            if method is None:
+                debug('No handler defined for midi event of type: %s' % type)
+            method(channel, *args)
+
+    def noteon(self, channel, note, velocity, timestamp):
+        pass
+
+    def noteoff(self, channel, note, velocity, timestamp):
+        pass
+
+
+
+class _DummyInstrument:
+
+    @classmethod
+    def playnote(cls, note, velocity):
+        pass
+
+    @classmethod
+    def stopnote(cls, note):
+        pass
+
+
+class NoteOnOffHandler(MidiHandler):
+    """
+    A simple MidiHandler which takes a mapping of channels to instruments.
+    """
+
+    def __init__(self, instrs):
+        self.instrs = instrs
+
+    def noteon(self, channel, note, velocity, timestamp):
+        """
+        Immediately play instrument at channel with given note and velocity.
+        The timestamp is ignored. This is a noop if no instrument is mapped
+        to the given channel.
+        """
+        self.instrs.get(channel, _DummyInstrument).playnote(note, velocity)
+
+    def noteoff(self, channel, note, velocity, timestamp):
+        """
+        Immediately stop instrument at channel with given note. The velocity
+        and timestamp arguments are ignored. This is a noop if no instrument
+        is mapped to the given channel.
+        """
+        self.instrs.get(channel, _DummyInstrument).stopnote(note)
+
+
+class ChordHandler(MidiHandler):
+    """
+    A chord handler is a simple MidiHandler which recognizes chords and sends
+    to its callback.
+
+    todo: Currently this implementation doesn't care about channels; but this
+    behavior should likely change in the near future.
+    """
+
+    def __init__(self, callback, sustain=False):
+        """
+        callback: handler to receive chords
+        sustain: if True, only call our callback with noteon events
+        """
+        self.callback = callback
+        self.sustain = sustain
+        self._chord = []
+
+    def noteon(self, channel, note, velocity, timestamp):
+        """
+        Add note to chord and call our callback with updated chord.
+
+        Note that channel, velocity and timestamp arguments are ignored.
+        """
+        debug('noteon channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
+        if note not in self._chord:
+            self._chord.append(note)
+            debug('calling %s' % self.callback)
+            self.callback(list(self._chord))
+
+    def noteoff(self, channel, note, velocity, timestamp):
+        """
+        Remove note from chord. If the attribute `sustain` is `True` then we do not
+        call callback with the updated chord.
+
+        Note that channel, velocity and timestamp arguments are ignored.
+        """
+        debug('noteoff channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
+        if note in self._chord:
+            self._chord.remove(note)
+            if not self.sustain:
+                debug('calling %s' % self.callback)
+                self.callback(list(self._chord))
+
 
 class ClockSender(object):
+    """
+    A simple midi beat clock sender which can be used to synchronize external
+    MIDI devices.
+    """
 
     def __init__(self, midiOut, clock=None):
         self.clock = getClock(clock)
@@ -146,6 +303,12 @@ class ClockSender(object):
         self._started = False
 
     def start(self):
+        """
+        Start the ClockSender - on the next measure begin sending MIDI beat
+        clock events.  The first run will send a START and TIMINGCLOCK event.
+        Subsequent calls (24 per quarter note), will send bare TIMINGCLOCK
+        events.
+        """
         self._event = self.clock.schedule(self).startLater(1, 1/96.)
 
     def __call__(self):
