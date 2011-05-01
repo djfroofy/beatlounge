@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-from txbeatlounge import version as VERSION
+from bl import version as VERSION
 
-PKGNAME = 'txbeatlounge'
+PKGNAME = 'bl'
 
 def load_requirements(requirements):
     fd = open(requirements)
@@ -23,7 +23,7 @@ requirements = load_requirements('requirements.txt')
 packages = [PKGNAME] + [ ( '%s.%s' % (PKGNAME, pkg) ) for pkg in find_packages(PKGNAME) ]
 
 setup(
-    name='txbeatlounge',
+    name='bl',
     author = "Beatscape Drone Unicorns",
     version=VERSION,
     description='Twisted Beat Lounge is a framework for laying beats with fluidsynth',
@@ -32,7 +32,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     entry_points = { 'console_scripts' :
-        ['playsf2 = txbeatlounge.sf2tester:main',
-        'beatlounge = txbeatlounge.console:main'] },
+        ['playsf2 = bl.sf2tester:main',
+        'beatlounge = bl.console:main'] },
 )
 

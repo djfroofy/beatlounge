@@ -4,7 +4,7 @@ from zope.interface import Interface, implements
 
 from twisted.python import log
 
-from txbeatlounge.debug import DEBUG
+from bl.debug import DEBUG
 
 
 class Conductor(object):
@@ -76,5 +76,5 @@ Musician = PlayerMusician
 
 def _getclock(clock):
     if clock is None:
-        from txbeatlounge.scheduler import clock
+        from bl.scheduler import clock
     return clock 
