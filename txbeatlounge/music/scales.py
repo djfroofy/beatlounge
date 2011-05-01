@@ -1,8 +1,12 @@
 from txbeatlounge.music.notes import MidiNote
 
 
+__all__ = [
+
+]
+
 class Scale(object):
-    
+
     def __init__(self, proto, key=0):
         """
         proto is a scale in the form [0,2,4,5,7,9,11]
@@ -78,7 +82,6 @@ proto = {
     "minorpenta": [0,3,5,7,10],
     "mangong": [0,3,5,8,10],
 
-    
 
 }
 

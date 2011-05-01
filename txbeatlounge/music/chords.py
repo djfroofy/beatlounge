@@ -4,6 +4,10 @@ from txbeatlounge.utils import flattenLists
 from txbeatlounge.music import notes, constants
 
 
+__all__ = [
+
+]
+
 protoflavs = {
     "maj": [0, 4, 7],
     "min": [0, 3, 7],

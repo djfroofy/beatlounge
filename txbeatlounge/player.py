@@ -177,6 +177,22 @@ class SchedulePlayer(PlayableMixin):
     C) on the first quarter note with velocity 95 and sustain for 1 measure, note
     64 on the second quater with velocity 70 and sustain for a half duration, and
     note 48 on the last eighth with velocity 93 and sustain for a quarter duration.
+
+
+    Schedules can also be generated, rather than returning a pre-computed list.
+    Take the following example:
+
+
+        def gen():
+            when = 0
+            notes = cycle([60, 64, 67, 62])
+            while 1:
+                yield (when, notes.next(), 120, 24)
+                when += 24
+
+        player = SchedulePlayer(instr, lambda : gen())
+        clock.callAfterMeasures(1, player.play)
+
     """
 
     def __init__(self, instr, scheduleFactory, interval=0.25, clock=None,
@@ -198,7 +214,7 @@ class SchedulePlayer(PlayableMixin):
             raise ValueError('Invalid player type "%s"' % type)
 
     def play(self):
-        schedule = self.scheduleFactory()
+        schedule = ( event for event in self.scheduleFactory() )
         self._advance(0, schedule)
 
     def _advance(self, last, schedule, event=None):
@@ -210,8 +226,11 @@ class SchedulePlayer(PlayableMixin):
             self._on_method(note, vel)
             if sustain is not None:
                 self.clock.callLater(sustain, self._off_method, note)
-        if schedule:
-            event = schedule.pop(0)
+        try:
+            event = schedule.next()
+        except StopIteration:
+            return
+        if event:
             when, event = exhaustCall(event[0]), event[1:]
             delta = when - last
             if delta < 0:
