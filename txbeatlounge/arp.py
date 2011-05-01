@@ -1,17 +1,19 @@
 # Arpegiattors
 
+from pprint import pformat
 import random
 
 from zope.interface import Interface, Attribute, implements
 
 from twisted.python import log
 
+from txbeatlounge.debug import debug, DEBUG
 from txbeatlounge.utils import getClock
 
 
 __all__ = [
     'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
-    'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder',
+    'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder', 'PhraseRecordingArp',
 ]
 
 
@@ -199,6 +201,89 @@ class OctaveArp(ArpSwitcher):
         return v
 
 
+
+class PhraseRecordingArp(BaseArp):
+
+    def __init__(self, clock=None):
+        self.clock = getClock(clock)
+        self._phraseStartTicks = self.clock.ticks
+        self._last_tape = None
+        self._tape = {}
+        self._eraseTape()
+        self.phrase = []
+
+    def __call__(self):
+        self.elapsed = self._phraseStartTicks = self.clock.ticks
+        self._resetRecording()
+        return list(self.phrase)
+
+    def _resetRecording(self):
+        whens = self._tape['whens']
+        notes = self._tape['notes']
+        velocities = self._tape['velocities']
+        sustains = self._tape['sustains']
+        indexes = self._tape['indexes']
+        if DEBUG:
+            log.msg('>tape===\n%s' % pformat(self._tape))
+        self._eraseTape()
+        if not whens and (self._last_tape and self._last_tape['dirty']):
+            whens = self._last_tape['whens']
+            notes = self._last_tape['notes']
+            velocities = self._last_tape['velocities']
+            sustains = self._last_tape['sustains']
+            indexes = self._last_tape['indexes']
+            self._last_tape['dirty'] = True
+        if whens:
+            sus = [None] * len(whens)
+            for (ontick, onnote, sustain) in sustains:
+                index = indexes.get((ontick, onnote))
+                if index is not None:
+                    sus[index] = sustain
+                else:
+                    log.err(ValueError(
+                        'no index for tick=%s note=%s' % (ontick, onnote)))
+            self.phrase = zip(whens, notes, velocities, sus)
+            self.phrase = [ (w,n,v,s or self.elapsed - w) for (w,n,v,s) in self.phrase ]
+            if DEBUG:
+                log.msg('>phrase===\n%s' % pformat(self.phrase))
+
+    def _eraseTape(self):
+        if self._tape and self._tape['whens']:
+            self._last_tape = dict(self._tape)
+            self._last_tape['dirty'] = False
+        self._tape = {'whens':[], 'notes':[], 'velocities':[],
+                      'sustains':[], 'indexes':{}, 'last_ticks': {}}
+
+
+    def recordNoteOn(self, note, velocity=100, ticks=None):
+        if ticks is None:
+            ticks = self.clock.ticks
+        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['notes'])
+        self._tape['last_ticks'][note] = self.clock.ticks
+        self._tape['notes'].append(note)
+        self._tape['velocities'].append(velocity)
+        self._tape['whens'].append(ticks - self._phraseStartTicks)
+
+
+    def recordNoteOff(self, note):
+        tape = self._tape
+        last = tape['last_ticks'].get(note, None)
+        if last is None:
+            if self._last_tape:
+                last = self._last_tape['last_ticks'].get(note, None)
+                debug('got last tick from past recording: %s' % last)
+                if last is None:
+                    log.err(ValueError(
+                            'woops, i have not seen noteon event in current '
+                            'or last phrase for note: %s' % note))
+                    return
+            tape = self._last_tape
+            tape['dirty'] = True
+        sustain = self.clock.ticks - last
+        tape['sustains'].append((last, note, sustain))
+
+
+
 class Adder(ArpSwitcher):
     """
     A simple wrapper over an Arp instance which will add `amount` to the
@@ -214,5 +299,6 @@ class Adder(ArpSwitcher):
         v = exhaustCall(self.arp())
         if v is not None:
             return self.amount + v
+
 
 

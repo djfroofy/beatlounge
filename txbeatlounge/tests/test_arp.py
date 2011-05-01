@@ -1,11 +1,14 @@
+from pprint import pformat
 from itertools import cycle
 
 from twisted.trial.unittest import TestCase
 
+from txbeatlounge.testlib import ClockRunner, TestReactor
 from txbeatlounge import arp
 from txbeatlounge.player import N
+from txbeatlounge.scheduler import BeatClock
 from txbeatlounge.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
-    Adder)
+    Adder, PhraseRecordingArp)
 
 class ArpTests(TestCase):
 
@@ -206,4 +209,79 @@ class ArpTests(TestCase):
             a = klass([])
             for i in range(4):
                 n = a()
+
+
+class PhraseRecordingArpTests(TestCase, ClockRunner):
+
+    def setUp(self):
+        self.clock = BeatClock(135, reactor=TestReactor())
+        self.phraseRecorder = PhraseRecordingArp(self.clock)
+
+
+    def test_phrase_recording(self):
+        clock, phraseRecorder = self.clock, self.phraseRecorder
+
+        self.runTicks(96 * 4)
+        phrase = phraseRecorder()
+        self.failIf(list(phrase))
+
+        self.runTicks(24)
+        phraseRecorder.recordNoteOn(60, 110)
+        self.runTicks(12)
+        phraseRecorder.recordNoteOff(60)
+        self.runTicks(96)
+        phraseRecorder.recordNoteOn(64, 90)
+        self.runTicks(48)
+        phraseRecorder.recordNoteOn(67, 90)
+        self.runTicks(72)
+        phraseRecorder.recordNoteOff(67)
+        self.runTicks(130)
+        phraseRecorder.recordNoteOff(64)
+        self.runTicks(2)
+
+        phrase = phraseRecorder()
+        self.assertEquals(phrase,
+            [(24, 60, 110, 12), (132, 64, 90, 250), (180, 67, 90, 72)])
+
+        self.runTicks(96 * 4)
+        phrase = phraseRecorder()
+        self.assertEquals(phrase,
+            [(24, 60, 110, 12), (132, 64, 90, 250), (180, 67, 90, 72)])
+
+
+    def test_noteoff_from_past_phrase(self):
+        """
+        todo - we should handle noteoff from past phrases better - maybe
+        adjust corresponding sustain in the past recorded phrase somehow.
+        """
+        clock, phraseRecorder = self.clock, self.phraseRecorder
+        phraseRecorder.recordNoteOn(60, 120)
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        # note we guess the sustain to be 96 (clock.ticks - when)
+        self.assertEquals(phrase, [(0, 60, 120, 96)])
+        self.runTicks(24)
+        phraseRecorder.recordNoteOff(60)
+        self.runTicks(72)
+        phrase = phraseRecorder()
+        self.failIf(self.flushLoggedErrors())
+        # note how the past phrase got updated with a prolonged sustain
+        self.assertEquals(phrase, [(0, 60, 120, 120)])
+
+
+    def test_phrase_killing(self):
+        clock, phraseRecorder = self.clock, self.phraseRecorder
+        phraseRecorder.recordNoteOn(60, 120)
+        self.runTicks(48)
+        phraseRecorder.recordNoteOff(60)
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        self.assertEquals(phrase, [(0,60,120,48)])
+        phraseRecorder.phrase = []
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        self.failIf(phrase)
+        self.runTicks(96)
+        phrase = phraseRecorder()
+        self.failIf(phrase)
 

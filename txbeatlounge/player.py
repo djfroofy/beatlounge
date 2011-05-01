@@ -17,7 +17,8 @@ __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
     'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
     'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
     'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
-    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W']
+    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W',
+    'SchedulePlayer']
 
 
 class IPlayer(Interface):

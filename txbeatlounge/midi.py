@@ -8,7 +8,7 @@ from txbeatlounge.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
            'ClockSender', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler',
-           'NoteOnOffHandler' ]
+           'MonitorHandler', 'NoteEventHandler' ]
 
 class PypmWrapper:
     """
@@ -221,7 +221,7 @@ class _DummyInstrument:
         pass
 
 
-class NoteOnOffHandler(MidiHandler):
+class MonitorHandler(MidiHandler):
     """
     A simple MidiHandler which takes a mapping of channels to instruments.
     """
@@ -245,6 +245,7 @@ class NoteOnOffHandler(MidiHandler):
         """
         self.instrs.get(channel, _DummyInstrument).stopnote(note)
 
+NoteOnOffHandler = MonitorHandler
 
 class ChordHandler(MidiHandler):
     """
@@ -289,6 +290,32 @@ class ChordHandler(MidiHandler):
             if not self.sustain:
                 debug('calling %s' % self.callback)
                 self.callback(list(self._chord))
+
+
+class NoteEventHandler(MidiHandler):
+    """
+    A generic note event handler which sends noteon/noteoff events to some
+    registered callbacks. Note that that noteon callback should take two arguments
+    (note, velocity) and noteoff callback should take one argument (note).
+    """
+
+    def __init__(self, noteonCallback, noteoffCallback):
+        self.noteonCallback = noteonCallback
+        self.noteoffCallback = noteoffCallback
+
+    def noteon(self, channel, note, velocity, timestamp):
+        """
+        Call noteonCallback with the note and velocity.
+        """
+        # todo - maybe do something smarter with the timestamp
+        # ... like normalize to ticks
+        self.noteonCallback(note, velocity)
+
+    def noteoff(self, channel, note, velocity, timestamp):
+        """
+        Call noteoffCallback with the note.
+        """
+        self.noteoffCallback(note)
 
 
 class ClockSender(object):
