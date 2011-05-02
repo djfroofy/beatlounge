@@ -223,7 +223,8 @@ class SchedulePlayer(PlayableMixin):
             note = exhaustCall(note)
             vel = exhaustCall(vel)
             sustain = exhaustCall(sustain)
-            self._on_method(note, vel)
+            if note is not None:
+                self._on_method(note, vel)
             if sustain is not None:
                 self.clock.callLater(sustain, self._off_method, note)
         try:
