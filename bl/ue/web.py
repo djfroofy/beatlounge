@@ -13,7 +13,6 @@ from bl.player import SchedulePlayer
 
 
 class StepSequencer:
-
     def __init__(self, duration=16*4, octaves=2, offset=48):
         self.duration = duration
         self.grid = [[0 for i in range(octaves * 12)] for j in range(duration)]
@@ -28,7 +27,6 @@ class StepSequencer:
                 for (note, on) in enumerate(col):
                     if on:
                         next = (start + index * (96/16), self.offset + note, 120, 24)
-                        print 'next:', next
                         yield next
             index += 1
             index %= self.duration
@@ -41,11 +39,9 @@ class StepSequencer:
 
     def noteon(self, when, note):
         self.grid[when][note] = 1
-        print 'NOTEON grid:\n', pformat(self.grid)
 
     def noteoff(self, when, note):
         self.grid[when][note] = 0
-        print 'NOTEOFF grid:\n', pformat(self.grid)
 
 
 class TheStuff(Resource):
@@ -53,7 +49,7 @@ class TheStuff(Resource):
 
     def render_GET(self, request):
         # hehe - reloading template support
-        return open(html_path).read() #% _authors
+        return open(html_path).read()
 
 class HaveYouSomeHTMLAndJavascript(Resource):
     allowed = ("GET",)
@@ -63,7 +59,6 @@ class HaveYouSomeHTMLAndJavascript(Resource):
         self.stepSequencer = stepSequencer
 
     def getChild(self, path, request):
-        log.msg('path: %s' % path)
         if not path or path == '/':
             return TheStuff()
         if path == 'favicon.ico':
@@ -104,6 +99,7 @@ def start(instr):
     stepper = StepSequencer()
     resource = HaveYouSomeHTMLAndJavascript(stepper)
     player = SchedulePlayer(instr, stepper)
+    resource.player = player
     clock.callAfterMeasures(1, player.play)
     factory = Site(resource)
     reactor.listenTCP(9090, factory)
