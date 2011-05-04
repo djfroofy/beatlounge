@@ -19,8 +19,6 @@ __all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mt
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
 
-secs = lambda : time.time() % 86400
-
 class Beat(_BeatBase):
     """
     A named tuple representing the current beat as:
