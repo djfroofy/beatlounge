@@ -6,6 +6,7 @@ from pprint import pformat
 from twisted.python import log
 from twisted.web.resource import Resource
 from twisted.web.server import Site
+from twisted.web.client import Response
 
 from bl.utils import getClock
 from bl.player import SchedulePlayer

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>beatlounge (C) 2011 The BeatLoungers society</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+<style type="text/css">
+tr.even { background-color: #ddd; }
+.txt { color: #5ef; background: #000;}
+.demarc { background: red; }
+.on div { background: green; }
+td div { border-radius: 5px; width: 20px; height: 20px; }
+</style>
+</head>
+<body>
+<section>
+<h1>`---\...beatlounge web ui.../---,</h1>
+<form id="notesender" action="POST">
+</form>
+<script language="javascript">
+    $(document).ready(
+      function () {
+        var html = "<table>"
+        for (var i=0; i<8; i++) {
+          var rowcls = 'odd';
+            if (i % 2 == 0) {
+                rowcls = 'even';
+            }
+          html += "<tr"+ ' class="' + rowcls + '">';
+          for (var j=0; j<12; j++) {
+            var colcls = 'odd';
+              if (j % 2 == 0) {
+                  colcls = 'even';
+              }
+            html += '<td' + ' class="' + colcls + '">';
+            html += '<input type="checkbox" name="' + (i*12 + j) + '" class="noteEvent"/>' + (i*12 + j);
+            html += '</td>';
+          }
+          html += "</tr>";
+        }
+        html += "</table>";
+
+        $("#notesender").append(html);
+        $(".noteEvent").click(function(evt){
+          var path = '/arp';
+          console.log(evt);
+          console.log(this);
+          console.log(evt.currentTarget.name);
+
+          if($(this).is(':checked')) {
+            $.post(path, {'on': evt.currentTarget.name});
+          } else {
+            $.post(path, {'off': evt.currentTarget.name});
+          }
+
+
+        });
+        console.log("completed append");
+    });
+</script>
+</section>
+</body>
+</html>
