@@ -12,8 +12,6 @@ from twisted.internet.selectreactor import SelectReactor
 from twisted.internet.defer import Deferred, succeed
 from twisted.internet.task import LoopingCall
 
-#from fluidsynth import Synth
-
 from bl.debug import DEBUG
 
 __all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt',
@@ -333,62 +331,6 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.task.stop()
         self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
 
-
-    def receiveTime(self, receiver=None, port=17779, interface='192.168.2.3', listen_now=True):
-        """
-        Receives time from a master and starts the clock with the next "one"
-        Master sends 4 args: ticks, time, timeSignature, tempo
-
-clock = BeatClock()
-
-
-        """
-
-        if self.running: raise ValueError('clock is already running')
-
-        if not receiver:
-            from txosc.dispatch import Receiver
-            receiver = Receiver()
-
-        def _sync(message, address):
-            args = message.arguments
-
-            tempo = int(args[3].value)
-            beats, duration = [int(a) for a in str(args[2].value).split('/')]
-            meter = Meter(beats, duration, 1)
-
-            if self.running:
-                if tempo == self.tempo:
-                    return
-                else:
-                    log.msg('received clock tempo change')
-                    self.task.stop()
-
-            log.msg(message)
-            ticks = int(args[0].value)
-            time_of_last_one = float(args[1].value)
-
-            ticks_per = 96/duration
-            ticks_per_measure = ticks_per * beats
-            ticks_per_second = tempo * 0.4
-            seconds_per_measure = ticks_per_measure/ticks_per_second
-
-            self.tempo = tempo
-            self._tick_interval = (60. / tempo) * (1./24)
-            self.meters = [Meter(beats, duration, 1)]
-            self.ticks = ticks + ticks_per_measure
-            delta = (time_of_last_one + seconds_per_measure) - secs()
-
-            if self.running:
-                self.reactor.callLater(delta, self.startTicking)
-            else:
-                self.reactor.callLater(delta, self.run)
-
-        receiver.addCallback('/clock', _sync)
-
-        if listen_now:
-            from txosc.async import DatagramServerProtocol
-            self.reactor.listenUDP(port, DatagramServerProtocol(receiver), interface=interface)
 
 
 def measuresToTicks(measures, meter=standardMeter):
