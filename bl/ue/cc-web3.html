@@ -1,0 +1,71 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head> 
+<meta charset="UTF-8"> 
+<!--<style>.range {-webkit-appearance: slider-vertical; width: 20px; height: 200px;}</style> -->
+<style>.range {width: 300px; clear: left;}</style>
+<title>BL Gridz</title> 
+</head> 
+
+<body>
+<div id="conn_status"></div>
+
+
+
+<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+
+<script> 
+ws = new WebSocket("ws://localhost:8347/cc");
+
+var values = {
+  'vibrato': 0,
+  'pan': 50,
+  'expression': 127,
+  'sustain': 50,
+  'reverb': 0,
+  'chorus': 0,
+}
+
+function initRange() {
+  for (var prop in values) {
+    inp = $(
+      '<input type="range" class="range" name="'+prop+'" min="0" max="127" step="1" value="'+values[prop]+'" />'
+    );
+    label = $('<label>'+prop+'</label>');
+    $('body').append(inp);
+    $('body').append(prop);
+    $('body').append('<br>');
+    inp.change(function(ev){
+      ws.send(this.name + "-" + this.value);
+    });
+  }
+}
+
+$(function(){
+  initRange();
+  ws.onmessage = function(evt) {
+    console.log(evt);
+    console.log(evt.data);
+    o = JSON.parse(evt.data);
+    for (var prop in o) {
+      $('input[name="'+prop+'"]').val(o[prop]);
+      values[prop] = o[prop];
+    }
+  }
+  ws.onopen = function(evt) {
+    $('#conn_status').html('<b>Connected</b>');
+    /*
+    for (var k in values) {
+      ws.send(k+"-"+values[k]);
+    }
+    */
+  }
+  ws.onerror = function(evt) {
+    $('#conn_status').html('<b>Error</b>');
+  }
+  ws.onclose = function(evt) {
+    $('#conn_status').html('No Connection');
+  }
+});
+</script>
+</body>
