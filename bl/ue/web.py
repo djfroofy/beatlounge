@@ -7,10 +7,14 @@ from twisted.python import log
 from twisted.web.resource import Resource
 from twisted.web.server import Site
 from twisted.web.client import Response
+from twisted.web.server import NOT_DONE_YET
+from twisted.web.template import Element, renderer, XMLFile, flattenString
 
 from bl.utils import getClock
 from bl.player import SchedulePlayer
 
+_here = os.path.dirname(__file__)
+_authors = ['Drew Smathers', 'Skylar Saveland']
 
 class StepSequencer:
     def __init__(self, duration=16*4, octaves=2, offset=48):
@@ -44,65 +48,85 @@ class StepSequencer:
         self.grid[when][note] = 0
 
 
-class TheStuff(Resource):
-    isLeaf = True
+class RootElement(Element):
+    loader = XMLFile(os.path.join(_here, 'stepseq.html'))
+
+    @renderer
+    def title(self, request, tag):
+        random.shuffle(_authors)
+        tag.fillSlots(authors=', '.join(_authors))
+        return tag
+
+    @renderer
+    def form(self, request, tag):
+        tag.fillSlots(sid=str(request.sid))
+        return tag
+
+
+class StepSequencerPage(Resource):
+    allowed = ("GET",)
+    addSlash = True
+
+    def __init__(self, instrFactory):
+        Resource.__init__(self)
+        self.instrFactory = instrFactory
+        self.sessions = []
 
     def render_GET(self, request):
-        # hehe - reloading template support
-        return open(html_path).read()
+        clock = getClock()
+        stepSequencer = StepSequencer()
+        instr = self.instrFactory()
+        player = SchedulePlayer(instr, stepSequencer)
+        session = {
+            'sequencer': stepSequencer,
+            'player': player,
+        }
+        clock.callAfterMeasures(1, player.play)
+        request.sid = len(self.sessions)
+        self.sessions.append(session)
+        request.write('<!DOCTYPE html>\n')
+        flattenString(request, RootElement()).addCallback(self._templateRendered, request)
+        return NOT_DONE_YET
 
-class HaveYouSomeHTMLAndJavascript(Resource):
-    allowed = ("GET",)
-
-    def __init__(self, stepSequencer):
-        Resource.__init__(self)
-        self.stepSequencer = stepSequencer
-
-    def getChild(self, path, request):
-        if not path or path == '/':
-            return TheStuff()
-        if path == 'favicon.ico':
-            return Response('')
-        return NoteEvent(path, self)
+    def _templateRendered(self, html, request):
+        request.write(html)
+        request.finish()
 
 
-class NoteEvent(Resource):
+class NoteEventHandler(Resource):
     allowed = ("POST",)
     isLeaf = True
+    parent = None
 
-    def __init__(self, path, parent):
-        Resource.__init__(self)
-        command, when, note = path.split('-')
-        self.command = command
-        self.when = int(when)
-        self.note = int(note)
-        self.parent = parent
+    def _parse_request(self, request):
+        node = request.path.split('/')[-1]
+        id, command, when, note = node.split('-')
+        return int(id), command, int(when), int(note)
 
     def render_POST(self, request):
-        stepSequencer = self.parent.stepSequencer
-        if self.command == 'on':
-            stepSequencer.noteon(self.when, self.note)
+        id, command, when, note = self._parse_request(request)
+        session = self.parent.sessions[id]
+        stepSequencer = session['sequencer']
+        if command == 'on':
+            stepSequencer.noteon(when, note)
         else:
-            stepSequencer.noteoff(self.when, self.note)
+            stepSequencer.noteoff(when, note)
         return 'ok'
 
 
-HERE = os.path.dirname(__file__)
-_authors = ['Drew Smathers', 'Skylar Saveland']
-random.shuffle(_authors)
-html_path = os.path.join(HERE, 'html_web.html')
 
-
-def start(instr):
+def start(instrFactory):
     from twisted.internet import reactor
-    clock = getClock()
-    stepper = StepSequencer()
-    resource = HaveYouSomeHTMLAndJavascript(stepper)
-    player = SchedulePlayer(instr, stepper)
-    resource.player = player
-    clock.callAfterMeasures(1, player.play)
-    factory = Site(resource)
+    root = Resource()
+    seqPage = StepSequencerPage(instrFactory)
+    root.putChild('stepseq', seqPage)
+    noteEventHandler = NoteEventHandler()
+    noteEventHandler.parent = seqPage
+    seqPage.putChild('notes', noteEventHandler)
+    factory = Site(root)
     reactor.listenTCP(9090, factory)
-    return resource
+    return root, seqPage
+
+
 
 
