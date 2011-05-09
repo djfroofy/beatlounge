@@ -1,0 +1,233 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head> 
+<meta charset="UTF-8"> 
+<meta name="robots" content="noindex"> 
+<title>BL Step Sequence</title> 
+</head> 
+
+<body>
+<div id="conn_status"></div>
+
+<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+<script> 
+// factor to utils or sth
+function divmod(num, div){ return [Math.floor(num/div), num%div]}
+
+function Cell(row, col) {
+    this.row = row;
+    this.col = col;
+}
+
+var ws = new WebSocket("ws://localhost:8347/step");
+var kBoardWidth = 24*16;
+var kBoardHeight= 88;
+var kPieceWidth = 3;
+var kPieceHeight= 8;
+var kPixelWidth = 1 + (kBoardWidth * kPieceWidth);
+var kPixelHeight= 1 + (kBoardHeight * kPieceHeight);
+
+function getCursorPosition(e) {
+    var x;
+    var y;
+    if (e.pageX != undefined && e.pageY != undefined) {
+    	x = e.pageX;
+    	y = e.pageY;
+    }
+    else {
+    	x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+    	y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    }
+    x -= e.currentTarget.offsetLeft;
+    y -= e.currentTarget.offsetTop;
+    x = Math.min(x, kBoardWidth * kPieceWidth);
+    y = Math.min(y, kBoardHeight * kPieceHeight);
+    var cell = new Cell(Math.floor(y/kPieceHeight), Math.floor(x/kPieceWidth));
+    return cell;
+}
+
+function drawBoard(context, selected) {
+  context.clearRect(0, 0, kPixelWidth, kPixelHeight);
+  context.beginPath();
+  /* vertical lines */
+  for (var x = 0; x <= kPixelWidth; x += kPieceWidth) {
+    context.moveTo(0.5 + x, 0);
+    context.lineTo(0.5 + x, kPixelHeight);
+  }
+  /* horizontal lines */
+  for (var y = 0; y <= kPixelHeight; y += kPieceHeight) {
+    context.moveTo(0, 0.5 + y);
+    context.lineTo(kPixelWidth, 0.5 +  y);
+  }
+  context.strokeStyle = "#ccc";
+  context.stroke();
+
+  /* make some verticle rectangles to see */
+  for (var i = 0; i < kBoardWidth; i ++) {
+    context.fillStyle = "#fff";
+    if (i % 3 == 0) {
+      context.fillStyle = "#ccc";
+    }
+    // 8th triplet
+    if (i % 4 == 0) {
+      context.fillStyle = "#def";
+    }
+    // 16th
+    if (i % 6 == 0) {
+      context.fillStyle = "#bbb";
+    }
+    // qt triplet
+    if (i % 8 == 0) {
+      context.fillStyle = "#abc";
+    }
+    // 8th
+    if (i % 12 == 0) {
+      context.fillStyle = "#aaa";
+    }
+    // qt
+    if (i % 24 == 0) {
+      context.fillStyle = "#999";
+    }
+    if (i % 24 == 0) {
+      context.fillStyle = "#888";
+    }
+    // whole
+    if (i % (24*4) == 0) {
+      context.fillStyle = "#777";
+    }
+    // 2 whole
+    if (i % (24*8) == 0) {
+      context.fillStyle = "#555";
+    }
+    context.fillRect(i*kPieceWidth, 0, kPieceWidth, kPixelHeight);
+  }
+  
+  /* horizontal rectangles, notes */
+
+  var wheel = {
+      9: "rgba(255, 0, 0, .2)",  
+      4: "rgba(255, 127, 0, .2)",
+      11: "rgba(255, 255, 0, .2)",
+      6: "rgba(127, 255, 0, .2)",
+      1: "rgba(0, 255, 0, .2)",
+      8: "rgba(0, 255, 127, .2)",
+      3: "rgba(0, 255, 255, .2)",
+      10: "rgba(0, 127, 255, .2)",
+      5: "rgba(0, 0, 255, .2)",
+      0: "rgba(127, 0, 255, .2)",
+      7: "rgba(255, 0, 255, .2)",
+      2: "rgba(255, 0, 127, .2)",
+  };
+  for (var i = kBoardHeight; i > 0; i--){
+      context.fillStyle = wheel[(kBoardHeight-i)%12];
+      context.fillRect(0, (kBoardHeight-i)*kPieceHeight, kPixelWidth, kPieceHeight);
+  }
+
+  // selected
+  for (var i = 0; i < kBoardHeight; i++){
+    for (j = 0; j < kBoardWidth; j++){
+      if (selected[i][j] === 1){
+        drawPiece(context, new Cell(i,j));
+      }
+    }
+  }
+
+}
+ 
+function drawPiece(context, c) {
+    var col = c.col;
+    var row = c.row;
+    var x = (col * kPieceWidth) + (kPieceWidth/2);
+    var y = (row * kPieceHeight) + (kPieceHeight/2);
+    var radius = (kPieceWidth/2) - (kPieceWidth/10);
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI*2, false);
+    context.closePath();
+    context.strokeStyle = "#000";
+    context.stroke();
+	  context.fillStyle = "#000";
+    context.fill();
+}
+
+function initSelected(){
+  var selected = []; 
+  for (i = 0; i < kBoardHeight; i++){
+    selected.push([]);
+    for (j = 0; j < kBoardWidth; j++){
+      selected[i].push(0);
+    }
+  }
+  return selected;
+}
+
+$(function() {
+  var can = $('<canvas></canvas>');
+  //var feedbackdiv = $('<div id="feedback"></div>');
+
+  rawjscanvas = can.get(0);
+  rawjscanvas.id = "step";
+  rawjscanvas.width = kPixelWidth;
+  rawjscanvas.height = kPixelHeight;
+  $('body').append(can);
+  //$('body').append(feedbackdiv);
+  context = rawjscanvas.getContext('2d');
+ 
+  selected = initSelected();
+ 
+  drawBoard(context, selected);
+
+  can.click(function(ev){
+    cell = getCursorPosition(ev);
+    selecting = selected[cell.row][cell.col] === 0;
+    if (selecting) {
+      selected[cell.row][cell.col] = 1;
+    } else {
+      selected[cell.row][cell.col] = 0;
+    }
+    console.log(cell, selecting);
+    col = [];
+    for (var i=0; i < kBoardHeight; i++){
+      if (selected[i][cell.col] === 1){
+        col.push(kBoardHeight-i);
+      }
+    }
+    console.log(cell.col, col);
+    ws.send(cell.col + "-" + col);
+  });
+
+  ws.onmessage = function(evt) {
+    var o = JSON.parse(evt.data);
+    console.log(o);
+    selected = initSelected();
+    for (var tick in o){
+      if (o.hasOwnProperty(tick)){
+        for (var i=0; i < o[tick].length; i++){
+          note = o[tick][i];
+          selected[(kBoardHeight-note)][tick] = 1;
+        }
+      }
+    }
+    drawBoard(context, selected);
+  }
+  ws.onopen = function(evt) {
+    $('#conn_status').html('<b>Connected</b>');
+    //ws.send('Connected');
+  }
+  ws.onerror = function(evt) {
+    $('#conn_status').html('<b>Error</b>');
+  }
+  ws.onclose = function(evt) {
+    $('#conn_status').html('<b>Closed</b>');
+  }
+});
+
+
+
+// global for to play
+
+
+
+</script> 
+</body> 
+</html> 
+

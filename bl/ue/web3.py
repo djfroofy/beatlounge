@@ -30,6 +30,60 @@ class BaseHandler(WebSocketHandler):
         self.transports.remove(self.transport)
 
 
+
+
+class StepHandler(BaseHandler):
+    """
+    values will be like:
+
+    {
+        <tick>: [note,note,note],
+
+    }
+    """
+
+    values = {}
+    transports = []
+
+    def frameReceived(self, frame):
+        """<1-384>-<1-127>::<1-127>"""
+
+        print "frame:", frame
+        tick, values = frame.split('-')
+        tick = int(tick)
+        print tick, values
+
+        values = [int(v) for v in values.split(',') if v]
+        if values:
+            self.values[tick] = values
+        else:
+            del self.values[tick]
+
+        print self.values
+
+        for t in self.transports:
+            t.write(json.dumps(self.values))
+
+    @classmethod
+    def factory(self):
+        #l = sorted(self.values.values(), key=lambda i: i[0])
+
+        l = []
+        for k,v in self.values.iteritems():
+            # TODO, put vol, sus in UI instead of hardcoding to 100,24
+            item = [k, v, 100,24]
+            l.append(item)
+
+        l = sorted(l, key=lambda i: i[0])
+        print l
+        return l
+
+
+
+
+
+
+
 class ListHandler(BaseHandler):
     values = []
     transports = []
@@ -116,6 +170,7 @@ def start():
     site = WebSocketSite(root)
     site.addHandler('/list', ArpHandler)
     site.addHandler('/cc', ControlChangeHandler)
+    site.addHandler('/step', StepHandler)
     reactor.listenTCP(8347, site)
 
 
