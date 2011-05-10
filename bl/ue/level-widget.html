@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8" />
-<title>Canvas Drag and Drop Test</title>
+<title>Canvas Event</title>
 </head>
 <body>
 
@@ -10,49 +10,71 @@
 
 <script type="text/javascript">
 
-var canvas;
-var ctx;
-var kBoardWidth = 24*16;
-var LevelHeight = 127;
-var kPieceWidth = 3;
-var kPieceHeight = 1;
-var kPixelWidth = kPieceWidth * kBoardWidth + 1;
-var kPixelHeight = kPieceHeight * LevelHeight + 1;
-
-var defaultValue = 100;
-
-var selected = {};
-var dragging = false;
-
-function rect(ctx, x, y, w, h) {
-  ctx.beginPath();
-  ctx.rect(x,y,w,h);
-  ctx.closePath();
-  ctx.stroke();
-}
-
-function draw(ctx) {
-  console.log(ctx);
-  ctx.clearRect(0, 0, kPixelWidth, kPixelHeight);
-  rect(ctx, 0, 0, kPixelWidth, kPixelHeight);
-  for (i=0; i<kBoardWidth; i++){
-    if (selected[i] === undefined){
-      value = defaultValue;
-    } else {
-      value = selected[i];
-    }
-    rect(ctx, i*kPieceWidth, LevelHeight - value, kPieceWidth, kPieceHeight);
-  }
-
-}
-
 
 function Cell(row, col) {
     this.row = row;
     this.col = col;
 }
 
-function getCursorPosition(e) {
+function drawRect(context, x, y, w, h) {
+  context.beginPath();
+  context.rect(x,y,w,h);
+  context.closePath();
+  context.stroke();
+}
+
+function LevelRoller(canvas, options){
+  var defaultOptions = {
+    "id": "level",
+    "BoardWidth": 24*16,
+    "BoardHeight": 128,
+    "PieceWidth": 3,
+    "PieceHeight": 1,
+    "strokeStyle": "#000",
+  }
+  if (typeof options == 'object') {
+		options = $.extend(defaultOptions, options);
+	} else {
+		options = defaultOptions;
+	}
+
+  this.canvas = canvas;
+  var ctx = canvas.getContext('2d');
+  ctx.strokeStyle = options["strokeStyle"];
+  var BoardWidth = options["BoardWidth"]
+  var BoardHeight = options["BoardHeight"]
+  var PieceWidth = options["PieceWidth"]
+  var PieceHeight = options["PieceHeight"]
+  var PixelWidth = PieceWidth * BoardWidth + 1;
+  var PixelHeight = PieceHeight * BoardHeight + 1;
+
+  this.canvas.id = options["id"];
+  this.canvas.width = PixelWidth;
+  this.canvas.height = PixelHeight;
+
+  var defaultLevel = 100;
+  var selected = {};
+  this.dragging = false;
+
+  draw = function() {
+    var value;
+    console.log(ctx);
+    console.log(PixelWidth, PixelHeight);
+    ctx.clearRect(0, 0, PixelWidth, PixelHeight);
+    drawRect(ctx, 0, 0, PixelWidth, PixelHeight);
+    for (i = 0; i < BoardWidth; i++){
+      if (selected[i] === undefined){
+        value = defaultLevel;
+      } else {
+        value = selected[i];
+      }
+      drawRect(ctx, i*PieceWidth, BoardHeight - value, PieceWidth, PieceHeight);
+    }
+  }
+  this.draw = draw;
+
+  // TODO, factor this out to parent class for rilz
+  getCursorPosition = function(e) {
     var x;
     var y;
     if (e.pageX != undefined && e.pageY != undefined) {
@@ -65,46 +87,47 @@ function getCursorPosition(e) {
     }
     x -= e.currentTarget.offsetLeft;
     y -= e.currentTarget.offsetTop;
-    x = Math.min(x, kBoardWidth * kPieceWidth);
-    y = Math.min(y, LevelHeight * kPieceHeight);
-    var cell = new Cell(Math.floor(y/kPieceHeight), Math.floor(x/kPieceWidth));
+    x = Math.min(x, BoardWidth * PieceWidth);
+    y = Math.min(y, BoardHeight * PieceHeight);
+    var cell = new Cell(Math.floor(y/PieceHeight), Math.floor(x/PieceWidth));
     return cell;
-}
+  }
 
+  this.drag = function(e) {
+    var cell = getCursorPosition(e);
+    console.log(cell);
+    selected[cell.col] = BoardHeight - cell.row;
+    draw();
+  };
+
+  this.mousedown = function(e){
+    var cell = getCursorPosition(e);
+    console.log(cell);
+    dragging = true;
+    this.canvas.onmousemove = this.drag;
+  };
+
+  this.mouseup = function(e){
+    canvas.onmousemove = null;
+    dragging = false;
+    console.log('up');
+  };
+
+}
 
 $(function() {
   var can = $('<canvas></canvas>');
   console.log(can);
   var canvas = can.get(0);
-  canvas.id = "tutorial";
-  canvas.width = kPixelWidth;
-  canvas.height = kPixelHeight;
   console.log(canvas);
   $('body').append(can);
-  var context = canvas.getContext('2d');
-  context.strokeStyle = "#000"
-  console.log(context);
-  draw(context);
 
-  function draggingCB(e) {
-    var cell = getCursorPosition(e);
-    console.log(cell);
-    selected[cell.col] = LevelHeight - cell.row;
-    draw(context);
-  };
+  var levelroller = new LevelRoller(canvas);
+  console.log(levelroller);
+  levelroller.draw();
 
-  canvas.onmousedown = function(e){
-    var cell = getCursorPosition(e);
-    console.log(cell);
-    dragging = true;
-    canvas.onmousemove = draggingCB;
-  };
-
-  canvas.onmouseup = function(e){
-    canvas.onmousemove = null;
-    dragging = false;
-    console.log('up');
-  };
+  canvas.onmousedown = function(e) { return levelroller.mousedown(e); }
+  canvas.onmouseup = function(e) { return levelroller.mouseup(e); }
 
 });
 
