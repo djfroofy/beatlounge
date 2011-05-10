@@ -19,7 +19,8 @@ function Cell(row, col) {
     this.col = col;
 }
 
-var ws = new WebSocket("ws://localhost:8347/step");
+
+var ws = new WebSocket("ws://"+location.hostname+":8347/step");
 var kBoardWidth = 24*16;
 var kBoardHeight= 88;
 var kPieceWidth = 3;
