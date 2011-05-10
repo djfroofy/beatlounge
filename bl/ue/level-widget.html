@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Canvas Drag and Drop Test</title>
+</head>
+<body>
+
+<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+var canvas;
+var ctx;
+var kBoardWidth = 24*16;
+var LevelHeight = 127;
+var kPieceWidth = 3;
+var kPieceHeight = 1;
+var kPixelWidth = kPieceWidth * kBoardWidth + 1;
+var kPixelHeight = kPieceHeight * LevelHeight + 1;
+
+var defaultValue = 100;
+
+var selected = {};
+var dragging = false;
+
+function rect(ctx, x, y, w, h) {
+  ctx.beginPath();
+  ctx.rect(x,y,w,h);
+  ctx.closePath();
+  ctx.stroke();
+}
+
+function draw(ctx) {
+  console.log(ctx);
+  ctx.clearRect(0, 0, kPixelWidth, kPixelHeight);
+  rect(ctx, 0, 0, kPixelWidth, kPixelHeight);
+  for (i=0; i<kBoardWidth; i++){
+    if (selected[i] === undefined){
+      value = defaultValue;
+    } else {
+      value = selected[i];
+    }
+    rect(ctx, i*kPieceWidth, LevelHeight - value, kPieceWidth, kPieceHeight);
+  }
+
+}
+
+
+function Cell(row, col) {
+    this.row = row;
+    this.col = col;
+}
+
+function getCursorPosition(e) {
+    var x;
+    var y;
+    if (e.pageX != undefined && e.pageY != undefined) {
+    	x = e.pageX;
+    	y = e.pageY;
+    }
+    else {
+    	x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+    	y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    }
+    x -= e.currentTarget.offsetLeft;
+    y -= e.currentTarget.offsetTop;
+    x = Math.min(x, kBoardWidth * kPieceWidth);
+    y = Math.min(y, LevelHeight * kPieceHeight);
+    var cell = new Cell(Math.floor(y/kPieceHeight), Math.floor(x/kPieceWidth));
+    return cell;
+}
+
+
+$(function() {
+  var can = $('<canvas></canvas>');
+  console.log(can);
+  var canvas = can.get(0);
+  canvas.id = "tutorial";
+  canvas.width = kPixelWidth;
+  canvas.height = kPixelHeight;
+  console.log(canvas);
+  $('body').append(can);
+  var context = canvas.getContext('2d');
+  context.strokeStyle = "#000"
+  console.log(context);
+  draw(context);
+
+  function draggingCB(e) {
+    var cell = getCursorPosition(e);
+    console.log(cell);
+    selected[cell.col] = LevelHeight - cell.row;
+    draw(context);
+  };
+
+  canvas.onmousedown = function(e){
+    var cell = getCursorPosition(e);
+    console.log(cell);
+    dragging = true;
+    canvas.onmousemove = draggingCB;
+  };
+
+  canvas.onmouseup = function(e){
+    canvas.onmousemove = null;
+    dragging = false;
+    console.log('up');
+  };
+
+});
+
+</script>
+
+</body>
+</html>
+

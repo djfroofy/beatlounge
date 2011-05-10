@@ -15,7 +15,7 @@
 <script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
 
 <script> 
-ws = new WebSocket("ws://localhost:8347/cc");
+ws = new WebSocket("ws://"+location.hostname+":8347/cc");
 
 var values = {
   'vibrato': 0,
@@ -31,7 +31,7 @@ function initRange() {
     inp = $(
       '<input type="range" class="range" name="'+prop+'" min="0" max="127" step="1" value="'+values[prop]+'" />'
     );
-    label = $('<label>'+prop+'</label>');
+    //label = $('<label>'+prop+'</label>');
     $('body').append(inp);
     $('body').append(prop);
     $('body').append('<br>');
