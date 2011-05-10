@@ -5,6 +5,7 @@ from twisted.internet.defer import maybeDeferred
 
 from twisted.web.resource import IResource, Resource
 from twisted.web.server import NOT_DONE_YET
+from twisted.web.template import flattenString
 
 try:
     from lxml.hmtl import html5parser
@@ -58,4 +59,56 @@ class HTML5Resource(Resource):
             # TODO validate the content
             pass
         request.finish()
+
+
+class HTML5TemplatedResource(HTML5Resource):
+    """
+    An HTML5 templated by twisted.web.template.Element. Just supply
+    an Element subclass to the constructor and we'll take care
+    of the redering in render_GET for you.
+    """
+
+
+    def __init__(self, elementClass):
+        Resource.__init__(self)
+        self.elementClass = elementClass
+
+    def render_GET(self, request):
+        """
+        Return a Deferred that will fire after we have flattened
+        our Element into a string.
+        """
+        element = self.elementClass()
+        return flattenString(request, element)
+
+class TemplatedResourceMixin(object):
+
+    elementClass = None
+
+    def renderTemplate(self, request):
+        element = self.elementClass()
+        return flattenString(request, element)
+
+
+class HTML5TemplatedResource(HTML5Resource, TemplatedResourceMixin):
+    """
+    An HTML5 templated by twisted.web.template.Element. Just supply
+    an Element subclass to the constructor and we'll take care
+    of the redering in render_GET for you.
+    """
+
+
+    def __init__(self, elementClass):
+        Resource.__init__(self)
+        self.elementClass = elementClass
+
+    def render_GET(self, request):
+        """
+        Return a Deferred that will fire after we have flattened
+        our Element into a string.
+        """
+        return self.renderTemplate(request)
+
+
+
 

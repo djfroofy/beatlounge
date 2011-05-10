@@ -1,10 +1,15 @@
+import os
+
 from zope.interface.verify import verifyClass, verifyObject
 
 from twisted.trial.unittest import TestCase
 from twisted.python import log
+from twisted.web.template import Element, renderer, XMLFile
 
 from bl.ue.web.resource import IDeferredResource, HTML5Resource
+from bl.ue.web.resource import HTML5TemplatedResource
 
+_here = os.path.dirname(__file__)
 
 class TestHTML5Resource(HTML5Resource):
 
@@ -63,5 +68,39 @@ class HTML5ResourceTests(TestCase):
                               '<!doctype html>\n<h1>Deferred Hello</h1>')
             self.assert_(req.finished)
         return resource.render(req)
+
+
+class TestElement(Element):
+    loader = XMLFile(os.path.join(_here, 'test.xhtml'))
+
+    @renderer
+    def header(self, request, tag):
+        return tag('Header. request.method=%s' % request.method)
+
+    @renderer
+    def footer(self, request, tag):
+        return tag('Footer.')
+
+
+class HTML5TemplatedResourceTests(TestCase):
+
+    def test_template_rendering(self):
+        r = HTML5TemplatedResource(TestElement)
+        req = DummyRequest()
+        r.render(req)
+
+        expected = '''<!doctype html>
+
+<html>
+<body>
+  <div>Header. request.method=GET</div>
+  <div id="content">
+    <p>Content goes here.</p>
+  </div>
+  <div>Footer.</div>
+</body>
+</html>'''
+        rendered = '\n'.join(req.written)
+        self.assertEquals(rendered, expected)
 
 
