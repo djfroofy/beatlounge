@@ -24,6 +24,8 @@ function drawRect(context, x, y, w, h) {
 }
 
 function LevelRoller(canvas, options){
+  var self = this;
+
   var defaultOptions = {
     "id": "level",
     "BoardWidth": 24*16,
@@ -31,6 +33,7 @@ function LevelRoller(canvas, options){
     "PieceWidth": 3,
     "PieceHeight": 1,
     "strokeStyle": "#000",
+    "defaultLevel": 100
   }
   if (typeof options == 'object') {
 		options = $.extend(defaultOptions, options);
@@ -38,9 +41,9 @@ function LevelRoller(canvas, options){
 		options = defaultOptions;
 	}
 
-  this.canvas = canvas;
-  var ctx = canvas.getContext('2d');
-  ctx.strokeStyle = options["strokeStyle"];
+  self.canvas = canvas;
+  self.ctx = canvas.getContext('2d');
+  self.ctx.strokeStyle = options["strokeStyle"];
   var BoardWidth = options["BoardWidth"]
   var BoardHeight = options["BoardHeight"]
   var PieceWidth = options["PieceWidth"]
@@ -48,33 +51,31 @@ function LevelRoller(canvas, options){
   var PixelWidth = PieceWidth * BoardWidth + 1;
   var PixelHeight = PieceHeight * BoardHeight + 1;
 
-  this.canvas.id = options["id"];
-  this.canvas.width = PixelWidth;
-  this.canvas.height = PixelHeight;
+  self.canvas.id = options["id"];
+  self.canvas.width = PixelWidth;
+  self.canvas.height = PixelHeight;
+  self.defaultLevel = options["defaultLevel"];
+  self.selected = {};
+  self.dragging = false;
+  self.lastcol = undefined; // Too know what direction we are dragging
 
-  var defaultLevel = 100;
-  var selected = {};
-  this.dragging = false;
-
-  draw = function() {
+  function draw() {
     var value;
-    console.log(ctx);
-    console.log(PixelWidth, PixelHeight);
-    ctx.clearRect(0, 0, PixelWidth, PixelHeight);
-    drawRect(ctx, 0, 0, PixelWidth, PixelHeight);
+    self.ctx.clearRect(0, 0, PixelWidth, PixelHeight);
+    drawRect(self.ctx, 0, 0, PixelWidth, PixelHeight);
     for (i = 0; i < BoardWidth; i++){
-      if (selected[i] === undefined){
-        value = defaultLevel;
+      if (self.selected[i] === undefined){
+        value = self.defaultLevel;
       } else {
-        value = selected[i];
+        value = self.selected[i];
       }
-      drawRect(ctx, i*PieceWidth, BoardHeight - value, PieceWidth, PieceHeight);
+      drawRect(self.ctx, i*PieceWidth, BoardHeight - value, PieceWidth, PieceHeight);
     }
   }
-  this.draw = draw;
+  self.draw = draw;
 
   // TODO, factor this out to parent class for rilz
-  getCursorPosition = function(e) {
+  function getCursorPosition(e) {
     var x;
     var y;
     if (e.pageX != undefined && e.pageY != undefined) {
@@ -92,25 +93,55 @@ function LevelRoller(canvas, options){
     var cell = new Cell(Math.floor(y/PieceHeight), Math.floor(x/PieceWidth));
     return cell;
   }
+  self.getCursorPosition = getCursorPosition;
 
-  this.drag = function(e) {
-    var cell = getCursorPosition(e);
-    console.log(cell);
-    selected[cell.col] = BoardHeight - cell.row;
-    draw();
+  self.drag = function(e) {
+    var cell = self.getCursorPosition(e);
+    var difference = cell.col - self.lastcol;
+
+    var level = BoardHeight - cell.row;
+    self.selected[cell.col] = level;
+
+    if (Math.pow(difference, 2) > 1){
+      for (i=self.lastcol; i <cell.col; i++){
+        self.selected[i] = level;
+      }
+      for (i=self.lastcol; i > cell.col; i--){
+        self.selected[i] = level;
+      }
+
+    }
+    /* TODO better algo for curves.  Choices on UI?
+    for (var i=1; i<3; i++){
+      for (var m=-1; m<2; m+=2){
+        var value = self.selected[cell.col+i*m];
+        if (value === undefined){ value = level;}
+        if (typeof value === NaN){ value = level;}
+        console.log(value);
+        self.selected[cell.col+i*m] = (value*i+level)/(1+i);
+      }
+    }
+    */
+    self.lastcol = cell.col;
+    self.draw();
   };
 
-  this.mousedown = function(e){
-    var cell = getCursorPosition(e);
-    console.log(cell);
-    dragging = true;
-    this.canvas.onmousemove = this.drag;
+  self.mousedown = function(e){
+    var cell = self.getCursorPosition(e);
+    self.lastcol = cell.col;
+    var level = BoardHeight - cell.row;
+    self.selected[cell.col] = level;
+    self.dragging = true;
+    self.canvas.onmousemove = self.drag;
+
+    self.selected[cell.col] = level;
+
+    self.draw();
   };
 
-  this.mouseup = function(e){
-    canvas.onmousemove = null;
-    dragging = false;
-    console.log('up');
+  self.mouseup = function(e){
+    self.canvas.onmousemove = null;
+    self.dragging = false;
   };
 
 }
@@ -126,8 +157,8 @@ $(function() {
   console.log(levelroller);
   levelroller.draw();
 
-  canvas.onmousedown = function(e) { return levelroller.mousedown(e); }
-  canvas.onmouseup = function(e) { return levelroller.mouseup(e); }
+  canvas.onmousedown = levelroller.mousedown;
+  canvas.onmouseup = levelroller.mouseup;
 
 });
 
