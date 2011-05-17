@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Multiple Widgets with good OO JS</title>
+</head>
+<body>
+
+<canvas id="sequencer"></canvas>
+<canvas id="volume"></canvas>
+<canvas id="sustain"></canvas>
+
+<script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript"></script>
+<script src="./js/bluez.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+
+/* RainbowSequencer */
+//var can = $('<canvas></canvas>');
+//var canvas = can[0];
+//$('body').append(can);
+
+seqcan = $('canvas#sequencer');
+seqcanvas = seqcan[0]
+var sequencer = new bluez.RainbowSequencer(seqcanvas);
+sequencer.draw();
+
+/* LevelRoller */
+//var can = $('<canvas></canvas>');
+//var canvas = can[0];
+//$('body').append(can);
+
+lrcan = $('canvas#volume');
+lrcanvas = lrcan[0];
+var levelroller = new bluez.LevelRoller(lrcanvas, {"wsPath": "/vol"});
+levelroller.draw();
+//lrcanvas.onmousedown = levelroller.mousedown;
+//lrcanvas.onmouseup = levelroller.mouseup;
+
+
+
+suscan = $('canvas#sustain');
+suscanvas = suscan[0];
+var susroller = new bluez.LevelRoller(suscanvas, {"wsPath": "/sus"});
+susroller.draw();
+
+
+</script>
+</body>
+</html>
+
