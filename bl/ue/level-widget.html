@@ -33,7 +33,8 @@ function LevelRoller(canvas, options){
     "PieceWidth": 3,
     "PieceHeight": 1,
     "strokeStyle": "#000",
-    "defaultLevel": 100
+    "defaultLevel": 100,
+    "wsAddress": location.hostname+":8347/vol"
   }
   if (typeof options == 'object') {
 		options = $.extend(defaultOptions, options);
@@ -41,6 +42,7 @@ function LevelRoller(canvas, options){
 		options = defaultOptions;
 	}
 
+  self.ws = new WebSocket("ws://"+options["wsAddress"]);
   self.canvas = canvas;
   self.ctx = canvas.getContext('2d');
   self.ctx.strokeStyle = options["strokeStyle"];
@@ -64,7 +66,8 @@ function LevelRoller(canvas, options){
     self.ctx.clearRect(0, 0, PixelWidth, PixelHeight);
     drawRect(self.ctx, 0, 0, PixelWidth, PixelHeight);
     for (i = 0; i < BoardWidth; i++){
-      if (self.selected[i] === undefined){
+      if (self.selected[i] == undefined){
+        self.selected[i] = self.defaultLevel;
         value = self.defaultLevel;
       } else {
         value = self.selected[i];
@@ -74,7 +77,6 @@ function LevelRoller(canvas, options){
   }
   self.draw = draw;
 
-  // TODO, factor this out to parent class for rilz
   function getCursorPosition(e) {
     var x;
     var y;
@@ -111,18 +113,10 @@ function LevelRoller(canvas, options){
       }
 
     }
-    /* TODO better algo for curves.  Choices on UI?
-    for (var i=1; i<3; i++){
-      for (var m=-1; m<2; m+=2){
-        var value = self.selected[cell.col+i*m];
-        if (value === undefined){ value = level;}
-        if (typeof value === NaN){ value = level;}
-        console.log(value);
-        self.selected[cell.col+i*m] = (value*i+level)/(1+i);
-      }
-    }
-    */
     self.lastcol = cell.col;
+    msg = JSON.stringify(self.selected);
+    console.log(msg);
+    self.ws.send(msg);
     self.draw();
   };
 
@@ -135,13 +129,29 @@ function LevelRoller(canvas, options){
     self.canvas.onmousemove = self.drag;
 
     self.selected[cell.col] = level;
-
+    //console.log(self.selected);
+    //self.ws.send(self.selected);
     self.draw();
   };
 
   self.mouseup = function(e){
     self.canvas.onmousemove = null;
     self.dragging = false;
+  };
+
+  self.ws.onmessage = function(e){
+    console.log(e);
+    //self.selected = JSON.parse(e.data);
+    //self.draw();
+  };
+  self.ws.onopen = function(e){
+    console.log("open");
+  };
+  self.ws.onerror = function(e){
+    console.log("error");
+  };
+  self.ws.onclose = function(e){
+    console.log("close");
   };
 
 }

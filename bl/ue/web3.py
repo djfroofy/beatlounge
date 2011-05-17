@@ -23,7 +23,7 @@ class BaseHandler(WebSocketHandler):
     def connectionMade(self):
         print 'Connected to client.'
         self.transports.append(self.transport)
-        self.transport.write(self.values)
+        self.transport.write(json.dumps(self.values))
 
     def connectionLost(self, reason):
         print 'Lost connection.', reason
@@ -50,7 +50,7 @@ class StepHandler(BaseHandler):
 
         print "frame:", frame
         tick, values = frame.split('-')
-        tick = int(tick)
+        tick = tick
         print tick, values
 
         values = [int(v) for v in values.split(',') if v]
@@ -71,7 +71,7 @@ class StepHandler(BaseHandler):
         l = []
         for k,v in self.values.iteritems():
             # TODO, put vol, sus in UI instead of hardcoding to 100,24
-            item = [k, v, 100,24]
+            item = [int(k), v, 100,24]
             l.append(item)
 
         l = sorted(l, key=lambda i: i[0])
@@ -81,6 +81,52 @@ class StepHandler(BaseHandler):
 
 
 
+class VolumeHandler(BaseHandler):
+
+    values = {}
+    transports = []
+
+    def frameReceived(self, frame):
+        print "VolumeHandler frame:", type(frame)
+
+        # TODO better algo
+        values = json.loads(frame)
+        #print type(values)
+        for k,v in values.iteritems():
+            self.values[int(k)] = int(v)
+
+        for t in self.transports:
+            t.write(json.dumps(self.values))
+
+        #print self.values
+
+
+class SusHandler(VolumeHandler):
+    values = {}
+    transports = []
+
+
+class StepVolumeFactory(object):
+
+    def __init__(self, stephandler, volumehandler):
+        self.stephandler = stephandler
+        self.volumehandler = volumehandler
+
+    def factory(self):
+        svalues = self.stephandler.values
+        vvalues = self.volumehandler.values
+        print svalues
+        print vvalues
+
+        l = []
+        for k,v in svalues.iteritems():
+            vol = vvalues.get(int(k), 100)
+            item = [int(k), v, vol, 24] # StepVolumeSustainFactory .. 
+            #yield item <-- how do I get this type of thing going on?
+            l.append(item)
+        l = sorted(l, key=lambda i: i[0])
+        print l
+        return l
 
 
 
@@ -171,6 +217,8 @@ def start():
     site.addHandler('/list', ArpHandler)
     site.addHandler('/cc', ControlChangeHandler)
     site.addHandler('/step', StepHandler)
+    site.addHandler('/vol', VolumeHandler)
+    site.addHandler('/vol', SusHandler)
     reactor.listenTCP(8347, site)
 
 
