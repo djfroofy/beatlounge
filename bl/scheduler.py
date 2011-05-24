@@ -172,7 +172,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             lasttick, ignore = self.syncClock.lastTick()
             self.ticks = lasttick
 
-    def run(self):
+    def run(self, runReactor=True):
         """
         Start the BeatClock. Note that if twisted's reactor has not been started this
         will start it. This is done for you by bl/console.py (beatlounge command)
@@ -181,7 +181,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self._initBackends()
         self.startTicking()
         self.running = True
-        if not self.reactor.running:
+        if runReactor and not self.reactor.running:
             self.reactor.run()
 
 
