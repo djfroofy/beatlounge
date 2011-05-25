@@ -20,16 +20,13 @@ class BLRestPlugin(object):
         optParameters = [
             ('port', 'p', 8347, 'Port for REST services to listen on', int),
             ('interface', 'i', '0.0.0.0', 'Interface to listen on (default: 0.0.0.0)'),
-            ('tempo', 't', 132, 'Tempo in beats per minute (default: 132)', int) ]
+            ('sfdir', 's', 'journey/sf2', 'Directory containing sound fonts')]
 
     def makeService(self, options):
         ms = MultiService()
-        clock = BeatClock()
-        clock.setTempo(options['tempo'])
-        site = apiSite(clock)
+        site = apiSite(options['sfdir'])
         strports.service('tcp:%s:interface=%s' % (options['port'], options['interface']),
                          site).setServiceParent(ms)
-        clock.run(False)
         return ms
 
 
