@@ -36,7 +36,7 @@ class BeatClocks(Collection):
 
 
 class InstrumentElement(Element):
-    exposedAttributes = 'name', 'type', 'load_args'
+    exposedAttributes = 'name', 'type', 'load_args', 'cc',
     updatableAttributes = 'cc',
     loaders = {}
 
@@ -54,10 +54,11 @@ class InstrumentElement(Element):
         log.msg('%r powered up with instrument: %s' % (self, self.instrument))
 
     def update(self, state):
+        cc = self.cc
         Element.update(self, state)
-        self.cc.update(state['cc'])
-        self.instrument.controlChange(**encodeKwargs(self.cc))
-        log.msg('%r adjusting cc on instrument: %s' % (self, self.cc))
+        if cc != self.cc:
+            self.instrument.controlChange(**encodeKwargs(self.cc))
+            log.msg('%r adjusting cc on instrument: %s' % (self, self.cc))
 
 
 class Instruments(Collection):
