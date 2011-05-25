@@ -144,6 +144,7 @@ class ChordPlayer(BasePlayer):
     def _next(self):
         return self.chordFactory()
 
+
 START = None
 
 class SchedulePlayer(PlayableMixin):
