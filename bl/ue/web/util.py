@@ -12,3 +12,6 @@ def checkClassAvailable(klassName, klass):
         return wrapper
     return decorator
 
+def encodeKwargs(kw):
+    return dict((str(k), v) for (k,v) in kw.items())
+
