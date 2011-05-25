@@ -99,6 +99,8 @@ class Meter(object):
 
 standardMeter = Meter(4,4)
 
+# FIXME - this is really misplacement - initialization of fluidsynth and
+# other backends should be separated from bl.scheduler
 class SynthControllerMixin(object):
     synthAudioDevice = 'coreaudio'
     synthChannels = 'stereo'
@@ -115,6 +117,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     defaultClock = None
     syncClock = None
+    _initializedBackends = False
 
     def __init__(self, tempo=130, meters=(), reactor=None, syncClockClass=None, default=False):
         """
@@ -185,28 +188,35 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             self.reactor.run()
 
 
-    def _initBackends(self):
+    @classmethod
+    def _initBackends(cls):
+        if cls._initializedBackends:
+            print 'already initialized'
+            return
         # XXX this should be refactored some - make backends pluggable and indicate
         # which to start from a command line, etc.
         try:
+            print 'synth channels', cls.synthChannels
             from bl.instrument import fsynth
-            if self.synthChannels == 'stereo':
-                return
-            if self.synthChannels == 'mono':
+            if cls.synthChannels == 'stereo':
+                pool = fsynth.StereoPool()
+            elif cls.synthChannels == 'mono':
                 pool = fsynth.MonoPool()
-            elif self.synthChannels == 'quad':
+            elif cls.synthChannels == 'quad':
                 pool = fsynth.QuadPool()
             else:
                 try:
-                    self.synthChannels = int(self.synthChannels)
+                    cls.synthChannels = int(cls.synthChannels)
                 except ValueError:
                     raise ValueError('synthChannels should be one of mono, stereo, quad or an integer')
-                synths = dict( (n, fsynth.Synth) for n in range(self.synthChannels) )
+                synths = dict( (n, fsynth.Synth) for n in range(cls.synthChannels) )
                 pool = fsynth.NConnectionPool(synths)
             fsynth.suggestDefaultPool(pool)
         except ImportError:
             log.msg('fluidsynth will not be available at runtime')
             pass
+        cls._initializedBackends = True
+        log.msg('initialized backends ======')
 
     def startTicking(self):
         """
