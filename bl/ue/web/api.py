@@ -10,9 +10,17 @@ from bl.debug import setDebug
 from bl.scheduler import BeatClock, Meter
 from bl import arp
 from bl import player
-from bl.ue.web.util import encodeKwargs
+from bl.ue.web.util import encodeKwargs, decodeValues
 from bl.ue.web.exceptions import ApiError
 from bl.ue.web.loaders import loaders, FluidSynthInstrumentLoader
+
+
+I_WANT_TO_EVAL_SHIT_FROM_ARBITRARY_SOURCE_AND_PRETEND_ITS_SAFE = True
+
+if not I_WANT_TO_EVAL_SHIT_FROM_ARBITRARY_SOURCE_AND_PRETEND_ITS_SAFE:
+    def decodeValues(values):
+        for value in values:
+            yield value
 
 
 class BeatClockElement(Element):
@@ -84,7 +92,7 @@ class ArpElement(Element):
 
     def update(self, state):
         Element.update(self, state)
-        self.arp.reset(self.values)
+        self.arp.reset(list(decodeValues(self.values)))
         log.msg('%s reset arp with values: %s' % (self, self.values))
 
 
@@ -120,7 +128,7 @@ class SwitcherElement(Element):
             self.switcher = self.noteFactory = switcherClass(switchee, self.values)
         else:
             if self.values != self.switcher.values:
-                self.switcher.reset(self.values)
+                self.switcher.reset(list(decodeValues(self.values)))
             if switchee != self.switcher.arp:
                 self.switcher.switch(switchee)
         if hasattr(self.switcher, 'amount') and self.amount != self.switcher.amount:
