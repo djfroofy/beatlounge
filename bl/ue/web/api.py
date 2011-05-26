@@ -98,7 +98,7 @@ class ArpElement(Element):
 
 class Arps(Collection):
     defaultElementClass = ArpElement
-    exposedElementAttributes = 'name', 'type'
+    exposedElementAttributes = 'name', 'type', 'values'
 
 
 class SwitcherElement(Element):
