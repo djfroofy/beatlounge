@@ -45,6 +45,10 @@ class BeatClocks(Collection):
     defaultElementClass = BeatClockElement
     exposedElementAttributes = 'name', 'tempo', 'meter', 'is_default'
 
+    pageSize = 200
+    maxPageSize = 1000
+
+
 
 class InstrumentElement(Element):
     exposedAttributes = 'name', 'type', 'load_args', 'cc',
@@ -76,6 +80,8 @@ class Instruments(Collection):
     defaultElementClass = InstrumentElement
     exposedElementAttributes = 'name', 'type'
 
+    pageSize = 200
+    maxPageSize = 1000
 
 class ArpElement(Element):
     exposedAttributes = 'name', 'type', 'values'
@@ -100,6 +106,8 @@ class Arps(Collection):
     defaultElementClass = ArpElement
     exposedElementAttributes = 'name', 'type', 'values'
 
+    pageSize = 200
+    maxPageSize = 1000
 
 class SwitcherElement(Element):
     updatableAttributes = 'switchee_uri', 'values', 'amount', 'octaves', 'oscillate'
@@ -125,6 +133,7 @@ class SwitcherElement(Element):
         switchee = collection[name].noteFactory
         if not update:
             switcherClass = getattr(arp, self.type)
+            print switcherClass, switchee, self.values
             self.switcher = self.noteFactory = switcherClass(switchee, self.values)
         else:
             if self.values != self.switcher.values:
@@ -145,8 +154,10 @@ class SwitcherElement(Element):
 
 class Switchers(Collection):
     defaultElementClass = SwitcherElement
-    exposedElementAttributes = 'name', 'type', 'switchee_uri'
+    exposedElementAttributes = 'name', 'type', 'switchee_uri', 'values'
 
+    pageSize = 200
+    maxPageSize = 1000
 
 class PlayerElement(Element):
     exposedAttributes = ('name', 'type', 'instrument_name', 'note_factory_uri', 'clock_name', 'velocity_arp_name',
@@ -187,38 +198,75 @@ class PlayerElement(Element):
         self.player = cls(instrument, note_arp, velocity_arp, clock=clock, interval=self.interval,
                           stop = lambda : self.sustain)
         log.msg('%r powered up with player: %r' % (self, self.player))
+        log.msg(instrument, note_arp, velocity_arp, clock, self.interval, self.sustain)
+
+        log.msg(dir(note_arp), dir(velocity_arp))
+        log.msg(note_arp.values)
+        log.msg(velocity_arp.values)
+
         if self.playing:
             log.msg('%r starting to play' % self)
             self.player.startPlaying()
 
     def update(self, state):
         Element.update(self, state)
+        log.msg(state)
         if 'instrument_name' in state:
+            self.player.instr.stopall()
             instrument = self.instruments[self.instrument_name].instrument
             self.player.instr = instrument
+
+
+        if 'playing' in state:
+            # TODO, this is not working ... ?
+            log.msg(self.playing)
+            if state['playing']:
+                if not self.playing:
+                    self.playing = True
+                    self.player.startPlaying()
+                    log.msg('%r started player' % self)
+            else:
+                log.msg('%r stopped player' % self)
+                self.player.stopPlaying()
+                self.playing = False
+
+
         if 'note_factory_uri' in state:
+            log.msg('self.arps', self.arps)
+            """
+            TODO: key error?
             note_arp = self.arps[self.note_factory_uri].arp
             self.player.noteFactory = note_arp
+            """
         if 'velocity_arp_name' in state:
             velocity_arp = self.arps[self.velocity_arp_name].arp
             self.player.velocity = velocity_arp
-        if 'interval' in state:
-            if self.playing:
-                raise ApiError('Cannot change interval on running player')
-            self.player.interval = self.interval
+
+        if not self.playing:
+            if 'interval' in state:
+                if self.playing:
+                    raise ApiError('Cannot change interval on running player')
+                self.player.interval = self.interval
         if 'sustain' in state:
             self.player.stop = lambda : self.sustain
-        if 'playing' in state:
-            if state['playing']:
-                self.player.startPlaying()
-                log.msg('%r started player' % self)
-            else:
-                self.player.stopPlaying()
 
 
 class Players(Collection):
     defaultElementClass = PlayerElement
-    exposedElementAttributes = 'name', 'type'
+    exposedElementAttributes = (
+        'name',
+        'type',
+        'instrument_name',
+        'note_factory_uri',
+        'velocity_arp_name',
+        'clock_name',
+        'sustain',
+        'interval',
+        'playing'
+    )
+
+    pageSize = 200
+    maxPageSize = 1000
 
 
 def apiSite(sfdir):
