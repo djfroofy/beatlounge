@@ -59,6 +59,7 @@ def decodeValues(values):
             yield value
 
 
-
+def newTuple(tup, add=(), remove=()):
+    return tuple((set(tup) - set(remove)).union(set(add)))
 
 

@@ -1,6 +1,7 @@
 import os
 
 from twisted.python import log
+from twisted.python.components import registerAdapter
 from twisted.web.resource import IResource, Resource
 from twisted.web.server import Site
 
@@ -10,10 +11,10 @@ from bl.debug import setDebug
 from bl.scheduler import BeatClock, Meter
 from bl import arp
 from bl import player
-from bl.ue.web.util import encodeKwargs, decodeValues
+from bl.ue.web.util import encodeKwargs, decodeValues, newTuple
 from bl.ue.web.exceptions import ApiError
 from bl.ue.web.loaders import loaders, FluidSynthInstrumentLoader
-
+from bl.ue.web.storage import IStore
 
 I_WANT_TO_EVAL_SHIT_FROM_ARBITRARY_SOURCE_AND_PRETEND_ITS_SAFE = True
 
@@ -22,18 +23,64 @@ if not I_WANT_TO_EVAL_SHIT_FROM_ARBITRARY_SOURCE_AND_PRETEND_ITS_SAFE:
         for value in values:
             yield value
 
+class PersistentElement(Element):
+    _id = None
+    persistentAttributes = 'name', '_id'
+    persisted = False
+    collectionName = ''
 
-class BeatClockElement(Element):
-    exposedAttributes = 'name', 'tempo', 'meter', 'is_default'
+    def save(self):
+        self.saving = True
+        store = IStore(self)
+        return store.collection(self.collectionName).addCallbacks(
+            self._collection_cb, log.err)
+
+    def powerUp(self, update=False):
+        pass
+
+    def update(self, state):
+        Element.update(self, state)
+        # TODO
+        # Part of me thinks we should save and then power up so
+        # our elements aren't in a powered-up state that doesn't
+        # reflect what has been persisted; Another side of me
+        # like not to wait for the latency before an object is
+        # powered up.
+        self.powerUp(state=state, update=True)
+        self.save()
+
+    def _collection_cb(self, collection):
+        log.msg('got collection: %s' % collection)
+        document = dict((name, getattr(self, name)) for name in self.persistentAttributes
+                        if not (name == '_id' and self._id is None))
+        d = collection.save(document)
+        d.addCallbacks(self._saved_cb, log.err)
+        return d
+
+    def _saved_cb(self, _id):
+        self._id = _id
+        log.msg('Saved: %s' % _id)
+        self.saving = False
+        self.persisted = True
+
+
+class BeatClockElement(PersistentElement):
+    exposedAttributes = 'name', 'tempo', 'meter', 'is_default', 'saving', 'persisted'
+    persistentAttributes = newTuple(exposedAttributes,
+                                    add=('_id',), remove=('saving', 'persisted'))
+    collectionName = 'clocks'
 
     def __init__(self, name='default', tempo=132, meter='4/4', is_default=False):
         self.name = name
         self.tempo = tempo
         self.meter = meter
         self.is_default = is_default
-        self.powerup()
+        self.powerUp()
+        self.save()
 
-    def powerup(self):
+    def powerUp(self, update=False):
+        if update:
+            return
         n, d = self.meter.split('/')
         self.clock = BeatClock(self.tempo, [ Meter(int(n), int(d)) ],
                                 default=self.is_default)
@@ -43,17 +90,20 @@ class BeatClockElement(Element):
 
 class BeatClocks(Collection):
     defaultElementClass = BeatClockElement
-    exposedElementAttributes = 'name', 'tempo', 'meter', 'is_default'
+    exposedElementAttributes = 'name', 'tempo', 'meter', 'is_default', 'saving', 'persisted'
 
     pageSize = 200
     maxPageSize = 1000
 
 
 
-class InstrumentElement(Element):
+class InstrumentElement(PersistentElement):
     exposedAttributes = 'name', 'type', 'load_args', 'cc',
+    persistentAttributes = newTuple(exposedAttributes,
+                                    add=('_id',), remove=('saving', 'persisted'))
     updatableAttributes = 'cc',
     loaders = {}
+    collectionName = 'instruments'
 
     def __init__(self, name=None, type=None, load_args=None, cc=None):
         self.name = name
@@ -61,19 +111,17 @@ class InstrumentElement(Element):
         self.cc = cc or {}
         load_args = load_args or {}
         self.load_args = dict((str(k),v) for (k,v) in load_args.items())
-        self.powerup()
+        self.powerUp()
+        self.save()
 
-    def powerup(self):
+    def powerUp(self, update=False):
+        if update:
+            self.instrument.controlChange(**encodeKwargs(self.cc))
+            log.msg('%r adjusting cc on instrument: %s' % (self, self.cc))
+            return
         loader = loaders[self.type]
         self.instrument = loader.load(**self.load_args)
         log.msg('%r powered up with instrument: %s' % (self, self.instrument))
-
-    def update(self, state):
-        cc = self.cc
-        Element.update(self, state)
-        if cc != self.cc:
-            self.instrument.controlChange(**encodeKwargs(self.cc))
-            log.msg('%r adjusting cc on instrument: %s' % (self, self.cc))
 
 
 class Instruments(Collection):
@@ -83,35 +131,42 @@ class Instruments(Collection):
     pageSize = 200
     maxPageSize = 1000
 
-class ArpElement(Element):
-    exposedAttributes = 'name', 'type', 'values'
+
+class ArpElement(PersistentElement):
+    exposedAttributes = 'name', 'type', 'values', 'saving', 'persisted'
     updatableAttributes = 'values',
+    persistentAttributes = newTuple(exposedAttributes,
+                                    add=('_id',), remove=('saving', 'persisted'))
+    collectionName = 'arps'
 
     def __init__(self, name=None, type=None, values=None):
         self.name = name
         self.type = type
         self.values = values
-        self.powerup()
+        self.powerUp()
+        self.save()
 
-    def powerup(self):
+    def powerUp(self, state=None, update=False):
+        if update:
+            self.arp.reset(list(decodeValues(self.values)))
+            log.msg('%s reset arp with values: %s' % (self, self.values))
+            return
         self.arp = self.noteFactory = getattr(arp, self.type)(self.values)
-
-    def update(self, state):
-        Element.update(self, state)
-        self.arp.reset(list(decodeValues(self.values)))
-        log.msg('%s reset arp with values: %s' % (self, self.values))
 
 
 class Arps(Collection):
     defaultElementClass = ArpElement
-    exposedElementAttributes = 'name', 'type', 'values'
+    exposedElementAttributes = 'name', 'type', 'values', 'saving', 'persisted'
 
     pageSize = 200
     maxPageSize = 1000
 
-class SwitcherElement(Element):
+class SwitcherElement(PersistentElement):
     updatableAttributes = 'switchee_uri', 'values', 'amount', 'octaves', 'oscillate'
     exposedAttributes = 'name', 'type', 'switchee_uri', 'values', 'amount', 'octaves', 'oscillate'
+    persistentAttributes = newTuple(exposedAttributes,
+                                    add=('_id',), remove=('saving', 'persisted'))
+    collectionName = 'switchers'
     switcherClasses = 'OctaveArp', 'Adder',
     switchers = None
     arps = None
@@ -125,9 +180,10 @@ class SwitcherElement(Element):
         self.amount = amount
         self.octaves = octaves
         self.oscillate = oscillate
-        self.powerup()
+        self.powerUp()
+        self.save()
 
-    def powerup(self, update=False):
+    def powerUp(self, state=None, update=False):
         c, name = self.switchee_uri.split('/')
         collection = getattr(self, c)
         switchee = collection[name].noteFactory
@@ -147,9 +203,6 @@ class SwitcherElement(Element):
         if hasattr(self.switcher, 'oscillate') and self.oscillate != self.switcher.oscillate:
             self.switcher.oscillate = self.oscillate
 
-    def update(self, state):
-        Element.update(self, state)
-        self.powerup(True)
 
 
 class Switchers(Collection):
@@ -159,11 +212,15 @@ class Switchers(Collection):
     pageSize = 200
     maxPageSize = 1000
 
-class PlayerElement(Element):
+
+class PlayerElement(PersistentElement):
     exposedAttributes = ('name', 'type', 'instrument_name', 'note_factory_uri', 'clock_name', 'velocity_arp_name',
-                         'sustain', 'interval', 'playing')
+                         'sustain', 'interval', 'playing', 'saving', 'persisted')
     updatableAttributes = ('interval', 'playing', 'instrument_name', 'note_factory_uri', 'velocity_arp_name',
                           'sustain')
+    persistentAttributes = newTuple(exposedAttributes,
+                                    add=('_id',), remove=('saving', 'persisted'))
+    collectionName = 'players'
     allowedInstrumenTypes = 'NotePlayer',
 
     arps = None
@@ -183,9 +240,12 @@ class PlayerElement(Element):
         self.interval = interval
         self.sustain = sustain
         self.playing = playing
-        self.powerup()
+        self.powerUp()
+        self.save()
 
-    def powerup(self):
+    def powerUp(self, state=None, update=False):
+        if update:
+            return self._update(state)
         instrument = self.instruments[self.instrument_name].instrument
         c, name = self.note_factory_uri.split('/')
         coll = getattr(self, c)
@@ -206,11 +266,41 @@ class PlayerElement(Element):
 
         if self.playing:
             log.msg('%r starting to play' % self)
+            self.playing = True
             self.player.startPlaying()
 
-    def update(self, state):
-        Element.update(self, state)
-        log.msg(state)
+    def _update(self, state):
+
+        """
+        if 'instrument_name' in state:
+            instrument = self.instruments[self.instrument_name].instrument
+            self.player.instr = instrument
+        if 'note_factory_uri' in state:
+            note_arp = self.arps[self.note_factory_uri].arp
+            self.player.noteFactory = note_arp
+        if 'velocity_arp_name' in state:
+            velocity_arp = self.arps[self.velocity_arp_name].arp
+            self.player.velocity = velocity_arp
+        if 'interval' in state:
+            if self.playing:
+                raise ApiError('Cannot change interval on running player')
+            self.player.interval = self.interval
+        if 'sustain' in state:
+            self.player.stop = lambda : self.sustain
+        if 'playing' in state:
+            if state['playing']:
+                self.player.startPlaying()
+                log.msg('%r started player' % self)
+            else:
+                log.msg('%r stopping player' % self)
+                self.player.stopPlaying()
+        """
+
+
+
+
+        log.msg('updating PlayerElement with state:%s' % state)
+
         if 'instrument_name' in state:
             self.player.instr.stopall()
             instrument = self.instruments[self.instrument_name].instrument
@@ -219,25 +309,28 @@ class PlayerElement(Element):
 
         if 'playing' in state:
             # TODO, this is not working ... ?
-            log.msg(self.playing)
             if state['playing']:
+                log.msg("_update, state['playing'], self.playing?:", self.playing)
                 if not self.playing:
                     self.playing = True
                     self.player.startPlaying()
                     log.msg('%r started player' % self)
             else:
-                log.msg('%r stopped player' % self)
-                self.player.stopPlaying()
-                self.playing = False
+                log.msg("_update, not state['playing'], self.playing?:", self.playing)
+                if self.playing:
+                    log.msg('%r stopped player' % self)
+                    self.player.stopPlaying()
+                    self.playing = False
 
 
         if 'note_factory_uri' in state:
             log.msg('self.arps', self.arps)
-            """
+            '''
             TODO: key error?
             note_arp = self.arps[self.note_factory_uri].arp
             self.player.noteFactory = note_arp
-            """
+            '''
+
         if 'velocity_arp_name' in state:
             velocity_arp = self.arps[self.velocity_arp_name].arp
             self.player.velocity = velocity_arp
@@ -271,6 +364,12 @@ class Players(Collection):
 
 def apiSite(sfdir):
     #setDebug(True)
+
+    # Let's embark on this magical journey that is persistence with mongodo
+    from bl.ue.web.storage import thing2MongoStore
+    from txyoga.interface import ICollection, IElement
+    registerAdapter(thing2MongoStore, ICollection, IStore)
+    registerAdapter(thing2MongoStore, IElement, IStore)
 
     loaders['fluidsynth'] = FluidSynthInstrumentLoader(sfdir)
     clocks = BeatClocks()

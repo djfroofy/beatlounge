@@ -55,6 +55,9 @@ class PlayableMixin(object):
 
     def stopPlaying(self, node=None):
         se = self._playSchedule
+        if se is None:
+            return
+
         # Stop one tick before the next measure -
         # This means if you try to schedule something at a granularity of 1
         # you're kind of screwed - though I'm not sure of a nicer way to prevent
