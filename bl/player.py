@@ -50,6 +50,8 @@ class PlayableMixin(object):
     clock = getClock()
 
     def startPlaying(self, node=None):
+        if hasattr(self, '_playSchedule') and self._playSchedule:
+            return
         self._playSchedule = self.clock.schedule(self.play).startLater(
             0, self.interval)
 

@@ -311,16 +311,14 @@ class PlayerElement(PersistentElement):
             # TODO, this is not working ... ?
             if state['playing']:
                 log.msg("_update, state['playing'], self.playing?:", self.playing)
-                if not self.playing:
-                    self.playing = True
-                    self.player.startPlaying()
-                    log.msg('%r started player' % self)
+                self.playing = True
+                self.player.startPlaying()
+                log.msg('%r started player' % self)
             else:
                 log.msg("_update, not state['playing'], self.playing?:", self.playing)
-                if self.playing:
-                    log.msg('%r stopped player' % self)
-                    self.player.stopPlaying()
-                    self.playing = False
+                log.msg('%r stopped player' % self)
+                self.player.stopPlaying()
+                self.playing = False
 
 
         if 'note_factory_uri' in state:
@@ -335,11 +333,11 @@ class PlayerElement(PersistentElement):
             velocity_arp = self.arps[self.velocity_arp_name].arp
             self.player.velocity = velocity_arp
 
-        if not self.playing:
-            if 'interval' in state:
-                if self.playing:
-                    raise ApiError('Cannot change interval on running player')
-                self.player.interval = self.interval
+        if 'interval' in state:
+            if self.playing:
+                raise ApiError('Cannot change interval on running player')
+            self.player.interval = self.interval
+
         if 'sustain' in state:
             self.player.stop = lambda : self.sustain
 
