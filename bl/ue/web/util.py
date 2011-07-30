@@ -1,10 +1,13 @@
+import os
 from functools import wraps
 
 from bl.player import R, W, N
 from bl.ue.web.exceptions import ApiError
+from bl.ue.web import base32
 
 
-__all__ = ('checkClassAvailable', 'encodeKwargs', 'decodeValues')
+__all__ = ('checkClassAvailable', 'encodeKwargs', 'decodeValues', 'newTuple',
+           'generateBlid')
 
 def checkClassAvailable(klassName, klass):
     def decorator(f):
@@ -61,5 +64,13 @@ def decodeValues(values):
 
 def newTuple(tup, add=(), remove=()):
     return tuple((set(tup) - set(remove)).union(set(add)))
+
+
+def generateBlid(bits=256):
+    """
+    Make a scure BLID which is a Swiss Number of bits.
+    """
+    swnum = os.urandom(bits/8)
+    return base32.encode(swnum)
 
 

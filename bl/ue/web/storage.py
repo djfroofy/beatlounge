@@ -130,7 +130,7 @@ class MongoCollection(proxyForInterface(IPersistentCollection, originalAttribute
     def __init__(self, collection):
         self._collection = collection
 
-# TODO make some in-memory implementations for testing
+# TODO make some in-memory implementations for testing/fallback
 
 
 def thing2MongoStore(thing):
