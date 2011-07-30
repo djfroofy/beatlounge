@@ -152,6 +152,23 @@ class ChordPlayer(BasePlayer):
 
 START = None
 
+class StoppableGen:
+
+    _stopped = False
+
+    def __init__(self, gen):
+        self.gen = gen
+
+    def __iter__(self):
+        for thing in self.gen:
+            if self._stopped:
+                return
+            yield thing
+
+    def stop(self):
+        self._stopped = True
+
+
 class SchedulePlayer(PlayableMixin):
     """
     This takes a callable schedule factory which returns a list of tuples in
