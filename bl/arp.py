@@ -14,6 +14,8 @@ from bl.utils import getClock
 __all__ = [
     'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
     'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder', 'PhraseRecordingArp',
+    'Paradiddle', 'SingleParadiddle', 'DoubleParadiddle', 'TripleParadiddle',
+    'ParadiddleDiddle',
 ]
 
 
@@ -168,6 +170,44 @@ class ArpSwitcher(BaseArp):
         return self.arp()
 
 
+class Paradiddle(OrderedArp):
+
+    def reset(self, values):
+        assert len(values) == 2, 'Paradiddles take exactly two values (R and L)'
+        paradiddle = self.makeParadiddle(values[0], values[1])
+        OrderedArp.reset(self, paradiddle)
+
+    def makeParadiddle(self, r, l):
+        """
+        Make a single paradiddle: RlRR LRLL
+        """
+        return [r, l, r, r, l, r, l, l]
+
+SingleParadiddle = Paradiddle
+
+class DoubleParadiddle(Paradiddle):
+
+    def makeParadiddle(self, r, l):
+        """
+        Make a double paradiddle: RLRLRR LRLRLL
+        """
+        return [r, l, r, l, r, r, l, r, l, r, l, l]
+
+class TripleParadiddle(Paradiddle):
+
+    def makeParadiddle(self, r, l):
+        """
+        Make a triple paradiddle: RLRLRLRR LRLRLRLL
+        """
+        return [r, l, r, l, r, l, r, r, l, r, l, r, l, r, l, l]
+
+class ParadiddleDiddle(Paradiddle):
+
+    def makeParadiddle(self, r, l):
+        """
+        Make a paradiddle diddle
+        """
+        return [r, l, r, r, l, l ] * 2 + [l, r, l, l, r, r] * 2
 
 class OctaveArp(ArpSwitcher):
 
@@ -281,6 +321,7 @@ class PhraseRecordingArp(BaseArp):
             tape['dirty'] = True
         sustain = self.clock.ticks - last
         tape['sustains'].append((last, note, sustain))
+
 
 
 

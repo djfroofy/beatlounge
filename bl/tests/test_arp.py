@@ -9,6 +9,8 @@ from bl.player import N
 from bl.scheduler import BeatClock
 from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
     Adder, PhraseRecordingArp)
+from bl.arp import (SingleParadiddle, DoubleParadiddle, TripleParadiddle,
+    ParadiddleDiddle)
 
 class ArpTests(TestCase):
 
@@ -209,6 +211,30 @@ class ArpTests(TestCase):
             a = klass([])
             for i in range(4):
                 n = a()
+
+    def test_paradiddle_patterns(self):
+        notes = [ 1, 2 ]
+        single = SingleParadiddle(notes)
+        pattern = [ single() for i in range(16) ]
+        self.assertEquals(pattern,
+            [1,2,1,1,2,1,2,2, 1,2,1,1,2,1,2,2])
+
+        double = DoubleParadiddle(notes)
+        pattern = [ double() for i in range(24) ]
+        self.assertEquals(pattern,
+            [1,2,1,2,1,1, 2,1,2,1,2,2] * 2)
+
+        triple = TripleParadiddle(notes)
+        pattern = [ triple() for i in range(32) ]
+        self.assertEquals(pattern,
+            [1,2,1,2,1,2,1,1, 2,1,2,1,2,1,2,2] * 2)
+
+        pdd = ParadiddleDiddle(notes)
+        pattern = [ pdd() for i in range(24) ]
+        self.assertEquals(pattern,
+            [1,2,1,1,2,2, 1,2,1,1,2,2,
+             2,1,2,2,1,1, 2,1,2,2,1,1]
+        )
 
 
 class PhraseRecordingArpTests(TestCase, ClockRunner):
