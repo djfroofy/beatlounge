@@ -38,7 +38,7 @@ class SystemClock:
 
     def lastTick(self):
         delta = time.time() - self._start
-        bps = self.beatclock.tempo / 60. * 24
+        bps = self.beatclock.tempo.bpm / 60. * self.beatclock.tempo.tpb
         tick = math.floor(bps * delta)
         return int(tick), self._start + (tick / bps)
 

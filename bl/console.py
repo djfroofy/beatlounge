@@ -16,12 +16,12 @@ from twisted.python import failure, reflect, log, usage
 from twisted.python.filepath import FilePath
 
 
-from bl.scheduler import BeatClock, Meter, standardMeter
+from bl.scheduler import Tempo, BeatClock, Meter, standardMeter
 
 __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 
 # Todo - make this an opt flag instead
-EXPERIMENTAL = True
+EXPERIMENTAL = False
 
 
 def toMeter(s):
@@ -31,7 +31,8 @@ def toMeter(s):
 class Options(usage.Options):
     optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
                      ['logfile', 'l', 'child.log', 'Path to logfile'],
-                     ['tempo', 't', 130, 'The tempo (bpm)', int],
+                     ['bpm', 'b', 130, 'The tempo in beats per minute', int],
+                     ['tpb', 't', 24, 'Ticks per beat', int],
                      ['meter', 'm', standardMeter, 'The meter (default 4/4)', toMeter]
                      ]
 
@@ -63,7 +64,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         if self.persistent:
             self._readHistoryFile()
         self.interpreter.locals['console'] = self
-        
+
     def _readHistoryFile(self):
         self._historySession = os.getpid()
         self._historyFd = open(self.historyFile + ('.%d' % self._historySession), 'w')
@@ -131,7 +132,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
             return
         if len(matches) == 1:
             if '.' in current:
-                buf = '.'.join(current.split('.')[:-1]) + '.' + matches[0] 
+                buf = '.'.join(current.split('.')[:-1]) + '.' + matches[0]
                 self._resetAndDeliverBuffer(buf)
             else:
                 self._resetAndDeliverBuffer(matches[0])
@@ -171,7 +172,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.terminal.nextLine()
         self.terminal.write(self.ps[self.pn])
         self.terminal.write(current)
-       
+
 
     # methods for host key verification ui
 
@@ -183,9 +184,9 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self._onPrompt = defer.Deferred()
         self.writeHelp(message)
         return self._onPrompt
-   
+
     warn = writeHelp
- 
+
     def _answerPrompt(self, line):
         answer = line.strip().lower()
         if answer == 'yes':
@@ -197,7 +198,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.handle_HOME()
         self.writeHelp('')
 
- 
+
 try:
 
     from twisted.conch.ssh import channel, session, keys, connection
@@ -219,7 +220,7 @@ try:
             console.writeHelp('failed connecting to remote: %s' % reason)
 
         log.msg('connecting')
-        
+
         def verifyHostKey(transport, host, pubKey, fingerprint):
             log.msg('verifying host key')
             actualHost = transport.factory.options['host']
@@ -262,7 +263,7 @@ try:
             client = session.SSHSessionClient()
             #client.dataReceived = dataReceived
             client.connectionLost = connectionLost
-            
+
             conn.console.session = self
 
             # tty voodoo magic (my head is officially fucking hurting)
@@ -278,15 +279,15 @@ try:
             log.msg('data received from remote side. bytes=%r' % data)
 
         def closeReceived(self):
-            log.msg('remote side closed %s' % self) 
+            log.msg('remote side closed %s' % self)
 
         def closed(self):
             log.msg('closed: %r' % self)
             self.conn.console.session = None
- 
+
         def sendEOF(self):
             self.conn.sendEOF(self)
-    
+
         def _windowResized(self, *args):
             winsz = fcntl.ioctl(0, tty.TIOCGWINSZ, '12345678')
             winSize = struct.unpack('4H', winsz)
@@ -297,10 +298,11 @@ except ImportError, ie:
     from warnings import warn
     warn('%s - connectConsole() will not be avaiable' % ie)
 
-def runWithProtocol(klass, audioDev, channels, tempo, meter):
+def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
+    tempo = Tempo(bpm, tpb)
     try:
         # TODO - there should be a cleaner strategy for collecting parameters and
         # initializing fluidsynth - initializing fluidsynth shouldn't really even be
@@ -328,10 +330,11 @@ def main(argv=None, reactor=None):
     log.startLogging(file(opts['logfile'], 'w'))
     log.msg('audio dev: %s' % opts['audiodev'])
     log.msg('channels: %s' % opts['channels'])
-    log.msg('tempo/BPM: %s' % opts['tempo'])
+    log.msg('tempo/BPM: %s' % opts['bpm'])
+    log.msg('tempo/TPB: %s' % opts['tpb'])
     log.msg('meter: %s' % opts['meter'])
-    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['tempo'], opts['meter'])
+    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['bpm'], opts['tpb'], opts['meter'])
 
 if __name__ == '__main__':
     main()
- 
+

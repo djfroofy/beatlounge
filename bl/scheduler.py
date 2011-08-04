@@ -14,7 +14,7 @@ from twisted.internet.task import LoopingCall
 
 from bl.debug import DEBUG
 
-__all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt',
+__all__ = [ 'Tempo', 'Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt',
             'ScheduledEvent', 'clock' ]
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
@@ -50,6 +50,7 @@ class Tempo(object):
             return
         self.tpm = self.bpm * self.tpb
 
+TEMPO_120_24 = Tempo()
 
 class Beat(_BeatBase):
     """
@@ -148,7 +149,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
     defaultClock = None
     syncClock = None
 
-    def __init__(self, tempo=130, meters=(), reactor=None, syncClockClass=None, default=False):
+    def __init__(self, tempo=TEMPO_120_24, meters=(), reactor=None, syncClockClass=None, default=False):
         """
         tempo: The tempo in beats per minute (default: 130)
         meters: Meters used by the clock - default to [ Meter(4,4) ]
@@ -163,7 +164,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.tempo = tempo
         self.ticks = 0
         #self.setTempo(tempo)
-        self._tick_interval = (60. / tempo) * (1./24)
+        #self._tick_interval = (60. / tempo) * (1./24)
         self.meters = meters
         self._meter_schedule = {}
         if not self.meters:
@@ -192,13 +193,12 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         and set before starting the clock (e.g. with beatlounge command use the -t arg
         to set the tempo in advance).
 
-        tempo: The tempo (BPM)
+        tempo: The tempo (instance of Tempo)
         """
-        self._tick_interval = (60. / tempo) * (1./24)
+        self.tempo = tempo
         if hasattr(self, 'task'):
             self.task.stop()
-            self.task.start(self._tick_interval, True)
-        self.tempo = tempo
+            self.task.start(60. / self.tempo.tpm, True)
 
         if self.syncClock:
             lasttick, ignore = self.syncClock.lastTick()
@@ -246,7 +246,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         will drive the BeatClock.
         """
         self.task = LoopingCall(self.tick)
-        self.on_stop = self.task.start(self._tick_interval, True)
+        self.on_stop = self.task.start(60. / self.tempo.tpm, True)
 
     def tick(self):
         """
@@ -359,7 +359,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         if not hasattr(self, 'task'):
             raise ValueError("Cannot nudge a clock that hasn't started")
         self.task.stop()
-        self.reactor.callLater(pause, self.task.start, self._tick_interval, True)
+        self.reactor.callLater(pause, self.task.start, 60. / self.tempo.tpm, True)
 
 
 

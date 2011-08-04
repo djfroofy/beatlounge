@@ -119,11 +119,11 @@ class ClockTests(TestCase, ClockRunner):
         self.meters = [ Meter(4,4), Meter(3,4) ]
         self.meterStandard = self.meters[0]
         self.meter34 = self.meters[1]
-        self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
+        self.clock = BeatClock(Tempo(135), meters=self.meters, reactor=TestReactor())
 
 
     def test_defaultMeterIsStandard(self):
-        clock = BeatClock(120)
+        clock = BeatClock(Tempo(120))
         self.assertEquals(len(clock.meters), 1)
         meter = clock.meters[0]
         self.assertEquals(meter.length, 4)
@@ -236,14 +236,14 @@ class ClockTests(TestCase, ClockRunner):
 
 
     def test_setTempo(self):
-        self.clock.setTempo(60)
-        interval_before = self.clock._tick_interval
+        self.clock.setTempo(Tempo(60))
+        interval_before = 60. / self.clock.tempo.tpm
         called = []
         self.clock.startTicking()
         self.clock.on_stop.addCallback(called.append)
-        self.clock.setTempo(120)
+        self.clock.setTempo(Tempo(120))
         self.assertEquals(len(called), 1)
-        self.assertEquals(self.clock._tick_interval, interval_before / 2.)
+        self.assertEquals(60. / self.clock.tempo.tpm, interval_before / 2.)
         self.clock.task.stop()
 
 
@@ -251,12 +251,12 @@ class ClockTests(TestCase, ClockRunner):
         self.clock.startTicking()
         self.clock.nudge()
         self.assertEquals(self.clock.reactor.scheduled,
-            [(0.1, self.clock.task.start, (self.clock._tick_interval, True), {})])
+            [(0.1, self.clock.task.start, (60. / self.clock.tempo.tpm, True), {})])
         self.clock.task.start(1, True)
         self.clock.nudge(pause=0.5)
         self.assertEquals(self.clock.reactor.scheduled,
-            [(0.1, self.clock.task.start, (self.clock._tick_interval, True), {}),
-             (0.5, self.clock.task.start, (self.clock._tick_interval, True), {})])
+            [(0.1, self.clock.task.start, (60. / self.clock.tempo.tpm, True), {}),
+             (0.5, self.clock.task.start, (60. / self.clock.tempo.tpm, True), {})])
 
 
 class TempoTests(TestCase):
