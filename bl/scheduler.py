@@ -19,6 +19,38 @@ __all__ = ['Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mt
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
 
+
+
+class Tempo(object):
+    """
+    Tempo gives the tempo in 3 forms for ready access:
+
+    bpm (beats per minute)
+    tpb (ticks per beat)
+    tpm (ticks per minute)
+
+    Do not set these attributes directly, but call reset() instead.
+    Otherwise, expect unexpected behaviors.
+    """
+
+    def __init__(self, bpm=120, tpb=24):
+        self.bpm = bpm
+        self.tpb = tpb
+        self.tpm = self.bpm * self.tpb
+
+
+    def reset(self, bpm=None, tpb=None, tpm=None):
+        if bpm:
+            self.bpm = bpm
+        if tpb:
+            self.tpb = tpb
+        if tpm:
+            self.tpm = tpm
+            self.bpm = (tpm / self.tpb)
+            return
+        self.tpm = self.bpm * self.tpb
+
+
 class Beat(_BeatBase):
     """
     A named tuple representing the current beat as:

@@ -2,7 +2,7 @@ from functools import partial
 
 from twisted.trial.unittest import TestCase
 
-from bl.scheduler import BeatClock, Meter, measuresToTicks
+from bl.scheduler import BeatClock, Tempo, Meter, measuresToTicks
 
 import data
 
@@ -46,27 +46,27 @@ class TestInstrument:
 class MeterTests(TestCase):
 
     def setUp(self):
-        self.meterStandard = Meter(4,4) 
+        self.meterStandard = Meter(4,4)
         self.meter34 = Meter(3,4)
         self.meter54 = Meter(5,4)
-        self.meter98 = Meter(9,8) 
+        self.meter98 = Meter(9,8)
 
     def test_beat(self):
         beats = []
         for i in range(96 * 2):
             beats.append(self.meterStandard.beat(i))
         self.assertEquals(beats, data.measure_standard_beats)
-       
+
         beats = []
         for i in range(96 * 2):
-            beats.append(self.meter34.beat(i)) 
+            beats.append(self.meter34.beat(i))
         self.assertEquals(beats, data.measure_34_beats)
 
         beats = []
         for i in range(96 * 2):
             beats.append(self.meter54.beat(i))
         self.assertEquals(beats, data.measure_54_beats)
-        
+
         beats = []
         for i in range(96 * 2):
             beats.append(self.meter98.beat(i))
@@ -82,7 +82,7 @@ class UtilityTests(TestCase):
         self.assertEquals(ticks, 12)
         ticks = measuresToTicks(1)
         self.assertEquals(ticks, 96)
-      
+
 
     def test_measuresToTicksMeterRelativity(self):
         meter34 = Meter(3,4)
@@ -111,7 +111,7 @@ class UtilityTests(TestCase):
         self.assertEquals(ticks, 228)
         ticks = measuresToTicks((2,1.5), meter98)
         self.assertEquals(ticks, 252)
- 
+
 class ClockTests(TestCase, ClockRunner):
 
 
@@ -142,11 +142,11 @@ class ClockTests(TestCase, ClockRunner):
         expected = [(0, 'f1'), (24, 'f1'), (48, 'f1'), (72, 'f1'), (96, 'f1'),
                     (120, 'f1'), (144, 'f1'), (168, 'f1'), (192, 'f1')]
         self.assertEquals(called, expected)
-        
+
         called[:] = []
 
         instr2 = TestInstrument('f2', self.clock, called)
-        
+
         self.clock.schedule(instr2).startLater(1.0, 1.0 / 3)
         self._runTicks(96 * 2)
         expected = [(216, 'f1'), (240, 'f1'), (264, 'f1'), (288, 'f2'), (288, 'f1'),
@@ -160,7 +160,7 @@ class ClockTests(TestCase, ClockRunner):
 
         instr1 = TestInstrument('f1', self.clock, called)
         instr2 = TestInstrument('f2', self.clock, called)
-        
+
         self.clock.schedule(instr1).startLater(1.0, 0.25, meter=self.meterStandard)
         self.clock.schedule(instr2).startLater(1.0, 0.25, meter=self.meter34)
 
@@ -177,7 +177,7 @@ class ClockTests(TestCase, ClockRunner):
 
         instr1 = TestInstrument('f1', self.clock, called)
         instr2 = TestInstrument('f2', self.clock, called)
-        
+
         self.clock.schedule(instr1).startLater(1.0, 0.25, meter=self.meterStandard).stopLater(3.5)
         self._runTicks(96 * 5)
         expected = [
@@ -197,18 +197,18 @@ class ClockTests(TestCase, ClockRunner):
         self.assertEquals(called, expected)
 
         called[:] = []
-       
+
         self.clock.schedule(instr2).startLater(0, 0.25, meter=self.meter34).stopLater(2.5, meter=self.meter34)
         self._runTicks(96 * 5)
         expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
         self.assertEquals(called, expected)
-        
+
     def test_bindMeter(self):
         called = []
 
         instr1 = TestInstrument('f1', self.clock, called)
         instr2 = TestInstrument('f2', self.clock, called)
-        
+
         self.clock.schedule(instr1).bindMeter(self.meterStandard).startLater(1.0, 0.25).stopLater(3.5)
         self._runTicks(96 * 5)
         expected = [
@@ -228,7 +228,7 @@ class ClockTests(TestCase, ClockRunner):
         self.assertEquals(called, expected)
 
         called[:] = []
-       
+
         self.clock.schedule(instr2).bindMeter(self.meter34).startLater(0, 0.25).stopLater(2.5)
         self._runTicks(96 * 5)
         expected = [(504, 'f2'), (528, 'f2'), (552, 'f2'), (576, 'f2'), (600, 'f2')]
@@ -250,10 +250,42 @@ class ClockTests(TestCase, ClockRunner):
     def test_nudge(self):
         self.clock.startTicking()
         self.clock.nudge()
-        self.assertEquals(self.clock.reactor.scheduled, 
+        self.assertEquals(self.clock.reactor.scheduled,
             [(0.1, self.clock.task.start, (self.clock._tick_interval, True), {})])
-        self.clock.task.start(1, True) 
+        self.clock.task.start(1, True)
         self.clock.nudge(pause=0.5)
         self.assertEquals(self.clock.reactor.scheduled,
             [(0.1, self.clock.task.start, (self.clock._tick_interval, True), {}),
              (0.5, self.clock.task.start, (self.clock._tick_interval, True), {})])
+
+
+class TempoTests(TestCase):
+
+    def test_basic_tempo(self):
+
+        tempo = Tempo()
+        self.assertEquals(tempo.bpm, 120)
+        self.assertEquals(tempo.tpb, 24)
+        self.assertEquals(tempo.tpm, 2880)
+
+        tempo.reset(bpm=150)
+        self.assertEquals(tempo.bpm, 150)
+        self.assertEquals(tempo.tpb, 24)
+        self.assertEquals(tempo.tpm, 3600)
+
+        tempo.reset(tpb=48)
+        self.assertEquals(tempo.bpm, 150)
+        self.assertEquals(tempo.tpb, 48)
+        self.assertEquals(tempo.tpm, 7200)
+
+        tempo.reset(tpb=24, bpm=60)
+        self.assertEquals(tempo.bpm, 60)
+        self.assertEquals(tempo.tpb, 24)
+        self.assertEquals(tempo.tpm, 1440)
+
+        tempo.reset(tpm=14400)
+        self.assertEquals(tempo.bpm, 600)
+        self.assertEquals(tempo.tpb, 24)
+        self.assertEquals(tempo.tpm, 14400)
+
+
