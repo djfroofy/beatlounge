@@ -1,4 +1,5 @@
 import time
+import warnings
 
 from collections import namedtuple
 from functools import wraps
@@ -51,6 +52,7 @@ class Tempo(object):
         self.tpm = self.bpm * self.tpb
 
 TEMPO_120_24 = Tempo()
+STANDARD_TICKS_PER_MEASURE = 96
 
 class Beat(_BeatBase):
     """
@@ -79,14 +81,13 @@ class Meter(object):
     ticks into the current measure, etc.
     """
 
-    def __init__(self, length=4, division=4, number=1):
+    def __init__(self, length=4, division=4, number=1, tempo=TEMPO_120_24):
         self.length = length
         self.division = division
         self.number = number
         self._quarters_per_measure = self.length * self.number / (self.division / 4.)
         self._hash = hash((self.length, self.division, self.number))
-        self.ticksPerMeasure = int(24 * self.length * 4. / self.division * self.number)
-
+        self.ticksPerMeasure = int(tempo.tpb * self.length * 4. / self.division * self.number)
 
     def beat(self, ticks):
         """
@@ -114,6 +115,35 @@ class Meter(object):
         ticks: the clock ticks (BeatClock.ticks)
         """
         return ticks % self.ticksPerMeasure
+
+    def divisionToTicks(self, n, d):
+        """
+        Convert n/d (examples 1/4, 3/4, 3/32, 8/4..)
+        For example, if the ticks-per-beat are 24, then n=1 and d=8 would return 12.
+        """
+        std = STANDARD_TICKS_PER_MEASURE
+        return ((float(n) / d) * std) * float(self.ticksPerMeasure) / std
+
+    dtt = divisionToTicks
+
+    def nextDivision(self, ticks, n, d):
+        m = self.measure(ticks) * self.ticksPerMeasure
+        nm = m + self.ticksPerMeasure
+        offset_ticks = self.divisionToTicks(n, d)
+        next = m + offset_ticks
+        if next < ticks:
+            next = next + self.ticksPerMeasure
+        #elif next > nm:
+        #    next = nm
+        return next
+
+    nd = nextDivision
+
+    def nextMeasure(self, ticks, measures=1):
+        m = self.measure(ticks) * self.ticksPerMeasure
+        return m + measures * self.ticksPerMeasure
+
+    nm = nextMeasure
 
     def measure(self, ticks):
         """
@@ -149,7 +179,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
     defaultClock = None
     syncClock = None
 
-    def __init__(self, tempo=TEMPO_120_24, meters=(), reactor=None, syncClockClass=None, default=False):
+    def __init__(self, tempo=TEMPO_120_24, meter=None, meters=(), reactor=None, syncClockClass=None, default=False):
         """
         tempo: The tempo in beats per minute (default: 130)
         meters: Meters used by the clock - default to [ Meter(4,4) ]
@@ -163,12 +193,13 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         global clock
         self.tempo = tempo
         self.ticks = 0
-        #self.setTempo(tempo)
-        #self._tick_interval = (60. / tempo) * (1./24)
         self.meters = meters
         self._meter_schedule = {}
         if not self.meters:
-            self.meters = [Meter(4,4,1)]
+            self.meters = [Meter(4,4,1,tempo=self.tempo)]
+        else:
+            warnings.warn('meters argument is deprecated, use meter=oneMeterNotAList instead')
+        self.meter = meter or self.meters[0]
         if not reactor:
             from twisted.internet import reactor
         self.reactor = reactor
@@ -279,7 +310,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         delta = tick - self.ticks
         if DEBUG:
             log.msg("We're behind by %s ticks (ticks=%s expected=%s)" % (delta, self.ticks, tick))
-        tpm = self.meters[0].ticksPerMeasure
+        tpm = self.meter.ticksPerMeasure
         if delta > tpm:
             t = tick % tpm
             ct = self.ticks % tpm
@@ -344,9 +375,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         a: postional args to call f with
         kw: keyword args to call f with
         """
-        meter = self.meters[0]
-        ticks = _ticks(measures, meter, self)
-        self.callLater(ticks, f, *a, **kw)
+        self.callLater(self.meter.nextMeasure(self.ticks, measures), f, *a, **kw)
 
     def nudge(self, pause=0.1):
         """
@@ -426,8 +455,17 @@ class ScheduledEvent(object):
         self.clock = clock
         self.call = (_f, args, kwargs)
 
+
+    def startAfterTicks(self, ticks, interval):
+        def _start():
+            self.clock.callLater(ticks, self.start, interval, True)
+        self.clock.callWhenRunning(_start)
+        return self
+
     def startLater(self, measures=1, frequency=0.25, ticks=None, meter=None):
         """
+        DEPRECATED - use startAfterTicks instead
+
         Begin calling our callable after measures (or raw ticks if specified).
         Frequency is the interval in measures to repeat calls to our callable.
         If a meter is given, this will be used as the basis for converting measures and frequency
@@ -436,9 +474,10 @@ class ScheduledEvent(object):
 
         (See measuresToTicks for details on how measures and frequency are converted to clock ticks).
         """
+        warnings.warn('startLater is deprecated, use startAfterTicks instead')
         if measures < 0:
             raise ValueError("measures must be greater than zero")
-        meter = meter or self.meter or self.clock.meters[0]
+        meter = meter or self.meter or self.clock.meter
         if ticks is None:
             #ticks = frequency * standardMeter.ticksPerMeasure
             # Use meters to ticks for meter-relative frequency
@@ -462,6 +501,18 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_start)
         return self
 
+
+    def stopAfterTicks(self, ticks):
+        def _schedule_stop():
+            def _stop():
+                if hasattr(self, 'task'):
+                    self.task.stop()
+                else:
+                    log.msg('tried to stop an event that has not yet started')
+            self.clock.callLater(ticks, _stop)
+        self.clock.callWhenRunning(_schedule_stop)
+        return self
+
     def stopLater(self, measures=1, meter=None, ticks=None):
         """
         Stop calling the callable after measures.
@@ -472,14 +523,13 @@ class ScheduledEvent(object):
 
         (See measuresToTicks for details on how measures are converted to clock ticks).
         """
-
-        meter = meter or self.meter or self.clock.meters[0]
+        warnings.warn('stopLater is deprecated, use stopAfterTicks instead')
+        meter = meter or self.meter or self.clock.meter
         ticks_ = ticks
         def _scheduleStop():
             ticks = ticks_
             if ticks is None:
                 ticks = _ticks(measures, meter, self.clock)
-                #ticks = mtt(measures, meter)
             def _stop():
                 if hasattr(self, 'task'):
                     self.task.stop()
@@ -507,6 +557,5 @@ class ScheduledEvent(object):
         self.meter = meter
         return self
 
-BPM = 130
-clock = BeatClock(BPM)
+clock = BeatClock()
 

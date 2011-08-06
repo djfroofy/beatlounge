@@ -6,7 +6,7 @@ from twisted.trial.unittest import TestCase
 from bl.testlib import ClockRunner, TestReactor
 from bl import arp
 from bl.player import N
-from bl.scheduler import BeatClock
+from bl.scheduler import BeatClock, Tempo
 from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
     Adder, PhraseRecordingArp)
 from bl.arp import (SingleParadiddle, DoubleParadiddle, TripleParadiddle,
@@ -240,7 +240,8 @@ class ArpTests(TestCase):
 class PhraseRecordingArpTests(TestCase, ClockRunner):
 
     def setUp(self):
-        self.clock = BeatClock(135, reactor=TestReactor())
+        tempo = Tempo(135)
+        self.clock = BeatClock(tempo, reactor=TestReactor())
         self.phraseRecorder = PhraseRecordingArp(self.clock)
 
 

@@ -24,16 +24,16 @@ __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 EXPERIMENTAL = False
 
 
-def toMeter(s):
+def toMeter(s, tempo):
     count, division = s.split('/')
-    return Meter(int(count), int(division))
+    return Meter(int(count), int(division), tempo=tempo)
 
 class Options(usage.Options):
     optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
                      ['logfile', 'l', 'child.log', 'Path to logfile'],
                      ['bpm', 'b', 130, 'The tempo in beats per minute', int],
                      ['tpb', 't', 24, 'Ticks per beat', int],
-                     ['meter', 'm', standardMeter, 'The meter (default 4/4)', toMeter]
+                     ['meter', 'm', '4/4', 'The meter (default 4/4)']
                      ]
 
     def parseArgs(self, audiodev='coreaudio'):
@@ -303,15 +303,16 @@ def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
     tempo = Tempo(bpm, tpb)
+    meter = toMeter(meter, tempo)
     try:
         # TODO - there should be a cleaner strategy for collecting parameters and
         # initializing fluidsynth - initializing fluidsynth shouldn't really even be
         # necessary
         if EXPERIMENTAL:
             from bl.sync import SystemClock
-            clock = BeatClock(tempo=tempo, meters=[meter], default=True, syncClockClass=SystemClock)
+            clock = BeatClock(tempo=tempo, meter=meter, default=True, syncClockClass=SystemClock)
         else:
-            clock = BeatClock(tempo=tempo, meters=[meter], default=True)
+            clock = BeatClock(tempo=tempo, meter=meter, default=True)
         clock.synthAudioDevice = audioDev
         clock.synthChannels = channels
         p = ServerProtocol(klass)

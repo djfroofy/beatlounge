@@ -97,7 +97,7 @@ class Ducker(BaseFilter):
         warn('Ducker is deprecated - use Stepper instead which is simpler')
         self.clock = getClock(clock)
         if meter is None:
-            meter = self.clock.meters[0]
+            meter = self.clock.meter
         self.meter = meter
         self.peaks = peaks or self.peaks
         self.duckLevel = duckLevel is None and self.duckLevel or duckLevel

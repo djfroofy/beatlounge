@@ -125,7 +125,7 @@ class ClockTests(TestCase, ClockRunner):
     def test_defaultMeterIsStandard(self):
         clock = BeatClock(Tempo(120))
         self.assertEquals(len(clock.meters), 1)
-        meter = clock.meters[0]
+        meter = clock.meter
         self.assertEquals(meter.length, 4)
         self.assertEquals(meter.division, 4)
         self.assertEquals(meter.number, 1)
@@ -287,5 +287,76 @@ class TempoTests(TestCase):
         self.assertEquals(tempo.bpm, 600)
         self.assertEquals(tempo.tpb, 24)
         self.assertEquals(tempo.tpm, 14400)
+
+
+
+class NewStyleMeterTests(TestCase):
+
+    def test_divisionToTicks(self):
+
+        tempo = Tempo()
+        meter = Meter(4, 4, tempo=tempo)
+        self.assertEquals(meter.divisionToTicks(1,4), 24)
+        self.assertEquals(meter.divisionToTicks(3,4), 72)
+        self.assertEquals(meter.divisionToTicks(1,1), 96)
+        self.assertEquals(meter.divisionToTicks(8,4), 192)
+        self.assertEquals(meter.divisionToTicks(1,12), 8)
+
+
+        tempo = Tempo(bpm=120, tpb=96)
+        meter = Meter(4, 4, tempo=tempo)
+        self.assertEquals(meter.divisionToTicks(1,4), 96)
+        self.assertEquals(meter.divisionToTicks(3,4), 96*3)
+        self.assertEquals(meter.divisionToTicks(1,1), 96*4)
+        self.assertEquals(meter.divisionToTicks(8,4), 96*8)
+        self.assertEquals(meter.divisionToTicks(1,12), 32)
+        self.assertEquals(meter.divisionToTicks(1,48), 8)
+        self.assertEquals(meter.divisionToTicks(1,128), 3)
+        self.assertEquals(meter.divisionToTicks(1,192), 2) # ... 192th, word
+
+
+    def test_nextDivision(self):
+        ticks = 0
+        tempo = Tempo()
+        meter = Meter(4, 4, tempo=tempo)
+        self.assertEquals(meter.nextDivision(ticks, 1,4), 24)
+        self.assertEquals(meter.nextDivision(ticks, 2,4), 48)
+        self.assertEquals(meter.nextDivision(ticks, 1,1), 96)
+        self.assertEquals(meter.nextDivision(ticks, 5,4), 96+24)
+        ticks = 48
+        self.assertEquals(meter.nextDivision(ticks, 1,4), 96+24)
+        self.assertEquals(meter.nextDivision(ticks, 2,4), 48)
+        self.assertEquals(meter.nextDivision(ticks, 1,1), 96)
+        self.assertEquals(meter.nextDivision(ticks, 5,4), 96+24)
+        ticks = 96 + 48
+        self.assertEquals(meter.nextDivision(ticks, 1,4), (96*2)+24)
+        self.assertEquals(meter.nextDivision(ticks, 2,4), 96 + 48)
+        self.assertEquals(meter.nextDivision(ticks, 1,1), 96*2)
+        self.assertEquals(meter.nextDivision(ticks, 5,4), (96*2)+24)
+
+
+        ticks = 0
+        tempo = Tempo(tpb=48)
+        meter = Meter(4, 4, tempo=tempo)
+        self.assertEquals(meter.nextDivision(ticks, 1,4), 48)
+        self.assertEquals(meter.nextDivision(ticks, 2,4), 96)
+        self.assertEquals(meter.nextDivision(ticks, 1,1), 192)
+        self.assertEquals(meter.nextDivision(ticks, 5,4), 240)
+        ticks = 96
+        self.assertEquals(meter.nextDivision(ticks, 1,4), 240)
+        self.assertEquals(meter.nextDivision(ticks, 2,4), 96)
+        self.assertEquals(meter.nextDivision(ticks, 1,1), 192)
+        self.assertEquals(meter.nextDivision(ticks, 5,4), 240)
+        ticks = 192 + 96
+        self.assertEquals(meter.nextDivision(ticks, 1,4), (192*2)+48)
+        self.assertEquals(meter.nextDivision(ticks, 2,4), 192 + 96)
+        self.assertEquals(meter.nextDivision(ticks, 1,1), 192*2)
+        self.assertEquals(meter.nextDivision(ticks, 5,4), (192*2)+48)
+
+
+#class ScheduledEventTests(TestCase):
+#
+#    def test_
+
 
 
