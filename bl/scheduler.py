@@ -51,6 +51,9 @@ class Tempo(object):
             return
         self.tpm = self.bpm * self.tpb
 
+    def __str__(self):
+        return 'Tempo(bpm=%s, tpb=%s)' % (self.bpm, self.tpb)
+
 TEMPO_120_24 = Tempo()
 STANDARD_TICKS_PER_MEASURE = 96
 

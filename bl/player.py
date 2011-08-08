@@ -47,11 +47,19 @@ class IPlayable(Interface):
 
 class PlayableMixin(object):
     implements(IPlayable)
-    clock = getClock()
+    clock = None
+    _playSchedule = None
 
     def startPlaying(self, node=None):
-        self._playSchedule = self.clock.schedule(self.play).startLater(
-            0, self.interval)
+        if self._playSchedule:
+            log.err('Playable %s already started' % self)
+            return
+        m = self.meter.measure(self.clock.ticks)
+        if self.clock.ticks > m:
+            m = self.meter.nextMeasure(self.clock.ticks, 1)
+        ticks = m - self.clock.ticks
+        self._playSchedule = self.clock.schedule(self.play).startAfterTicks(
+            ticks, self.interval)
 
     def stopPlaying(self, node=None):
         se = self._playSchedule
@@ -60,7 +68,6 @@ class PlayableMixin(object):
         # you're kind of screwed - though I'm not sure of a nicer way to prevent
         # the non-determinism on something stopping before it starts again when
         # the stop and start are scheduled for the same tick
-
         ticksd = self.clock.ticks % self.meter.ticksPerMeasure
         ticks = self.meter.ticksPerMeasure - 1 - ticksd
         self.clock.callLater(ticks, se.stop)
