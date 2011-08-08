@@ -315,6 +315,31 @@ class NewStyleMeterTests(TestCase):
         self.assertEquals(meter.divisionToTicks(1,192), 2) # ... 192th, word
 
 
+    def test_invalidDivisionToTicks(self):
+        tempo = Tempo()
+        meter = Meter(4,4,tempo=tempo)
+        self.assertRaises(ValueError, meter.dtt, 1, 192)
+        self.assertRaises(ValueError, meter.dtt, 1, 25)
+        self.assertRaises(ValueError, meter.dtt, 1, 7)
+        tempo.reset(tpb=192)
+        meter.resetTempo(tempo)
+        meter.dtt(1,192)
+        tempo.reset(tpb=25)
+        meter.resetTempo(tempo)
+        meter.dtt(1,25)
+        tempo.reset(tpb=24*7)
+        meter.resetTempo(tempo)
+        meter.dtt(1,7)
+        meter.strict = False
+        tempo.reset(tpb=24)
+        meter.resetTempo(tempo)
+        meter.dtt(1,192)
+        meter.dtt(1,25)
+        meter.dtt(1,7)
+        errors = self.flushLoggedErrors()
+        self.assertEquals(len(errors), 3)
+
+
     def test_nextDivision(self):
         ticks = 0
         tempo = Tempo()

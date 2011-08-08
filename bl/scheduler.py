@@ -1,4 +1,5 @@
 import time
+import math
 import warnings
 
 from collections import namedtuple
@@ -6,6 +7,7 @@ from functools import wraps
 from zope.interface import implements
 
 from twisted.python import log
+from twisted.python.failure import Failure
 from twisted.python.components import proxyForInterface
 from twisted.internet.interfaces import IReactorTime
 from twisted.internet.base import ReactorBase
@@ -83,6 +85,7 @@ class Meter(object):
     and converting to other related values: the current measure number based on ticks,
     ticks into the current measure, etc.
     """
+    strict = True
 
     def __init__(self, length=4, division=4, number=1, tempo=TEMPO_120_24):
         self.length = length
@@ -90,6 +93,9 @@ class Meter(object):
         self.number = number
         self._quarters_per_measure = self.length * self.number / (self.division / 4.)
         self._hash = hash((self.length, self.division, self.number))
+        self.resetTempo(tempo)
+
+    def resetTempo(self, tempo):
         self.ticksPerMeasure = int(tempo.tpb * self.length * 4. / self.division * self.number)
 
     def beat(self, ticks):
@@ -124,8 +130,13 @@ class Meter(object):
         Convert n/d (examples 1/4, 3/4, 3/32, 8/4..)
         For example, if the ticks-per-beat are 24, then n=1 and d=8 would return 12.
         """
-        std = STANDARD_TICKS_PER_MEASURE
-        return ((float(n) / d) * std) * float(self.ticksPerMeasure) / std
+        ticks = float(n)/d * self.ticksPerMeasure
+        _, rem = divmod(ticks, 1)
+        if rem and self.strict:
+            raise ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (n,d,self.ticksPerMeasure))
+        elif rem and not self.strict:
+            log.err(Failure(ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (n,d,self.ticksPerMeasure))))
+        return int(math.floor(ticks))
 
     dtt = divisionToTicks
 
@@ -136,8 +147,6 @@ class Meter(object):
         next = m + offset_ticks
         if next < ticks:
             next = next + self.ticksPerMeasure
-        #elif next > nm:
-        #    next = nm
         return next
 
     nd = nextDivision
