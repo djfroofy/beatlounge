@@ -153,7 +153,8 @@ class Meter(object):
 
     def nextMeasure(self, ticks, measures=1):
         m = self.measure(ticks) * self.ticksPerMeasure
-        return m + measures * self.ticksPerMeasure
+        r = m + measures * self.ticksPerMeasure
+        return r
 
     nm = nextMeasure
 
@@ -426,11 +427,34 @@ class ScheduledEvent(object):
 
 
     def startAfterTicks(self, ticks, interval):
+        """
+        Start scheduled event after ticks. Calls to wrapped callable will recur every interval ticks.
+        This is for raw tick-based schedulingl use startAfter for a simpler metrical api.
+        """
         def _start():
             self.clock.callLater(ticks, self.start, interval, True)
         self.clock.callWhenRunning(_start)
         return self
 
+
+    def startAfter(self, measures=1, interval=(1,4), n=0, d=4):
+        """
+        Start event after measures and division (n/d). Interval is a two-tuple expression
+        interval (e.g. (1,4) for every quarter note). This will calculate ticks based
+        on active meter (the meter assigned to the clock this schedule event was generated
+        from) and call startAfterTicks().
+        """
+        meter = self.clock.meter
+        ticks = None
+        if measures == 0:
+            m = meter.measure(self.clock.ticks) * meter.ticksPerMeasure
+            if self.clock.ticks > m:
+                measures = 1
+            else:
+                ticks = 0
+        if ticks is None:
+            ticks = meter.nm(self.clock.ticks, measures) + meter.dtt(n,d) - self.clock.ticks
+        self.startAfterTicks(ticks, meter.dtt(interval[0], interval[1]))
 
     def start(self, ticks=None, now=True):
         """
@@ -446,6 +470,10 @@ class ScheduledEvent(object):
 
 
     def stopAfterTicks(self, ticks):
+        """
+        Stop schedule event after ticks. This is for raw tick-based scheduling; use
+        stopAfter for a simpler metrical api.
+        """
         def _schedule_stop():
             def _stop():
                 if hasattr(self, 'task'):
@@ -456,6 +484,15 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_schedule_stop)
         return self
 
+    def stopAfter(self, measures=1, n=0, d=4):
+        """
+        Stop event after measures and division (n/d). This will calculate ticks based
+        on active meter (the meter assigned to the clock this schedule event was generated
+        from) and call stopAfterTicks().
+        """
+        meter = self.clock.meter
+        ticks = meter.nm(measures) + meter.dtt(n,d) - self.clock.ticks
+        self.stopAfterTicks(ticks)
 
     def stop(self):
         """

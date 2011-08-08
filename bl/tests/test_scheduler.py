@@ -120,6 +120,29 @@ class ClockTests(TestCase, ClockRunner):
                     (384, 'f2'), (384, 'f1')]
         self.assertEquals(called, expected)
 
+    def test_startAfter(self):
+        called = []
+
+        instr1 = TestInstrument('f1', self.clock, called)
+
+
+        self.clock.schedule(instr1).startAfter(0, (1,4))
+        self._runTicks(96 * 2)
+
+        expected = [(0, 'f1'), (24, 'f1'), (48, 'f1'), (72, 'f1'), (96, 'f1'),
+                    (120, 'f1'), (144, 'f1'), (168, 'f1'), (192, 'f1')]
+        self.assertEquals(called, expected)
+
+        called[:] = []
+
+        instr2 = TestInstrument('f2', self.clock, called)
+
+        self.clock.schedule(instr2).startAfter(1, (1,3))
+        self._runTicks(96 * 2)
+        expected = [(216, 'f1'), (240, 'f1'), (264, 'f1'), (288, 'f2'), (288, 'f1'),
+                    (312, 'f1'), (320, 'f2'), (336, 'f1'), (352, 'f2'), (360, 'f1'),
+                    (384, 'f2'), (384, 'f1')]
+        self.assertEquals(called, expected)
 
 
     def test_stopAfterTicks(self):
