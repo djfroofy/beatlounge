@@ -48,16 +48,17 @@ class IPlayable(Interface):
 class PlayableMixin(object):
     implements(IPlayable)
     clock = None
+    meter = None
     _playSchedule = None
 
     def startPlaying(self, node=None):
         if self._playSchedule:
             log.err('Playable %s already started' % self)
             return
-        m = self.meter.measure(self.clock.ticks)
-        if self.clock.ticks > m:
-            m = self.meter.nextMeasure(self.clock.ticks, 1)
-        ticks = m - self.clock.ticks
+        ticks = self.meter.measure(self.clock.ticks) * self.meter.ticksPerMeasure
+        if self.clock.ticks > ticks:
+            ticks = self.meter.nextMeasure(self.clock.ticks, 1)
+        ticks = ticks - self.clock.ticks
         self._playSchedule = self.clock.schedule(self.play).startAfterTicks(
             ticks, self.interval)
 
