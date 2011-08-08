@@ -9,7 +9,6 @@ from twisted.python import log
 from bl.utils import getClock, exhaustCall
 from bl.debug import DEBUG
 from bl.filters import BaseFilter
-from bl.scheduler import mtt
 
 
 __all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',

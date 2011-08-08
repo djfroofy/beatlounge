@@ -11,7 +11,7 @@ from bl.player import NotePlayer, ChordPlayer, SchedulePlayer, Player, noteFacto
 from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence, Q
 from bl.player import Conductor, START
 from bl.player import explode, cut, callMemo
-from bl.scheduler import BeatClock, Meter, Tempo, mtt
+from bl.scheduler import BeatClock, Meter, Tempo
 from bl.filters import BaseFilter, Stepper
 from bl.testlib import TestReactor, ClockRunner
 
@@ -379,18 +379,24 @@ class SchedulePlayerTests(TestCase, ClockRunner):
                                                interval=n(1,1), clock=self.clock)
 
     def scheduleFactory(self):
+        def mtt(measures):
+            return self.meter.ticksPerMeasure * measures
         return [
             (mtt(0.000), 60, 95, mtt(1.00)),
             (mtt(0.250), 64, 70, mtt(0.50)),
             (mtt(0.875), 48, 93, mtt(0.25)), ]
 
     def chordScheduleFactory(self):
+        def mtt(measures):
+            return self.meter.ticksPerMeasure * measures
         return [
             (mtt(0.000), [60,64,47], 95, mtt(1.00)),
             (mtt(0.250), [48,52,55], 70, mtt(0.50)),
             (mtt(0.875), [36,39,43], 93, mtt(0.25)), ]
 
     def factoryWithCallables(self):
+        def mtt(measures):
+            return self.meter.ticksPerMeasure * measures
         if self._callables:
             return list(self._callables)
         when = cycle([mtt(0.25), cycle([mtt(0.5), mtt(0.75)]).next]).next

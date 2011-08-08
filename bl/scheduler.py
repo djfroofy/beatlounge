@@ -17,7 +17,7 @@ from twisted.internet.task import LoopingCall
 
 from bl.debug import DEBUG
 
-__all__ = [ 'Tempo', 'Beat', 'Meter', 'standardMeter', 'BeatClock', 'measuresToTicks', 'mtt',
+__all__ = [ 'Tempo', 'Beat', 'Meter', 'standardMeter', 'BeatClock',
             'ScheduledEvent', 'clock' ]
 
 _BeatBase = namedtuple('_BeatBase', 'measure quarter eighth sixteenth remainder')
@@ -156,6 +156,11 @@ class Meter(object):
         return m + measures * self.ticksPerMeasure
 
     nm = nextMeasure
+
+    def untilNextMeasure(self, ticks, measures=1):
+        return self.nextMeasure(measures) - ticks
+
+    unm = untilNextMeasure
 
     def measure(self, ticks):
         """
@@ -405,55 +410,6 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
 
 
-def measuresToTicks(measures, meter=standardMeter):
-    """
-    short alias: mtt
-
-    Convert measures to ticks. Measures can either be a float or a tuple consisting of
-    the number of whole measures followed by the number of quarter notes. The meter
-    can be specified to aid conversion of measures to ticks since the number of ticks
-    per measure are dependent on the meter (4/4 contains 96, whereas 3/4 contains 72,
-    for example). Note if measures are given as a float, the fractional part of the number
-    is a factor of the standard meter (4/4), so 0.25 is a quarter and mtt(1.25, Meter(3/4)) will
-    give us 96 ticks (72 for the measure plus 24 for one quarter note (0.25)). This also
-    means that floats are not fully expressive for measures containing more than exactly 4
-    quarters (examples including 9/8, 11/8, etc); in such cases the tuple representation
-    should be used instead.
-
-    Some examples of measures given a as float:
-
-        >>> mtt(1.5, Meter(4,4)) # 1 whole + 1 half
-        144
-        >>> mtt(1.5, Meter(3,4)) #  1 whole + 1 quarter
-        120
-
-    Some examples of measures given as tuple:
-
-        >>> mtt((1,2), Meter(3,4)) # 1 whole + 1 quarter note
-        120
-        >>> mtt((1,5), Meter(11,8)) # 2 wholes + 1 half + 1 eighth
-        252
-    """
-    if type(measures) in (tuple, list):
-        whole_measures, quarters = measures
-        mantissa = quarters / 4.
-    else:
-        whole_measures = int(measures)
-        mantissa = measures - whole_measures
-    return int(whole_measures * meter.ticksPerMeasure + 96 * mantissa)
-
-mtt = measuresToTicks
-
-def _ticks(measures, meter, clock):
-    current_measure = meter.measure(clock.ticks)
-    #tick = int(current_measure * meter.ticksPerMeasure + measures * meter.ticksPerMeasure)
-    tickslater = mtt(measures, meter)
-    tick = current_measure * meter.ticksPerMeasure + tickslater
-    ticks = tick - clock.seconds()
-    if ticks < 0:
-        ticks += meter.ticksPerMeasure
-    return ticks
-
 
 class ScheduledEvent(object):
     """
@@ -475,32 +431,6 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_start)
         return self
 
-    def startLater(self, measures=1, frequency=0.25, ticks=None, meter=None):
-        """
-        DEPRECATED - use startAfterTicks instead
-
-        Begin calling our callable after measures (or raw ticks if specified).
-        Frequency is the interval in measures to repeat calls to our callable.
-        If a meter is given, this will be used as the basis for converting measures and frequency
-        to ticks; otherwise the events bound meter of the clock's default meter are used
-        for conversion.
-
-        (See measuresToTicks for details on how measures and frequency are converted to clock ticks).
-        """
-        warnings.warn('startLater is deprecated, use startAfterTicks instead')
-        if measures < 0:
-            raise ValueError("measures must be greater than zero")
-        meter = meter or self.meter or self.clock.meter
-        if ticks is None:
-            #ticks = frequency * standardMeter.ticksPerMeasure
-            # Use meters to ticks for meter-relative frequency
-            ticks = mtt(frequency, meter)
-        def _start_later():
-            ticksLater = _ticks(measures, meter, self.clock)
-            #ticksLater = mtt(measures, meter)
-            self.clock.callLater(ticksLater, self.start, ticks, True)
-        self.clock.callWhenRunning(_start_later)
-        return self
 
     def start(self, ticks=None, now=True):
         """
@@ -526,31 +456,6 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_schedule_stop)
         return self
 
-    def stopLater(self, measures=1, meter=None, ticks=None):
-        """
-        Stop calling the callable after measures.
-
-        If a meter is given, this will be used as the basis for converting measures and frequency
-        to ticks; otherwise the events bound meter of the clock's default meter are used
-        for conversion.
-
-        (See measuresToTicks for details on how measures are converted to clock ticks).
-        """
-        warnings.warn('stopLater is deprecated, use stopAfterTicks instead')
-        meter = meter or self.meter or self.clock.meter
-        ticks_ = ticks
-        def _scheduleStop():
-            ticks = ticks_
-            if ticks is None:
-                ticks = _ticks(measures, meter, self.clock)
-            def _stop():
-                if hasattr(self, 'task'):
-                    self.task.stop()
-                else:
-                    log.msg('Tried to stop an event that has not yet started')
-            self.clock.callLater(ticks, _stop)
-        self.clock.callWhenRunning(_scheduleStop)
-        return self
 
     def stop(self):
         """
@@ -560,15 +465,6 @@ class ScheduledEvent(object):
         if hasattr(self, 'task') and self.task.running:
             self.task.stop()
 
-    def bindMeter(self, meter):
-        """
-        Bind a meter to this event. When bound, the meter will be used in calls
-        to startLater() and stopLater() to derive ticks based on measures. If no
-        meter is bound, then in the said calls the clock's default meter will be
-        used.
-        """
-        self.meter = meter
-        return self
 
 clock = BeatClock()
 

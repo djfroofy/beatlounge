@@ -2,7 +2,6 @@ from twisted.python import log
 
 
 from bl.utils import getClock
-from bl.scheduler import measuresToTicks
 
 
 class LoopRecorder(object):
@@ -18,7 +17,7 @@ class LoopRecorder(object):
         if meter is None:
             meter = self.clock.meters[0]
         self.meter = meter
-        self.period = measuresToTicks(measures, meter=self.meter)
+        self.period = self.meter.ticksPerMeasure * measures
         self._loops = []
         self._buffer = []
         self._last_ticks = self.clock.ticks
@@ -43,11 +42,11 @@ class LoopRecorder(object):
             self._last_ticks = self.meter.ticksPerMeasure * self.meter.measure(ticks)
         elapsed = ticks - self._last_ticks
         self._buffer.append((event, elapsed))
-        
+
     def latch(self, index=0):
         """
         Return a completed loop. By default, this will return the last complete recorded
-        loop, otherwise you can return a past loop (up to 10) with index. For example, 
+        loop, otherwise you can return a past loop (up to 10) with index. For example,
         index=1 will return the loop before the last, ..., index=9, the 10th loop in the past.
         """
         if not self._loops:

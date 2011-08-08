@@ -165,7 +165,11 @@ class MidiDispatcher(object):
         Start the MidiDispatcher - this will schedule an event to call
         all it's handlers every tick with any buffered events.
         """
-        self._event = self.clock.schedule(self).startLater(0, 1/96.)
+        nm = self.clock.meter.nm
+        n = self.clock.meter.dtt
+        self._event = self.clock.schedule(self).startAfterTicks(
+            nm(self.clock.ticks, 1)-self.clock.ticks,
+            n(1,96))
 
     def __call__(self):
         """
@@ -336,7 +340,11 @@ class ClockSender(object):
         Subsequent calls (24 per quarter note), will send bare TIMINGCLOCK
         events.
         """
-        self._event = self.clock.schedule(self).startLater(1, 1/96.)
+        nm = self.clock.meter.nm
+        n = self.clock.meter.dtt
+        self._event = self.clock.schedule(self).startAfterTicks(
+            nm(self.clock.ticks, 1)-self.clock.ticks,
+            n(1,96))
 
     def __call__(self):
         if not self._started:
