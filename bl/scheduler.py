@@ -202,8 +202,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def __init__(self, tempo=TEMPO_120_24, meter=None, meters=(), reactor=None, syncClockClass=None, default=False):
         """
-        tempo: The tempo in beats per minute (default: 130)
-        meters: Meters used by the clock - default to [ Meter(4,4) ]
+        tempo: The tempo object (default: Tempo(120, 24))
+        meter: Meter used by the clock - default to Meter(4,4,tempo=tempo)
         reactor: The underlying reactor to drive this BeatClock - this defaults to the global
             reactor (i.e "from twisted.internet import reactor")
         syncClockClass: SyncClock class to use for synchronizing the clock's ticks and scheduling
