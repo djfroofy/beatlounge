@@ -255,6 +255,14 @@ class NewStyleMeterTests(TestCase):
         self.assertEquals(meter.divisionToTicks(1,192), 2) # ... 192th, word
 
 
+
+    def test_divitionToTicksNonStandardMeasure(self):
+        tempo = Tempo()
+        meter = Meter(3, 4, tempo=tempo)
+        self.assertEquals(meter.divisionToTicks(1,4), 24)
+        meter = Meter(7, 8, tempo=tempo)
+        self.assertEquals(meter.divisionToTicks(1,4), 24)
+
     def test_invalidDivisionToTicks(self):
         tempo = Tempo()
         meter = Meter(4,4,tempo=tempo)
@@ -318,10 +326,6 @@ class NewStyleMeterTests(TestCase):
         self.assertEquals(meter.nextDivision(ticks, 1,1), 192*2)
         self.assertEquals(meter.nextDivision(ticks, 5,4), (192*2)+48)
 
-
-#class ScheduledEventTests(TestCase):
-#
-#    def test_
 
 
 

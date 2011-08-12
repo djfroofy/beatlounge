@@ -97,6 +97,7 @@ class Meter(object):
 
     def resetTempo(self, tempo):
         self.ticksPerMeasure = int(tempo.tpb * self.length * 4. / self.division * self.number)
+        self.ticksPerStdMeasure = tempo.tpb * 4
 
     def beat(self, ticks):
         """
@@ -130,12 +131,14 @@ class Meter(object):
         Convert n/d (examples 1/4, 3/4, 3/32, 8/4..)
         For example, if the ticks-per-beat are 24, then n=1 and d=8 would return 12.
         """
-        ticks = float(n)/d * self.ticksPerMeasure
+        ticks = float(n)/d * self.ticksPerStdMeasure
         _, rem = divmod(ticks, 1)
         if rem and self.strict:
-            raise ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (n,d,self.ticksPerMeasure))
+            raise ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (
+                             n,d,self.ticksPerStdMeasure))
         elif rem and not self.strict:
-            log.err(Failure(ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (n,d,self.ticksPerMeasure))))
+            log.err(Failure(ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (
+                            n,d,self.ticksPerStdMeasure))))
         return int(math.floor(ticks))
 
     dtt = divisionToTicks
