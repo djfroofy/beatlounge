@@ -91,13 +91,12 @@ class Meter(object):
         self.length = length
         self.division = division
         self.number = number
-        self._quarters_per_measure = self.length * self.number / (self.division / 4.)
         self._hash = hash((self.length, self.division, self.number))
         self.resetTempo(tempo)
 
     def resetTempo(self, tempo):
+        self.tempo = tempo
         self.ticksPerMeasure = int(tempo.tpb * self.length * 4. / self.division * self.number)
-        self.ticksPerStdMeasure = tempo.tpb * 4
 
     def beat(self, ticks):
         """
@@ -108,13 +107,13 @@ class Meter(object):
         measure, ticks = divmod(ticks, self.ticksPerMeasure)
         if not ticks:
             return Beat(measure, 0, 0, 0, 0)
-        quarter, ticks = divmod(ticks, self.ticksPerMeasure / self._quarters_per_measure)
+        quarter, ticks = divmod(ticks, self.tempo.tpb)
         if not ticks:
             return Beat(measure, int(quarter), 0, 0, 0)
-        eighth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 2))
+        eighth, ticks = divmod(ticks, self.tempo.tpb / 2)
         if not ticks:
             return Beat(measure, int(quarter), int(eighth), 0, 0)
-        sixteenth, ticks = divmod(ticks, self.ticksPerMeasure / (self._quarters_per_measure * 4))
+        sixteenth, ticks = divmod(ticks, self.tempo.tpb / 4)
         return Beat(measure, int(quarter), int(eighth), int(sixteenth), int(ticks))
 
     def ticks(self, ticks):
@@ -131,14 +130,15 @@ class Meter(object):
         Convert n/d (examples 1/4, 3/4, 3/32, 8/4..)
         For example, if the ticks-per-beat are 24, then n=1 and d=8 would return 12.
         """
-        ticks = float(n)/d * self.ticksPerStdMeasure
+        ticksPerMeas = self.tempo.tpb * 4 # Ticks per standard measure 4/4
+        ticks = float(n)/d * ticksPerMeas
         _, rem = divmod(ticks, 1)
         if rem and self.strict:
             raise ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (
-                             n,d,self.ticksPerStdMeasure))
+                             n,d,ticksPerMeas))
         elif rem and not self.strict:
             log.err(Failure(ValueError('<divisionToTicks> %s/%s does not evenly divide %s' % (
-                            n,d,self.ticksPerStdMeasure))))
+                            n,d,ticksPerMeas))))
         return int(math.floor(ticks))
 
     dtt = divisionToTicks
