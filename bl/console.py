@@ -9,6 +9,7 @@ import struct
 import fcntl
 import signal
 
+from twisted.internet import reactor
 from twisted.internet import stdio, protocol, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
 from twisted.conch.recvline import HistoricRecvLine
@@ -29,11 +30,11 @@ def toMeter(s, tempo):
     return Meter(int(count), int(division), tempo=tempo)
 
 class Options(usage.Options):
-    optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
+    optParameters = [['channels', 'c', 2, 'Number of channels', int],
                      ['logfile', 'l', 'child.log', 'Path to logfile'],
                      ['bpm', 'b', 130, 'The tempo in beats per minute', int],
                      ['tpb', 't', 24, 'Ticks per beat', int],
-                     ['meter', 'm', '4/4', 'The meter (default 4/4)']
+                     ['meter', 'm', '4/4', 'The meter (default 4/4)'],
                      ]
 
     def parseArgs(self, audiodev='coreaudio'):
@@ -298,23 +299,28 @@ except ImportError, ie:
     from warnings import warn
     warn('%s - connectConsole() will not be avaiable' % ie)
 
-def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
+def runWithProtocol(klass, audiodev, channels, bpm, tpb, meter):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
     tty.setraw(fd)
     tempo = Tempo(bpm, tpb)
     meter = toMeter(meter, tempo)
     try:
-        # TODO - there should be a cleaner strategy for collecting parameters and
-        # initializing fluidsynth - initializing fluidsynth shouldn't really even be
-        # necessary
         if EXPERIMENTAL:
             from bl.sync import SystemClock
             clock = BeatClock(tempo=tempo, meter=meter, default=True, syncClockClass=SystemClock)
         else:
             clock = BeatClock(tempo=tempo, meter=meter, default=True)
-        clock.synthAudioDevice = audioDev
-        clock.synthChannels = channels
+        #clock.synthAudioDevice = audiodev
+        #clock.synthChannels = channels
+        # TODO eventually backend initialization should be driven by CLI flag
+        try:
+            from bl.instrument.fsynth import initialize as fsynth_init
+            fsynthPool = fsynth_init(channels, audiodev)
+            reactor.callWhenRunning(fsynthPool.startSynths)
+        except:
+            log.err(failure.Failure())
+            pass
         p = ServerProtocol(klass)
         stdio.StandardIO(p)
         clock.run()

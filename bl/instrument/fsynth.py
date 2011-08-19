@@ -7,7 +7,6 @@ from twisted.python import log
 
 from fluidsynth import Synth
 
-from bl.utils import getClock
 
 __all__ = [ 'SynthRouter', 'SynthPool', 'StereoPool', 'QuadPool', 'NConnectionPool',
             'Instrument', 'MultiInstrument', 'Layer', 'suggestDefaultPool' ]
@@ -27,29 +26,22 @@ class SynthRouter:
 
 class SynthPool:
 
-    def __init__(self, router, reactor=None, audiodev=None):
+    def __init__(self, router, audiodev=None):
         self.router = router
         self.pool = {}
         self.settings = {}
         self._channel_gen = {}
-        if reactor is None:
-            clock = reactor = getClock()
-        self.reactor = reactor
         self.audiodev = audiodev
-        self.reactor.callWhenRunning(self.startSynths)
 
     def bindSettings(self, connection, gain=0.5, samplerate=44100):
         self.settings[connection] = (gain, samplerate)
 
     def startSynths(self):
-        if self.audiodev is None:
-            self.audiodev = self.reactor.synthAudioDevice
         for connection in self.pool:
             fs = self.pool[connection]
-            #print 'starting synth %s with device %s' % (fs, self.audiodev)
             fs.start(self.audiodev)
 
-    def synthObject(self, connection='mono'):
+    def synthObject(self, connection=0):
         if connection not in self.router.connections:
             raise ValueError('No connection \'%s\' in router' % connection)
         if connection in self.pool:
@@ -64,10 +56,8 @@ class SynthPool:
                     curr += 1
             self._channel_gen[fs] = seq()
             self.pool[connection] = fs
-            if self.reactor.running:
-                #print 'premptively starting synth object %r with audio dev %s' % (
-                #    fs, self.audiodev)
-                fs.start(self.audiodev)
+            #if self.reactor.running:
+            fs.start(self.audiodev)
         return fs
 
     def loadSoundFont(self, synth, sf2path, channel=None, bank=0, preset=0):
@@ -86,25 +76,25 @@ class SynthPool:
         instr.registerSoundfont(sfid, channel)
 
 
-def MonoPool():
+def MonoPool(audiodev):
     router = SynthRouter(mono=Synth)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
-def StereoPool():
+def StereoPool(audiodev):
     router = SynthRouter(left=Synth, right=Synth, mono=Synth)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
 
-def QuadPool():
+def QuadPool(audiodev):
     router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth, mono=Synth)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
-def NConnectionPool(*p, **synth_factories):
+def NConnectionPool(audiodev, *p, **synth_factories):
     router = SynthRouter(*p, **synth_factories)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
 
-defaultPool = StereoPool()
+defaultPool = None
 
 CC_VIBRATO = 1
 CC_VOLUME = 7
@@ -117,21 +107,7 @@ CC_CHORUS = 93
 
 class ChordPlayerMixin(object):
 
-    clock = None
-    strumming = False
-
-    def strum(self, notes, velocity=80):
-        v = lambda : velocity
-        if callable(velocity):
-            v = lambda : velocity()
-        for (i, note) in enumerate(notes):
-            later = 1
-            self.clock.callLater(i*later, self.playnote, note, v())
-
-
     def playchord(self, notes, velocity=80):
-        if self.strumming:
-            return self.strum(notes, velocity)
         for note in notes:
             self.playnote(note, velocity)
 
@@ -146,13 +122,12 @@ class ChordPlayerMixin(object):
 
 class Instrument(ChordPlayerMixin):
 
-    def __init__(self, sfpath, synth=None, connection='mono',
-                 channel=None, bank=0, preset=0, pool=None, clock=None):
+    def __init__(self, sfpath, synth=None, connection=0,
+                 channel=None, bank=0, preset=0, pool=None):
         if pool is None:
             pool = defaultPool
         if synth is None:
             synth = pool.synthObject(connection=connection)
-        self.clock = getClock(clock)
         self.synth = synth
         self._file = os.path.basename(sfpath)
         self.sfpath = sfpath
@@ -166,7 +141,6 @@ class Instrument(ChordPlayerMixin):
         return 'Instrument path=%s sfid=%s channel=%s' % (self._file, self.sfid, self.channel)
 
     def registerSoundfont(self, sfid, channel):
-        #print 'registered sound font', self.synth, sfid, channel
         self.sfid = sfid
         self.channel = channel
 
@@ -175,11 +149,9 @@ class Instrument(ChordPlayerMixin):
 
     def playnote(self, note, velocity=80):
         velocity = min(velocity, self._max_velocity)
-        #print 'playing note', self.synth, self.channel, note, velocity
         self.synth.noteon(self.channel, note, velocity)
 
     def stopnote(self, note):
-        #print 'stopping note', self.synth, self.channel, note
         self.synth.noteoff(self.channel, note)
 
 
@@ -190,7 +162,7 @@ class Instrument(ChordPlayerMixin):
         if pan is not None:
             self.synth.cc(self.channel, CC_PAN, pan)
         if expression is not None:
-            self.synth.cc(self.channel, CC_EXPRESSION, expression) 
+            self.synth.cc(self.channel, CC_EXPRESSION, expression)
         if sustain is not None:
             self.synth.cc(self.channel, CC_SUSTAIN, sustain)
         if reverb is not None:
@@ -218,7 +190,7 @@ class MultiInstrument(ChordPlayerMixin):
                         warn(msg)
                 else:
                     self._mapping[to] = (instrument, from_)
-        
+
 
     def playnote(self, note, velocity=80):
         instr, realNote = self._mapping.get(note, (None, None))
@@ -264,5 +236,15 @@ class Layer(ChordPlayerMixin):
 def suggestDefaultPool(pool):
     global defaultPool
     defaultPool = pool
+
+def initialize(channels=1, audiodev='jack'):
+    synths = dict( (n, Synth) for n in range(channels) )
+    pool = NConnectionPool(audiodev, synths)
+    suggestDefaultPool(pool)
+    log.msg('initialized pool: %s'% pool)
+    return pool
+
+
+
 
 

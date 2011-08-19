@@ -183,11 +183,8 @@ class Meter(object):
 
 standardMeter = Meter(4,4)
 
-class SynthControllerMixin(object):
-    synthAudioDevice = 'coreaudio'
-    synthChannels = 'stereo'
 
-class BeatClock(SelectReactor, SynthControllerMixin):
+class BeatClock(SelectReactor):
     """
     A BeatClock is a meta reactor based on a looping call which is used to keep
     virtual time based on a given tempo and meter. The current implementation assumes
@@ -262,35 +259,11 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         will start it. This is done for you by bl/console.py (beatlounge command)
         so you generally should not call this directly in interpreter sessions.
         """
-        self._initBackends()
         self.startTicking()
         self.running = True
         if not self.reactor.running:
             self.reactor.run()
 
-
-    def _initBackends(self):
-        # XXX this should be refactored some - make backends pluggable and indicate
-        # which to start from a command line, etc.
-        try:
-            from bl.instrument import fsynth
-            if self.synthChannels == 'stereo':
-                return
-            if self.synthChannels == 'mono':
-                pool = fsynth.MonoPool()
-            elif self.synthChannels == 'quad':
-                pool = fsynth.QuadPool()
-            else:
-                try:
-                    self.synthChannels = int(self.synthChannels)
-                except ValueError:
-                    raise ValueError('synthChannels should be one of mono, stereo, quad or an integer')
-                synths = dict( (n, fsynth.Synth) for n in range(self.synthChannels) )
-                pool = fsynth.NConnectionPool(synths)
-            fsynth.suggestDefaultPool(pool)
-        except ImportError:
-            log.msg('fluidsynth will not be available at runtime')
-            pass
 
     def startTicking(self):
         """
