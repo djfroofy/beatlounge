@@ -57,6 +57,8 @@ class RudimentsTest(TestCase):
         v = list(ssr.velocity())
         self.assertEquals(v, [120,90,70,80,67,120, 123,90,76,89,70,127])
 
+
+
     def test_chainRudiments(self):
 
         fsr = FiveStrokeRoll()
