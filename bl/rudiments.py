@@ -2,9 +2,10 @@ from zope.interface import implements, Interface, Attribute
 
 import itertools
 
-__all__ = ['IRudiment', 'IDoubleStrokeOpenRoll', 'IFlam', 'FiveStrokeRoll', 'FSR',
-    'SixStrokeRoll', 'SSR', 'Flam', 'Flam32', 'Flam64', 'FlamAccent', 'FlamAccent32', 'FlamAccent64',
+__all__ = ['IRudiment', 'IDoubleStrokeOpenRoll', 'IFlam', 'FiveStrokeRoll',
+    'SixStrokeRoll', 'Flam', 'Flam32', 'Flam64', 'FlamAccent', 'FlamAccent32', 'FlamAccent64',
     'FlamTap', 'FlamTap32', 'FlamTap64', 'Flamacue', 'Flamacue32', 'Flamacue64',
+    'InvertedFlamTap', 'InvertedFlamTap32', 'InvertedFlamTap64',
     'strokeGenerator', 'timeGenerator', 'generator', 'chainRudiments']
 
 class IRudiment(Interface):
@@ -94,23 +95,23 @@ class _SustainMixin:
 class FiveStrokeRoll(_SustainMixin):
     implements(IDoubleStrokeOpenRoll)
 
-    length = 12
-    time = timeGenerator((0,1,2,3,4, 6,7,8,9,10), length)
+    length = 96
+    time = timeGenerator((0,6,12,18,24, 48,54,60,66,72), length)
     strokes = strokeGenerator((R,R,L,L,R, L,L,R,R,L))
     velocity = generator((90,70,80,67,120, 90,76,89,70,127))
 
 
-FSR = FiveStrokeRoll
 
 class SixStrokeRoll(_SustainMixin):
     implements(IDoubleStrokeOpenRoll)
 
     length = 16
+    # TODO - adjust timing relative to 96 ticks/measure
+    # However, don't think this is the right timing anyhow
     time = timeGenerator((0,2,3,4,5,6, 8,10,11,12,13,14), length)
     strokes = strokeGenerator((L,R,R,L,L,R, L,R,R,L,L,R))
     velocity = generator((120,90,70,80,67,120, 123,90,76,89,70,127))
 
-SSR = SixStrokeRoll
 
 
 # Flam Rudiments
@@ -157,9 +158,25 @@ class FlamTap32(_SustainMixin):
 
 FlamTap = FlamTap32
 
+
 class FlamTap64(FlamTap):
     length = 96
     time = timeGenerator((0,12,21,24,36, 45,48,60,69,72,84, 93), length)
+
+
+class _InvertedFlamTapMixin(object):
+    strokes = strokeGenerator((R,L,R,L,R, L,R,L,R,L,R, L))
+
+
+class InvertedFlamTap32(_InvertedFlamTapMixin, FlamTap32):
+    pass
+
+
+InvertedFlamTap = InvertedFlamTap32
+
+
+class InvertedFlamTap64(_InvertedFlamTapMixin, FlamTap64):
+    pass
 
 
 class Flamacue32(_SustainMixin):
@@ -169,7 +186,9 @@ class Flamacue32(_SustainMixin):
     strokes = strokeGenerator((R,L,R,L,L,R,L, L,R,L,R,R,L,R))
     velocity = generator((90,127,85,90, 70,115, 60))
 
+
 Flamacue = Flamacue32
+
 
 class Flamacue64(Flamacue):
     length = 96
