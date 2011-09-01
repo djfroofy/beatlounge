@@ -23,6 +23,12 @@ __all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
 # Todo - make this an opt flag instead
 EXPERIMENTAL = True
 
+if sys.platform == 'darwin':
+    defaultAudioDev = 'coreaudio'
+elif sys.platform == 'linux2':
+    defaultAudioDev = 'alsa'
+else:
+    defaultAudioDev = 'portaudio'
 
 def toMeter(s):
     count, division = s.split('/')
@@ -35,7 +41,7 @@ class Options(usage.Options):
                      ['meter', 'm', standardMeter, 'The meter (default 4/4)', toMeter]
                      ]
 
-    def parseArgs(self, audiodev='coreaudio'):
+    def parseArgs(self, audiodev=defaultAudioDev):
         self['audiodev'] = audiodev
 
 class FriendlyConsoleManhole(ConsoleManhole):

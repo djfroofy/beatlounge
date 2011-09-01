@@ -1,3 +1,4 @@
+import sys
 import time
 
 from collections import namedtuple
@@ -100,7 +101,12 @@ class Meter(object):
 standardMeter = Meter(4,4)
 
 class SynthControllerMixin(object):
-    synthAudioDevice = 'coreaudio'
+    if sys.platform == 'darwin':
+        synthAudioDevice = 'coreaudio'
+    elif sys.platform == 'linux2':
+        synthAudioDevice = 'alsa'
+    else:
+        synthAudioDevice = 'portaudio'
     synthChannels = 'stereo'
 
 class BeatClock(SelectReactor, SynthControllerMixin):
