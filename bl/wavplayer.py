@@ -1,3 +1,4 @@
+import time
 import wave
 
 from warnings import warn
@@ -7,14 +8,16 @@ except ImportError:
     warn('(bl.wavplayer) requirement pyaudio not available - try installing')
     pyaudio = None
 
+from twisted.python import log
 from twisted.internet import reactor as globalReactor
 from twisted.internet.threads import deferToThread
 from twisted.internet.task import coiterate
 
+from bl.debug import DEBUG
 from bl.utils import getClock
 
 
-DEFAULT_CHUNK_SIZE = 8
+DEFAULT_CHUNK_SIZE = 4096 / 2
 
 
 __all__ = ['PyAudioManager', 'WavPlayer']
@@ -40,42 +43,53 @@ class WavPlayer:
 
     def __init__(self, filename, chunkSize=DEFAULT_CHUNK_SIZE, clock=None):
         self._filename = filename
-        wf = self._wf = wave.open(self._filename, 'rb')
+        wf = self.wavinput = wave.open(self._filename, 'rb')
         self.clock = getClock(clock)
         self.chunkSize = chunkSize
         self._playing = False
-        self._stopped = False
         p = PyAudioManager.init()
-        self.stream = p.open(
+        self.stream = s = p.open(
                 format = p.get_format_from_width(wf.getsampwidth()),
                 channels = wf.getnchannels(),
                 rate = wf.getframerate(),
                 output = True)
+        if DEBUG:
+            log.msg('WavPlayer: %s rate=%s channels=%s' % (
+                    filename, wf.getframerate(), wf.getnchannels()))
 
     def play(self, loop=False):
         if self._playing:
             return
         self._playing = True
-        deferToThread(self._play, loop)
+        return coiterate(self._play(loop))
 
     def _play(self, loop):
-        while not self._stopped:
-            data = self._wf.readframes(self.chunkSize)
-            while data:
-                self.stream.write(data)
-                data = self._wf.readframes(self.chunkSize)
-            if loop:
-                self._wf.setpos(0)
+        while self._playing:
+            data = self.wavinput.readframes(self.chunkSize)
+            while data and self._playing:
+                if DEBUG:
+                    log.msg('write available: %s' % self.stream.get_write_available())
+                if self.stream.get_write_available():
+                    self.stream.write(data)
+                    data = self.wavinput.readframes(self.chunkSize)
+                    yield data
+            if loop and self._playing:
+                self.wavinput.setpos(0)
             else:
                 break
-        self._wf.setpos(0)
         self._playing = False
 
+    def seek(self, position=0):
+        self.wavinput.setpos(position)
+
     def stop(self):
-        self._stopped = True
+        self._playing = False
 
     def close(self):
         self.stream.close()
-        self._wf.close()
+        self.wavinput.close()
+
+
+
 
 
