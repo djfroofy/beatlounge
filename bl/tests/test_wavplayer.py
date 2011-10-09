@@ -6,6 +6,7 @@ from zope.interface.verify import verifyClass, verifyObject
 
 from twisted.trial.unittest import TestCase
 
+
 try:
     from bl.wavplayer import WavPlayer, PyAudioManager, IPlayer
     from bl import wavplayer
@@ -38,7 +39,7 @@ class TestPyAudio:
     def open(self, *a, **kw):
         self.opened.append((a,kw))
         return self.stream()
-    
+
     def get_format_from_width(self, *a, **kw):
         return
 
@@ -63,7 +64,7 @@ class TestWavFile:
         d = ''.join(buffer)
         self.reads.append(d)
         return d
-    
+
     def _noop(self):
         pass
 
@@ -154,12 +155,17 @@ class WavPlayerTests(BaseTestCase):
         player = WavPlayer.fromPath('file.wav', chunkSize=10)
         player.source.wavfile.dataGen = ( i for i in range(100) )
         d = player.play()
-    
+
         player.pause()
 
         def check(ignore):
             d = player.resume()
             return self._test_play(player, d)
 
-        return d.addCallback(check) 
+        return d.addCallback(check)
+
+
+
+
+
 

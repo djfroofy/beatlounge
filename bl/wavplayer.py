@@ -1,5 +1,6 @@
 import time
 import wave
+import struct
 
 from warnings import warn
 try:
@@ -11,6 +12,7 @@ except ImportError:
 from zope.interface import Interface, Attribute, implements
 
 from twisted.python import log
+from twisted.python.components import proxyForInterface
 from twisted.internet.task import coiterate
 from twisted.internet.interfaces import IConsumer, IPushProducer
 
@@ -206,4 +208,63 @@ class WavFileReader:
 
     def seek(self, offset):
         self.wavfile.setpos(offset)
+
+
+class AudioNode(proxyForInterface(IAudioStream, originalAttribute='stream')):
+
+    def __init__(self, stream):
+        self.stream = stream
+
+
+class _AudioTransformMixin:
+
+    def setFormat(self, format=pyaudio.paInt16):
+        assert format in (pyaudio.paInt16,)
+        if format == pyaudio.paInt16:
+            self._cast = int
+            self._bytes = 2
+            self._format = 'h'
+
+    def transform(self, data, func):
+        buffer = []
+        for i in range(0, len(data), self._bytes):
+            f = struct.unpack(self._format, data[i:i+self._bytes])
+            buffer.append(struct.pack(self._format, self._cast(func(f[0]))))
+        return ''.join(buffer)
+
+
+class Filter(AudioNode, _AudioTransformMixin):
+
+    def __init__(self, stream, format=pyaudio.paInt16):
+        self.setFormat(format)
+        super(Filter, self).__init__(stream)
+
+    def write(self, data):
+        self.stream.write(self.transform(data, self.filter))
+
+    def filter(self, n):
+        return n
+
+class Volume(Filter):
+
+    volume = 1.0
+
+    def filter(self, n):
+        return n * self.volume
+
+
+class Delay(Filter):
+
+    def __init__(self, stream, format=pyaudio.paInt16, decay=0.95, samples=44100):
+        Filter.__init__(self, stream, format)
+        self._delay_buffer = []
+        self.decay = decay
+        self.samples = samples
+
+    def filter(self, n):
+        if len(self._delay_buffer) > self.samples:
+            n = (n + self._delay_buffer.pop(0) * self.decay) * 0.5
+        self._delay_buffer.append(n)
+        return n
+
 
