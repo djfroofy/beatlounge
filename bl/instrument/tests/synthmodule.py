@@ -22,6 +22,8 @@ class MockSynth(object):
     def noteoff(self, note):
         pass
 
+    def start(self, audiodev):
+        pass
 
     def sfload(self, path):
         sfid = nextid.next()
@@ -32,7 +34,7 @@ class MockSynth(object):
         (_,_,_,path) = self.sfonts[sfid]
         self.sfonts[sfid] = (channel, bank, preset, path)
 
-        
+
 
 Synth = MockSynth
 
