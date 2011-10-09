@@ -1,6 +1,7 @@
 import time
 import wave
 import struct
+import sys
 
 from warnings import warn
 try:
@@ -141,6 +142,50 @@ class WavPlayer:
         source = WavFileReader(wf, chunkSize=chunkSize, loop=loop)
         return cls(stream, source)
 
+    @classmethod
+    def fromInput(cls, inputDeviceName=None, outputDeviceName=None, chunkSize=DEFAULT_CHUNK_SIZE):
+        """
+        Convenience method to create an WavPlayer which uses a pyaudio input as its
+        source.
+        """
+        p = PyAudioManager.init()
+        if inputDeviceName is None:
+            info = p.get_default_input_device_info()
+            log.msg('using default input device: %s' % info['name'])
+            inputIndex = info['index']
+        else:
+            inputIndex = PyAudioManager.getDeviceIndexByName(inputDeviceName, type='input')
+        if outputDeviceName is None:
+            info = p.get_default_output_device_info()
+            log.msg('using default output device: %s' % info['name'])
+            outputIndex = info['index']
+        else:
+            outputIndex = PyAudioManager.getDeviceIndexByName(outputDeviceName, type='output')
+        stream_info = None
+        if sys.platform == 'darwin':
+            stream_info = pyaudio.PaMacCoreStreamInfo(
+                    flags = pyaudio.PaMacCoreStreamInfo.paMacCorePlayNice,
+                    channel_map = (0, 1))
+        ins = p.open(
+                format = pyaudio.paInt16,
+                channels = 2,
+                rate = 44100,
+                input_device_index = inputIndex,
+                input = True,
+                #input_host_api_specific_stream_info = stream_info,
+                frames_per_buffer=chunkSize)
+        outs = p.open(
+                format = pyaudio.paInt16,
+                channels = 2,
+                rate = 44100,
+                output_device_index = outputIndex,
+                output = True,
+                #output_host_api_specific_stream_info = stream_info)
+                )
+        stream = AudioStream(outs)
+        source = AudioInput(ins, chunkSize=chunkSize)
+        return cls(stream, source)
+
     def play(self):
         return self.source.beginStreaming(self.stream)
 
@@ -178,6 +223,53 @@ class AudioStream:
 
     def availableWrite(self):
         return self.stream.get_write_available()
+
+
+class _StreamerBase:
+    stream = None
+    _streaming = False
+
+    def beginStreaming(self, stream):
+        self.stream = stream
+        self.stream.registerProducer(self, True)
+        self._streaming = True
+        return coiterate(self._stream())
+
+    def pauseProducing(self):
+        self._streaming = False
+
+    def resumeProducing(self):
+        self._streaming = True
+        return coiterate(self._stream())
+
+    def _stream(self):
+        raise NotImplementedError()
+
+class AudioInput(_StreamerBase):
+    implements(IAudioSource)
+
+    def __init__(self, pyaudioStream, chunkSize=DEFAULT_CHUNK_SIZE):
+        self._pyaudioStream = pyaudioStream
+        self.chunkSize = chunkSize
+
+    def _stream(self):
+        while self._streaming:
+            data = self._try_read()#self._pyaudioStream.read(self.chunkSize)
+            while self._streaming:
+                avl = self.stream.availableWrite()
+                if DEBUG:
+                    log.msg('write available: %s' % avl)
+                if avl >= self.chunkSize:
+                    if data:
+                        self.stream.write(data)
+                    data = self._try_read()#self._pyaudioStream.read(self.chunkSize)
+                    yield data
+
+    def _try_read(self):
+        try:
+            return self._pyaudioStream.read(self.chunkSize)
+        except Exception, e:
+            return ''
 
 
 class WavFileReader:
@@ -275,7 +367,7 @@ class Volume(Filter):
 
 class Delay(Filter):
 
-    def __init__(self, stream, format=pyaudio.paInt16, decay=0.95, samples=44100):
+    def __init__(self, stream, format=pyaudio.paInt16, decay=0.95, samples=44100/2):
         Filter.__init__(self, stream, format)
         self._delay_buffer = []
         self.decay = decay
