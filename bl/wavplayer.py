@@ -39,6 +39,21 @@ class PyAudioManager:
             cls.pyaudio = pyaudio.PyAudio()
         return cls.pyaudio
 
+    @classmethod
+    def getDeviceIndexByName(cls, name, type=None):
+        p = cls.init()
+        for i in range(p.get_device_count()):
+            info = p.get_device_info_by_index(i)
+            if type == 'output':
+                if info['name'] == name and info['maxOutputChannels']:
+                    return i
+            elif type == 'input':
+                if info['name'] == name and info['maxInputChannels']:
+                    return i
+            else:
+                if info['name'] == name:
+                    return i
+
 
 class IAudioStream(IConsumer):
 
@@ -105,17 +120,22 @@ class WavPlayer:
         self.source = source
 
     @classmethod
-    def fromPath(cls, path, chunkSize=DEFAULT_CHUNK_SIZE, loop=False):
+    def fromPath(cls, path, chunkSize=DEFAULT_CHUNK_SIZE, loop=False, deviceName=None):
         """
         Convenience method to create an WavPlayer from a filesystem path.
         This creates a news player with an AudioStream and WavFileReader.
         """
         wf = wave.open(path, 'rb')
         p = PyAudioManager.init()
+        if deviceName is None:
+            index = p.get_default_output_device_info()['index']
+        else:
+            index = PyAudioManager.getDeviceIndexByName(deviceName, type='output')
         s = p.open(
                 format = p.get_format_from_width(wf.getsampwidth()),
                 channels = wf.getnchannels(),
                 rate = wf.getframerate(),
+                output_device_index = index,
                 output = True)
         stream = AudioStream(s)
         source = WavFileReader(wf, chunkSize=chunkSize, loop=loop)
