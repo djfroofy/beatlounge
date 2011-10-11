@@ -3,12 +3,13 @@ import wave
 import struct
 import sys
 import random
+from collections import deque
 
 from warnings import warn
 try:
     import pyaudio
 except ImportError:
-    warn('(bl.wavplayer) requirement pyaudio not available - try installing')
+    warn('(bl.wavplayer) requirement pyaudio not available')
     pyaudio = None
 
 from zope.interface import Interface, Attribute, implements
@@ -124,7 +125,8 @@ class WavPlayer:
         self.source = source
 
     @classmethod
-    def fromPath(cls, path, chunkSize=DEFAULT_CHUNK_SIZE, loop=False, deviceName=None):
+    def fromPath(cls, path, chunkSize=DEFAULT_CHUNK_SIZE, loop=False,
+                 deviceName=None):
         """
         Convenience method to create an WavPlayer from a filesystem path.
         This creates a news player with an AudioStream and WavFileReader.
@@ -134,7 +136,9 @@ class WavPlayer:
         if deviceName is None:
             index = p.get_default_output_device_info()['index']
         else:
-            index = PyAudioManager.getDeviceIndexByName(deviceName, type='output')
+            index = PyAudioManager.getDeviceIndexByName(
+                        deviceName,
+                        type='output')
         s = p.open(
                 format = p.get_format_from_width(wf.getsampwidth()),
                 channels = wf.getnchannels(),
@@ -315,15 +319,16 @@ class Volume(Filter):
 
 class Delay(Filter):
 
-    def __init__(self, stream, format=pyaudio.paInt16, decay=0.95, samples=44100/2):
+    def __init__(self, stream, format=pyaudio.paInt16, decay=0.95,
+                 samples=44100/2):
         Filter.__init__(self, stream, format)
-        self._delay_buffer = []
+        self._delay_buffer = deque()
         self.decay = decay
         self.samples = samples
 
     def filter(self, n):
         while len(self._delay_buffer) > self.samples:
-            n = (n + self._delay_buffer.pop(0) * self.decay) * 0.5
+            n = (n + self._delay_buffer.popleft() * self.decay) * 0.5
         self._delay_buffer.append(n)
         return n
 
@@ -341,7 +346,8 @@ class Noise(Filter):
 
 class BiQuad(Filter):
 
-    def __init__(self, stream, format=pyaudio.paInt16, a0=1, a1=0, a2=-1, b1=0.1, b2=0.9):
+    def __init__(self, stream, format=pyaudio.paInt16, a0=1, a1=0, a2=-1,
+                 b1=0.1, b2=0.9):
         Filter.__init__(self, stream, format)
         self.a0 = a0
         self.a1 = a1
