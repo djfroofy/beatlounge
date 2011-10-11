@@ -145,50 +145,6 @@ class WavPlayer:
         source = WavFileReader(wf, chunkSize=chunkSize, loop=loop)
         return cls(stream, source)
 
-    @classmethod
-    def fromInput(cls, inputDeviceName=None, outputDeviceName=None, chunkSize=DEFAULT_CHUNK_SIZE):
-        """
-        Convenience method to create an WavPlayer which uses a pyaudio input as its
-        source.
-        """
-        p = PyAudioManager.init()
-        if inputDeviceName is None:
-            info = p.get_default_input_device_info()
-            log.msg('using default input device: %s' % info['name'])
-            inputIndex = info['index']
-        else:
-            inputIndex = PyAudioManager.getDeviceIndexByName(inputDeviceName, type='input')
-        if outputDeviceName is None:
-            info = p.get_default_output_device_info()
-            log.msg('using default output device: %s' % info['name'])
-            outputIndex = info['index']
-        else:
-            outputIndex = PyAudioManager.getDeviceIndexByName(outputDeviceName, type='output')
-        stream_info = None
-        if sys.platform == 'darwin':
-            stream_info = pyaudio.PaMacCoreStreamInfo(
-                    flags = pyaudio.PaMacCoreStreamInfo.paMacCorePlayNice,
-                    channel_map = (0, 1))
-        ins = p.open(
-                format = pyaudio.paInt16,
-                channels = 2,
-                rate = 44100,
-                input_device_index = inputIndex,
-                input = True,
-                #input_host_api_specific_stream_info = stream_info,
-                frames_per_buffer=chunkSize)
-        outs = p.open(
-                format = pyaudio.paInt16,
-                channels = 2,
-                rate = 44100,
-                output_device_index = outputIndex,
-                output = True,
-                #output_host_api_specific_stream_info = stream_info)
-                )
-        stream = AudioStream(outs)
-        source = AudioInput(ins, chunkSize=chunkSize)
-        return cls(stream, source)
-
     def play(self):
         return self.source.beginStreaming(self.stream)
 
@@ -257,7 +213,7 @@ class AudioInput(_StreamerBase):
 
     def _stream(self):
         while self._streaming:
-            data = self._try_read()#self._pyaudioStream.read(self.chunkSize)
+            data = self._try_read()
             while self._streaming:
                 avl = self.stream.availableWrite()
                 if DEBUG:
@@ -265,7 +221,7 @@ class AudioInput(_StreamerBase):
                 if avl >= self.chunkSize:
                     if data:
                         self.stream.write(data)
-                    data = self._try_read()#self._pyaudioStream.read(self.chunkSize)
+                    data = self._try_read()
                     yield data
 
     def _try_read(self):
@@ -275,7 +231,7 @@ class AudioInput(_StreamerBase):
             return ''
 
 
-class WavFileReader:
+class WavFileReader(_StreamerBase):
     implements(IAudioSource, ISeekableAudioSource)
 
     stream = None
@@ -285,12 +241,6 @@ class WavFileReader:
         self.wavfile = wavfile
         self.chunkSize = chunkSize
         self.loop = loop
-
-    def beginStreaming(self, stream):
-        self.stream = stream
-        self.stream.registerProducer(self, True)
-        self._streaming = True
-        return coiterate(self._stream())
 
     def _stream(self):
         while self._streaming:
@@ -308,18 +258,6 @@ class WavFileReader:
             else:
                 break
         self._streaming = False
-
-    def pauseProducing(self):
-        self._streaming = False
-
-    def resumeProducing(self):
-        self._streaming = True
-        return coiterate(self._stream())
-
-    def stopProducing(self):
-        self.pauseProducing()
-        self.wavfile.close()
-        self.stream.unregisterProducer()
 
     def seek(self, offset):
         self.wavfile.setpos(offset)
@@ -419,7 +357,8 @@ class BiQuad(Filter):
         self._input.append(n)
         lastout2 = self._output.pop(0)
         lastout1 = self._output[0]
-        n = self.a0 * n + self.a1 * lastin1 + self.a2 * lastin2 - self.b1 * lastout1 - self.b2 * lastout2
+        n = (self.a0 * n + self.a1 * lastin1 + self.a2 * lastin2 -
+             self.b1 * lastout1 - self.b2 * lastout2)
         self._output.append(n)
         return n
 
