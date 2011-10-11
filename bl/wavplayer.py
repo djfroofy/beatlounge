@@ -2,6 +2,7 @@ import time
 import wave
 import struct
 import sys
+import random
 
 from warnings import warn
 try:
@@ -20,6 +21,8 @@ from twisted.internet.interfaces import IConsumer, IPushProducer
 from bl.debug import DEBUG
 
 
+SHRT_MIN = -2**15
+SHRT_MAX = 2**15 - 1
 DEFAULT_CHUNK_SIZE = 4096 / 2
 
 
@@ -333,9 +336,16 @@ class _AudioTransformMixin:
     def setFormat(self, format=pyaudio.paInt16):
         assert format in (pyaudio.paInt16,)
         if format == pyaudio.paInt16:
-            self._cast = int
+            self._cast = self._short
             self._bytes = 2
             self._format = 'h'
+
+    def _short(self, v):
+        if v < SHRT_MIN:
+            return SHRT_MIN
+        if v > SHRT_MAX:
+            return SHRT_MAX
+        return v
 
     def transform(self, data, func):
         buffer = []
@@ -374,9 +384,44 @@ class Delay(Filter):
         self.samples = samples
 
     def filter(self, n):
-        if len(self._delay_buffer) > self.samples:
+        while len(self._delay_buffer) > self.samples:
             n = (n + self._delay_buffer.pop(0) * self.decay) * 0.5
         self._delay_buffer.append(n)
         return n
+
+class Noise(Filter):
+
+    def __init__(self, stream, format=pyaudio.paInt16, add=0, mul=400):
+        Filter.__init__(self, stream, format)
+        self.add = add
+        self.mul = mul
+
+    def filter(self, n):
+        noise = (0.5 - random.random()) * self.mul - self.add
+        return n + noise
+
+
+class BiQuad(Filter):
+
+    def __init__(self, stream, format=pyaudio.paInt16, a0=1, a1=0, a2=-1, b1=0.1, b2=0.9):
+        Filter.__init__(self, stream, format)
+        self.a0 = a0
+        self.a1 = a1
+        self.a2 = a2
+        self.b1 = b1
+        self.b2 = b2
+        self._input = [ 0, 0 ]
+        self._output = [ 0, 0 ]
+
+    def filter(self, n):
+        lastin2 = self._input.pop(0)
+        lastin1 = self._input[0]
+        self._input.append(n)
+        lastout2 = self._output.pop(0)
+        lastout1 = self._output[0]
+        n = self.a0 * n + self.a1 * lastin1 + self.a2 * lastin2 - self.b1 * lastout1 - self.b2 * lastout2
+        self._output.append(n)
+        return n
+
 
 
