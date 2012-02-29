@@ -1,7 +1,7 @@
 # Arpegiattors
 
-from pprint import pformat
 import random
+from pprint import pformat
 
 from zope.interface import Interface, Attribute, implements
 
@@ -24,7 +24,7 @@ class IArp(Interface):
     An interface for arpeggiators.
     """
 
-    values =  Attribute("Values to arpeggiate")
+    values = Attribute("Values to arpeggiate")
 
     def reset(values):
         """
@@ -45,19 +45,17 @@ class BaseArp(object):
     def __init__(self, values=()):
         self.reset(values)
 
-
     def reset(self, values):
         self.values = values
 
-
     def __call__(self):
-        raise NotImplentedError
+        raise NotImplementedError
 
 
 def sortNumeric(values, sort=None):
     if sort is None:
-        sort = lambda l : list(sorted(l))
-    numbers = [ v for v in values if type(v) in (int, float, list, tuple) ]
+        sort = lambda l: list(sorted(l))
+    numbers = [v for v in values if type(v) in (int, float, list, tuple)]
     numbers = sort(numbers)
     newvalues = []
     for v in values:
@@ -100,15 +98,18 @@ class IndexedArp(BaseArp):
         self.index = self.index % self.count
         return exhaustCall(v)
 
+
 class AscArp(IndexedArp):
 
     def sort(self, values):
         return sortNumeric(values)
 
+
 class DescArp(IndexedArp):
 
     def sort(self, values):
-        return sortNumeric(values, lambda l : list(reversed(sorted(l))))
+        return sortNumeric(values, lambda l: list(reversed(sorted(l))))
+
 
 class OrderedArp(IndexedArp):
 
@@ -128,6 +129,7 @@ def exhaustCall(v):
         v = v()
     return v
 
+
 class RandomArp(BaseArp):
 
     def reset(self, values):
@@ -142,10 +144,11 @@ class RandomArp(BaseArp):
         if not self._current:
             return
         l = len(self._current)
-        index = random.randint(0, l-1)
+        index = random.randint(0, l - 1)
         next = self._current.pop(index)
         self._next.append(next)
         return next
+
 
 class ArpSwitcher(BaseArp):
 
@@ -173,7 +176,9 @@ class ArpSwitcher(BaseArp):
 class Paradiddle(OrderedArp):
 
     def reset(self, values):
-        assert len(values) == 2, 'Paradiddles take exactly two values (R and L)'
+        assert (
+            len(values) == 2, 'Paradiddles take exactly two values (R and L)'
+        )
         paradiddle = self.makeParadiddle(values[0], values[1])
         OrderedArp.reset(self, paradiddle)
 
@@ -183,7 +188,9 @@ class Paradiddle(OrderedArp):
         """
         return [r, l, r, r, l, r, l, l]
 
+
 SingleParadiddle = Paradiddle
+
 
 class DoubleParadiddle(Paradiddle):
 
@@ -193,6 +200,7 @@ class DoubleParadiddle(Paradiddle):
         """
         return [r, l, r, l, r, r, l, r, l, r, l, l]
 
+
 class TripleParadiddle(Paradiddle):
 
     def makeParadiddle(self, r, l):
@@ -201,17 +209,24 @@ class TripleParadiddle(Paradiddle):
         """
         return [r, l, r, l, r, l, r, r, l, r, l, r, l, r, l, l]
 
+
 class ParadiddleDiddle(Paradiddle):
 
     def makeParadiddle(self, r, l):
         """
         Make a paradiddle diddle
         """
-        return [r, l, r, r, l, l ] * 2 + [l, r, l, l, r, r] * 2
+        return [r, l, r, r, l, l] * 2 + [l, r, l, l, r, r] * 2
+
 
 class OctaveArp(ArpSwitcher):
 
-    def __init__(self, arp, values=None, octaves=3, direction=1, oscillate=False):
+    def __init__(self,
+            arp,
+            values=None,
+            octaves=3,
+            direction=1,
+            oscillate=False):
         ArpSwitcher.__init__(self, arp, values)
         self.octaves = octaves
         self.currentOctave = 0
@@ -220,7 +235,6 @@ class OctaveArp(ArpSwitcher):
             self.currentOctave = octaves
         self.direction = direction
         self.oscillate = oscillate
-
 
     def __call__(self):
         if not self.count:
@@ -239,7 +253,6 @@ class OctaveArp(ArpSwitcher):
             else:
                 self.currentOctave = 0
         return v
-
 
 
 class PhraseRecordingArp(BaseArp):
@@ -283,7 +296,10 @@ class PhraseRecordingArp(BaseArp):
                     log.err(ValueError(
                         'no index for tick=%s note=%s' % (ontick, onnote)))
             self.phrase = zip(whens, notes, velocities, sus)
-            self.phrase = [ (w,n,v,s or self.elapsed - w) for (w,n,v,s) in self.phrase ]
+            self.phrase = [
+                (w, n, v, s or self.elapsed - w)
+                for (w, n, v, s) in self.phrase
+            ]
             if DEBUG:
                 log.msg('>phrase===\n%s' % pformat(self.phrase))
 
@@ -291,19 +307,18 @@ class PhraseRecordingArp(BaseArp):
         if self._tape and self._tape['whens']:
             self._last_tape = dict(self._tape)
             self._last_tape['dirty'] = False
-        self._tape = {'whens':[], 'notes':[], 'velocities':[],
-                      'sustains':[], 'indexes':{}, 'last_ticks': {}}
-
+        self._tape = {'whens': [], 'notes': [], 'velocities': [],
+                      'sustains': [], 'indexes': {}, 'last_ticks': {}}
 
     def recordNoteOn(self, note, velocity=100, ticks=None):
         if ticks is None:
             ticks = self.clock.ticks
-        self._tape['indexes'][(self.clock.ticks, note)] = len(self._tape['notes'])
+        self._tape['indexes'][(self.clock.ticks, note)] = len(
+                                                        self._tape['notes'])
         self._tape['last_ticks'][note] = self.clock.ticks
         self._tape['notes'].append(note)
         self._tape['velocities'].append(velocity)
         self._tape['whens'].append(ticks - self._phraseStartTicks)
-
 
     def recordNoteOff(self, note):
         tape = self._tape
@@ -323,8 +338,6 @@ class PhraseRecordingArp(BaseArp):
         tape['sustains'].append((last, note, sustain))
 
 
-
-
 class Adder(ArpSwitcher):
     """
     A simple wrapper over an Arp instance which will add `amount` to the
@@ -340,6 +353,3 @@ class Adder(ArpSwitcher):
         v = exhaustCall(self.arp())
         if v is not None:
             return self.amount + v
-
-
-
