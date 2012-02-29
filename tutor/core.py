@@ -1,3 +1,5 @@
+# All the names we want in our beatlounge python console
+
 import random # for rilz
 from itertools import cycle
 from functools import partial
@@ -13,8 +15,6 @@ from bl.notes import *
 from bl.filters import *
 from bl.scheduler import *
 from bl.debug import setDebug, DEBUG
-
-
 
 from bl.music import notes, chords, scales, constants
 
