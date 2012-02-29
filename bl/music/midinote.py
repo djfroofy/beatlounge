@@ -1,21 +1,25 @@
-
-from bl.utils import minmax
+"""
+Midinote class is able to convent
+Midi integer to frequency with different intonations,
+among other things.
+"""
 from bl.music.constants import twelve_tone_equal_440
 from bl.music.freq import offsets
 
 
 __all__ = [
-    'MidiNote', 'C', 'Cs', 'Df', 'D', 'Ds', 'Ef', 'E', 'F', 'Fs', 'Gf', 'G', 'Gs', 'Af', 'A', 'As', 'Bf', 'B',
+    'MidiNote',
+    'C', 'Cs', 'Df', 'D', 'Ds', 'Ef', 'E', 'F', 'Fs',
+    'Gf', 'G', 'Gs', 'Af', 'A', 'As', 'Bf', 'B',
     'keys', 'keys_rev',
 ]
 
+
 class MidiNote(object):
     """
-    int is an immutable value type and whatnot.  so, this is some kind of frowned upon idea, subclassing int.
-    <strike>However, these MidiNotes are immutable value types, so let's try.</strike>
-
-    Acts like an integer with some util methods to get frequency, related notes,
-    compare if another note is in the same octave.
+    Acts like an integer with some util methods
+    to get frequency, to get related notes,
+    Other ideas? Breaks a lot of python traditional semantics.
     """
 
     def __init__(self, value=0):
@@ -32,20 +36,18 @@ class MidiNote(object):
     def __hash__(self):
         return hash(self.value)
 
-
-    # INTEGER, it is.
-
+    # MidiNote is like an Integer in some ways
     def __int__(self):
         return self.value
 
     def __add__(self, other):
-        return self.__class__(int(other)+int(self))
+        return self.__class__(int(other) + int(self))
 
     def __radd__(self, other):
         return self + other
 
     def __sub__(self, other):
-        return self.__class__(int(self)-int(other))
+        return self.__class__(int(self) - int(other))
 
     def __rsub__(self, other):
         return MidiNote(int(other) - int(self))
@@ -68,9 +70,6 @@ class MidiNote(object):
     def __ge__(self, other):
         return int(self) >= int(other)
 
-
-    # FREQUENCIES are the thing.
-
     def freq(self, intone=None):
         """Tonality can be "3rd", "4th", "5th" or a numeric offset"""
 
@@ -87,7 +86,7 @@ class MidiNote(object):
         if intone == "5th":
             return note * offsets[7][0]
 
-        return note*intone
+        return note * intone
 
 C = [MidiNote(n) for n in range(0, 127, 12)]
 Cs = Df = [MidiNote(n) for n in range(1, 127, 12)]
@@ -102,19 +101,21 @@ A = [MidiNote(n) for n in range(9, 127, 12)]
 As = Bf = [MidiNote(n) for n in range(10, 127, 12)]
 B = [MidiNote(n) for n in range(11, 127, 12)]
 
-keys = {'C':0, 'Df':1, 'Cs':1, 'D':2, 'Ds':3, 'Ef':3,
-        'E':4, 'F':5, 'Fs':6, 'Gf':6, 'G':7, 'Gs':8,
-        'Af':8, 'A':9, 'As':10, 'Bf':10, 'B':11}
+
+keys = {'C': 0, 'Df': 1, 'Cs': 1, 'D': 2, 'Ds': 3, 'Ef': 3,
+        'E': 4, 'F': 5, 'Fs': 6, 'Gf': 6, 'G': 7, 'Gs': 8,
+        'Af': 8, 'A': 9, 'As': 10, 'Bf': 10, 'B': 11}
 
 # ok, maybe we can just use the sharps as canonical?
-keys_rev = dict((v,k) for k,v in keys.iteritems() if 'f' not in k)
+keys_rev = dict(
+        (v, k) for k, v in keys.iteritems()
+        if 'f' not in k
+)
 
 more = {}
-for k,v in keys_rev.iteritems():
-    more[k+12] = v
-    more[k+24] = v
+for k, v in keys_rev.iteritems():
+    more[k + 12] = v
+    more[k + 24] = v
 
 keys_rev.update(more)
-del k,v
-
-
+del k, v
