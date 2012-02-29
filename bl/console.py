@@ -28,7 +28,6 @@ def toMeter(s):
     count, division = s.split('/')
     return Meter(int(count), int(division))
 
-
 class Options(usage.Options):
     optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
                      ['logfile', 'l', 'child.log', 'Path to logfile'],
@@ -38,7 +37,6 @@ class Options(usage.Options):
 
     def parseArgs(self, audiodev='coreaudio'):
         self['audiodev'] = audiodev
-
 
 class FriendlyConsoleManhole(ConsoleManhole):
 
@@ -65,7 +63,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         if self.persistent:
             self._readHistoryFile()
         self.interpreter.locals['console'] = self
-
+        
     def _readHistoryFile(self):
         self._historySession = os.getpid()
         self._historyFd = open(self.historyFile + ('.%d' % self._historySession), 'w')
@@ -173,6 +171,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.terminal.nextLine()
         self.terminal.write(self.ps[self.pn])
         self.terminal.write(current)
+       
 
     # methods for host key verification ui
 
@@ -184,8 +183,9 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self._onPrompt = defer.Deferred()
         self.writeHelp(message)
         return self._onPrompt
+   
     warn = writeHelp
-
+ 
     def _answerPrompt(self, line):
         answer = line.strip().lower()
         if answer == 'yes':
@@ -197,6 +197,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.handle_HOME()
         self.writeHelp('')
 
+ 
 try:
 
     from twisted.conch.ssh import channel, session, keys, connection
@@ -218,7 +219,7 @@ try:
             console.writeHelp('failed connecting to remote: %s' % reason)
 
         log.msg('connecting')
-
+        
         def verifyHostKey(transport, host, pubKey, fingerprint):
             log.msg('verifying host key')
             actualHost = transport.factory.options['host']
@@ -261,6 +262,7 @@ try:
             client = session.SSHSessionClient()
             #client.dataReceived = dataReceived
             client.connectionLost = connectionLost
+            
             conn.console.session = self
 
             # tty voodoo magic (my head is officially fucking hurting)
@@ -281,10 +283,10 @@ try:
         def closed(self):
             log.msg('closed: %r' % self)
             self.conn.console.session = None
-
+ 
         def sendEOF(self):
             self.conn.sendEOF(self)
-
+    
         def _windowResized(self, *args):
             winsz = fcntl.ioctl(0, tty.TIOCGWINSZ, '12345678')
             winSize = struct.unpack('4H', winsz)
@@ -332,4 +334,4 @@ def main(argv=None, reactor=None):
 
 if __name__ == '__main__':
     main()
-
+ 
