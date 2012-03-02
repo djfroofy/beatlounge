@@ -8,9 +8,9 @@ class LoopRecorder(object):
     A LoopRecorder is a simple object for recording arbitrary events as a loop
     over the a duration given in measures.
 
-    Up to 10 recorded loops can be fetched from a FIFO buffer.
-    When a new loop is recorded it is added to the buffer and
-    the oldest is removed if capacity exceeds 10.
+    Up to 10 recorded loops can be fetched from a FIFO buffer.  When a new loop
+    is recorded it is added to the buffer and the oldest is removed if capacity
+    exceeds 10.
     """
 
     def __init__(self, measures=1, clock=None, meter=None):
@@ -25,10 +25,9 @@ class LoopRecorder(object):
 
     def record(self, event):
         """
-        Record an event.
-        If this the end of the loop duration,
-        and the recorded events create a loop different from the past loop,
-        add to recorded stack.
+        Record an event.  If this the end of the loop duration, and the
+        recorded events create a loop different from the past loop, add to
+        recorded stack.
         """
         ticks = self.clock.ticks
         ticksper = self.meter.ticksPerMeasure * self.meter.measure(ticks)
@@ -49,12 +48,10 @@ class LoopRecorder(object):
 
     def latch(self, index=0):
         """
-        Return a completed loop.
-        By default, this will return the last complete recorded loop,
-        otherwise you can return a past loop (up to 10) with index.
-        For example,
-        index=1 will return the loop before the last, ...,
-        index=9, the 10th loop in the past.
+        Return a completed loop.  By default, this will return the last
+        complete recorded loop, otherwise you can return a past loop (up to 10)
+        with index.  For example, index=1 will return the loop before the last,
+        ..., index=9, the 10th loop in the past.
         """
         if not self._loops:
             return

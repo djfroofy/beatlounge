@@ -188,15 +188,13 @@ class MidiHandler(object):
 
     def __call__(self, message):
         """
-        Parse method and call method on self based on midi function.
-        For example, if function is NOTEON_CHAN1,
-        this will call our method noteon(), etc.
-        If a message has a channel as part of it's function,
-        this will be the first argument.
-        After the first optional channel argument,
-        remaining positional arguments are passed
-        to the method in the same order as specified in MIDI.
-        Not all MIDI functions need to be supplied or implemented in subclass.
+        Parse method and call method on self based on midi function.  For
+        example, if function is NOTEON_CHAN1, this will call our method
+        noteon(), etc.  If a message has a channel as part of it's function,
+        this will be the first argument.  After the first optional channel
+        argument, remaining positional arguments are passed to the method in
+        the same order as specified in MIDI.  Not all MIDI functions need to be
+        supplied or implemented in subclass.
         """
         packet, timestamp = message
         func, arg1, arg2, _pad = packet
@@ -309,6 +307,7 @@ class NoteEventHandler(MidiHandler):
     """
     A generic note event handler which sends noteon/noteoff events to some
     registered callbacks.
+
     Note that that noteon callback should take two arguments
     (note, velocity) and noteoff callback should take one argument (note).
     """

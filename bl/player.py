@@ -57,11 +57,13 @@ class PlayableMixin(object):
 
     def stopPlaying(self, node=None):
         se = self._playSchedule
-        # Stop one tick before the next measure -
-        # This means if you try to schedule something at a granularity of 1
-        # you're SOL- though I'm not sure of a nicer way to prevent
-        # the non-determinism on something stopping before it starts again when
-        # the stop and start are scheduled for the same tick
+
+
+        # Stop one tick before the next measure - This means if you try to
+        # schedule something at a granularity of 1 you're SOL- though I'm not
+        # sure of a nicer way to prevent the non-determinism on something
+        # stopping before it starts again when the stop and start are scheduled
+        # for the same tick
 
         ticksd = self.clock.ticks % self.meter.ticksPerMeasure
         ticks = self.meter.ticksPerMeasure - 1 - ticksd
@@ -122,16 +124,15 @@ def _wrapgen(o):
     if hasattr(o, 'next'):
         return noteFactory(o)
     raise ValueError('Argument must be a callable'
-                        ' or a generator with .next method')
+                     ' or a generator with .next method')
 
 
 class NotePlayer(BasePlayer):
     implements(INotePlayer)
 
-    def __init__(self, instr, noteFactory, velocity,
-                stop=lambda: None, clock=None, interval=None):
-        super(NotePlayer, self).__init__(
-                                        instr, velocity, stop, clock, interval)
+    def __init__(self, instr, noteFactory, velocity, stop=lambda: None,
+                 clock=None, interval=None):
+        super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.noteFactory = _wrapgen(noteFactory)
         self._on_method = lambda n, v: self.instr.playnote(n, v)
         self._off_method = lambda n: self.instr.stopnote(n)
@@ -167,11 +168,12 @@ class SchedulePlayer(PlayableMixin):
 
         (when, note, velocity, sustain)
 
-    * "when" is the relatives ticks from the time in ticks  when play() is
-      called to play the note
-    * "note" is the note to play
-    * "velocity" is the attack velocity to play the note with
-    * "sustain" is the duration in ticks  before calling noteoff
+    Tuple entries:
+        * "when" is the relatives ticks from the time in ticks  when play() is
+          called to play the note
+        * "note" is the note to play
+        * "velocity" is the attack velocity to play the note with
+        * "sustain" is the duration in ticks  before calling noteoff
 
     All of the above may also be a callable (possibly chaining other callables
     as well).
@@ -187,17 +189,14 @@ class SchedulePlayer(PlayableMixin):
         player = scheduleFactory(instr, simpleScheduleFactory, interval=1)
         player.startPlaying()
 
-    With the above setup,
-    the player will, on every measure:
+    With the above setup, the player will, on every measure:
 
-        play note 60 (middle C) on the first quarter note
-                        with velocity 95 and sustain for 1 measure
-
-        play note 64 on the second quater
-                        with velocity 70 and sustain for a half duration
-
-        play note 48 on the last eighth
-                        with velocity 93 and sustain for a quarter duration.
+        * play note 60 (middle C) on the first quarter note with velocity 95
+          and sustain for 1 measure
+        * play note 64 on the second quater with velocity 70 and sustain for a
+          half duration
+        * play note 48 on the last eighth with velocity 93 and sustain for a
+          quarter duration.
 
     Schedules can also be generated, rather than returning a pre-computed list.
     Take the following example:
@@ -273,14 +272,13 @@ class Conductor(object):
     A Conductor plays a score graphs which consists of nodes.
     Each node has:
 
-        the duration in measures to play a node,
-        a list of players (IPlayable) to start and stop after the duration
-        a list of other keys in the graph to randomly transtition to.
-        which node to start on (START)
+        * The duration in measures to play a node,
+        * A list of players (IPlayable) to start and stop after the duration
+        * A list of other keys in the graph to randomly transtition to.
+        * Which node to start on (START)
 
-    The length of the measure is determined by
-    the supplied clock's (or the default global clock's)
-    default Meter (i.e. clock.meters[0]).
+    The length of the measure is determined by the supplied clock's (or the
+    default global clock's) default Meter (i.e. clock.meters[0]).
 
     An example score graph and conductor:
 
@@ -294,11 +292,10 @@ class Conductor(object):
         conductor = Conductor(score)
         conductor.start()
 
-    In the above example,
-    the conductor once started will play player1 and player2 for 2 measures,
-    then transition to itself or the next node 'b' with 50/50 chance of either.
-    When node 'b' is stated player1 and player3 with play
-    for one measure and then always transition back to 'a'.
+    In the above example, the conductor once started will play player1 and
+    player2 for 2 measures, then transition to itself or the next node 'b' with
+    50/50 chance of either.  When node 'b' is stated player1 and player3 with
+    play for one measure and then always transition back to 'a'.
     """
 
     def __init__(self, scoreGraph, clock=None):
@@ -313,9 +310,9 @@ class Conductor(object):
         Start the conductor.
 
         (Note that the actual start time is generally after two measures a 1
-        measure pause to resume at the start of the next measure
-        and then an additional measure before the the players begin
-        after the initial call to startPlaying())
+        measure pause to resume at the start of the next measure and then an
+        additional measure before the the players begin after the initial call
+        to startPlaying())
         """
         node = self.scoreGraph[START]
         self.clock.callAfterMeasures(1, self._resume, node)
@@ -343,10 +340,9 @@ class Conductor(object):
 
     def hold(self):
         """
-        Stop transitioning and continue playing current node
-        for blocks of measures given by the current node's duration.
-        After calling release(),
-        the conductor will resume regular transitioning.
+        Stop transitioning and continue playing current node for blocks of
+        measures given by the current node's duration.  After calling
+        release(), the conductor will resume regular transitioning.
         """
         self._hold = self.currentNode['key']
 
@@ -359,9 +355,9 @@ class Conductor(object):
 
 def noteFactory(g):
     """
-    Convert a generator to a callable. This is mostly equivalent
-    to g.next, except if the value yielded is a callable it
-    will be called first before returning.
+    Convert a generator to a callable. This is mostly equivalent to g.next,
+    except if the value yielded is a callable it will be called first before
+    returning.
     """
     def f():
         s = g.next()
@@ -461,14 +457,18 @@ W = Weight
 
 class Shifter(object):
     """
-    shifter = Shifter()
-    shifter.amount = 60
-    shift_cycle = cycle([0,4,7,12])
-    s = nf(shifter.shift(shift_cycle))
-    p = Player(instr, s, v1, interval... )
-    p.startPlaying()
-    shifter.amount = 55
-    shifter.shift(other_cycle)
+    Shifter is deprecated. User arps bl.arp.Adder instead.
+
+    Example usage:
+
+        shifter = Shifter()
+        shifter.amount = 60
+        shift_cycle = cycle([0,4,7,12])
+        s = nf(shifter.shift(shift_cycle))
+        p = Player(instr, s, v1, interval... )
+        p.startPlaying()
+        shifter.amount = 55
+        shifter.shift(other_cycle)
     """
 
     def __init__(self, gen=None):

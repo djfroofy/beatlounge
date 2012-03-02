@@ -221,12 +221,8 @@ class ParadiddleDiddle(Paradiddle):
 
 class OctaveArp(ArpSwitcher):
 
-    def __init__(self,
-            arp,
-            values=None,
-            octaves=3,
-            direction=1,
-            oscillate=False):
+    def __init__(self, arp, values=None, octaves=3, direction=1,
+                 oscillate=False):
         ArpSwitcher.__init__(self, arp, values)
         self.octaves = octaves
         self.currentOctave = 0

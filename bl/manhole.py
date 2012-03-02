@@ -88,9 +88,6 @@ class _BaseManhole(service.MultiService):
         self.checker = checker
 
         def makeNamespace():
-            # @cleanup
-            # master = self.parent
-            master = self.parent
             namespace = dict(consoleNamespace)
             return namespace
 
