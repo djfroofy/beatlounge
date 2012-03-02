@@ -1,4 +1,5 @@
 
+
 class ClockRunner:
 
     def runTicks(self, ticks):
@@ -8,6 +9,7 @@ class ClockRunner:
         self.clock.runUntilCurrent()
 
     _runTicks = runTicks
+
 
 class TestReactor(object):
     running = True
@@ -22,7 +24,6 @@ class TestReactor(object):
 
     def __getattr__(self, a):
         return getattr(self.reactor, a)
-
 
     def callLater(self, later, f, *a, **k):
         self.scheduled.append((later, f, a, k))

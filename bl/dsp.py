@@ -1,5 +1,8 @@
+"""
+Requires pyo:
+http://code.google.com/p/pyo/wiki/Installation
+"""
 from pyo import *
-
 
 
 class PyoServer:
@@ -26,7 +29,7 @@ class PyoServer:
     def restart(cls):
         """
         Start and top the already running pyo Server.
-    
+
         raises AssertionError if no server is running
         """
         assert cls._server, cls._error_msg % 'restart'
@@ -73,20 +76,10 @@ shutdownPyo = PyoServer.shutdown
 restartPyo = PyoServer.restart
 rebootPyo = PyoServer.reboot
 
-# backwards compat - please use startPyo
-startPYO = startPyo
-
-# TODO
-# CHANGE REQUEST
-# maybe get rid of this. pyo doesn't let you have more than one server per process.
-# hence, stopPyo or shutdownPro are more convenient. 
-def stop(s):
-    s.stop()
-    s.shutdown()
-
 
 class Rack(object):
-    """Effectz rack for filtering the input to pyo
+    """
+    Effectz rack for filtering the input to pyo
 
     >>> r = Rack()
     >>> r.setOuts(
@@ -95,10 +88,7 @@ class Rack(object):
     >>> r.disto.mul = r.lfoA
 
     """
-
-
-    def __init__(self, inputs=[], channels=[0,1], bpm=120):
-
+    def __init__(self, inputs=[], channels=[0, 1], bpm=120):
 
         if not inputs:
             self.inputs = []
@@ -122,17 +112,19 @@ class Rack(object):
         self.sawT = SawTable()
         self.squareT = SquareTable()
         self.tables = [
-            self.chebyT, self.cosT, self.curveT, self.expT, self.hannT, self.harmT, self.linT, self.sawT, self.squareT
+            self.chebyT, self.cosT, self.curveT, self.expT,
+            self.hannT, self.harmT, self.linT, self.sawT, self.squareT
         ]
 
-        self.lfoA = Sine(freq=bpm/60.)
-        self.lfoB = Sine(freq=bpm/60./2.)
+        self.lfoA = Sine(freq=bpm / 60.)
+        self.lfoB = Sine(freq=bpm / 60. / 2.)
         self.lfos = [
             self.lfoA, self.lfoB
         ]
 
         self.chorus = Chorus(self.inputs)
-        self.convolve = Convolve(self.inputs, self.harmT, size=512) # bad usage!
+        # bad usage!
+        self.convolve = Convolve(self.inputs, self.harmT, size=512)
         self.delay = Delay(self.inputs, feedback=.6, maxdelay=20)
         self.disto = Disto(self.inputs)
         self.freeverb = Freeverb(self.inputs)
@@ -142,7 +134,8 @@ class Rack(object):
         self.waveguide = Waveguide(self.inputs)
         self.FX['effects'] = [
             self.chorus, self.convolve,
-            self.delay, self.disto, self.freeverb, self.harmonizer, self.sdelay, self.wgverb, self.waveguide
+            self.delay, self.disto, self.freeverb,
+            self.harmonizer, self.sdelay, self.wgverb, self.waveguide
         ]
 
         self.biquad = Biquad(self.inputs, freq=1000, q=1, type=0)
@@ -150,12 +143,13 @@ class Rack(object):
             self.biquad,
         ]
 
-
-    def setOuts(self, li=[["disto", "chorus", "waveguide", "biquad"]], play_clean=True):
+    def setOuts(self,
+            li=[["disto", "chorus", "waveguide", "biquad"]],
+            play_clean=True):
         """
-        List of lists.  The input of l[n] is l[n-1] or the main input if it is first.
-        each list can not reuse a param where it would change the input of the filter.
-        More on this later.
+        `li` is List of lists.
+            The input of l[n] is l[n-1] or the main input if it is first.
+            input may not change from list to list
         """
         for i in self.FX['effects'] + self.FX['filters']:
             i.stop()
@@ -163,73 +157,80 @@ class Rack(object):
 
         for l in li:
             inp = self.inputs
-            for i,s in enumerate(l):
+            for i, s in enumerate(l):
                 this = getattr(self, s)
                 this.input = inp
                 inp = this
 
-                if i == len(l)-1:
+                if i == len(l) - 1:
                     this.out()
 
         if play_clean:
             [i.out() for i in self.inputs]
         else:
-            [(i.out(),i.stop()) for i in self.inputs]
-
+            [(i.out(), i.stop()) for i in self.inputs]
 
     def A(self, x):
-        self.biquad.freq = (440*4)*x
+        self.biquad.freq = (440 * 4) * x
+
     def B(self, x):
         self.biquad.q = x
+
     def C(self, x):
         self.chorus.feedback = x
+
     def D(self, x):
-        self.chorus.depth = 4*x
+        self.chorus.depth = 4 * x
+
     def E(self, x):
         self.disto.slope = x
+
     def F(self, x):
         self.disto.drive = x
 
 
+# Example program using pyo and the Rack
+# where are the players and arpegiators?
+
 def main(root=55):
     from txosc.dispatch import Receiver
-    from txosc.async import DatagramServerProtocol, DatagramClientProtocol
+    from txosc.async import DatagramServerProtocol  # , DatagramClientProtocol
     from bl.utils import percindex
     from twisted.internet import reactor
     from bl.osc.touchosc import Rotary, XY
-    from twisted.python import log
+    #from twisted.python import log
 
     receiver = Receiver()
-    reactor.listenUDP(17779, DatagramServerProtocol(receiver), interface='0.0.0.0')
+    serverProtocol = DatagramServerProtocol(receiver)
+    reactor.listenUDP(17779, serverProtocol, interface='0.0.0.0')
 
     s = startPYO()
     #client = DatagramClientProtocol()
     #clientPort = reactor.listenUDP(0, client)
-    sineA = Sine([220,222])
-    sineB = Sine([440,442])
+    tenor = root * 4
+    mid = root * 8
+    sineA = Sine([tenor, tenor + 2])
+    sineB = Sine([mid, mid + 2])
     r = Rack([sineA, sineB])
 
-    factors = [1, 7/6., 6/5., 5/4., 4/3., 3/2.,2]
+    factors = [1, 7 / 6., 6 / 5., 5 / 4., 4 / 3., 3 / 2., 2]
     octaves = 9
     choices = []
     binoff = 2
     for octave in range(octaves):
-        o = octave+1
+        o = octave + 1
         for f in factors:
-            choices.append(root*f*o)
+            choices.append(root * f * o)
 
-    def f(x,y):
-        choiceX = percindex(x,choices)
-        choiceY = percindex(y,choices)
+    def f(x, y):
+        choiceX = percindex(x, choices)
+        choiceY = percindex(y, choices)
         #log.msg(choiceX)
         #log.msg(choiceY)
-        sineA.setFreq([choiceX, choiceX+binoff])
-        sineB.setFreq([choiceY, choiceY+binoff])
+        sineA.setFreq([choiceX, choiceX + binoff])
+        sineB.setFreq([choiceY, choiceY + binoff])
 
     XY(receiver, f, page=4).attach()
     Rotary(receiver, [r.A, r.B, r.C, r.D, r.E, r.F], page=3).attach()
 
-    return s,r,sineA,sineB
-
-
-
+    return s, r, sineA, sineB
