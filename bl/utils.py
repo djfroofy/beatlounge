@@ -60,18 +60,24 @@ def windex(lst):
     return item
 
 
-spaces = {
-    '8trip': 1 / 6.,
-    '16th': 1 / 4.,
-    '8th': 1 / 2,
-    'qtrup': 1 / 3.,
-    'quarter': 1,
-    'half': 2,
-    'whole': 4,
-}
+def bpm_space_to_time(bpm, space):
+    """
+    takes bpm and a magic string for space
+    returns the number of seconds that space takes.
 
-
-def clock_converter(bpm, space):
+    For example,
+    bpm_space_to_time(60, "quarter") = 1
+    ie, 1 quarter note at 60bpm takes 1 second.
+    """
+    spaces = {
+        '8trip': 1 / 6.,
+        '16th': 1 / 4.,
+        '8th': 1 / 2,
+        'qtrup': 1 / 3.,
+        'quarter': 1,
+        'half': 2,
+        'whole': 4,
+    }
     return (60. / bpm) * spaces[space]
 
 
