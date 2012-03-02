@@ -52,6 +52,10 @@ Installing just python dependencies (with pip):
 
     pip install -r requirements.txt
 
+To install optional dependencies (currently txosc):
+
+    pip install -r optrequirements.txt
+
 You can run unit tests with trial:
 
     trial bl
