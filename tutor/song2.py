@@ -18,10 +18,11 @@
 #
 # ~~---<<<>>>---~~~<><><>~~~---<<<>>>---~~~<><><>~~~---<<<>>>---~~~<><><>~~~---
 
-import os.path
-from functools import partial
-from tutor.core import *
+import random
+from itertools import cycle
 
+from bl.player import Player, R, N
+from tutor.complib import piano_f
 
 
 # VS: "Ja let's use meine convenience function ... instead"
@@ -42,31 +43,29 @@ piano = piano_f()
 # random.choice(), if you care. Also N is special function to represent and
 # return None (this translates to a pause in playing).
 
-notes = cycle([R(60,64,67,69), R(36,48,60,N), R(48,52,55), R(36,40,43,45)])
+notes = cycle([R(60, 64, 67, 69), R(36, 48, 60, N), R(48, 52, 55),
+               R(36, 40, 43, 45)])
 
 
 # Next we'll create a callable for our velocity.
 
-velocity = cycle([120, 80, 100, 90]).next
+velocity = cycle([120, 80, 89, 83]).next
 
 
-# Finally let's create a Player whick takes as its arguments (amongst, some other
-# things), the notes generator and veocity functions from above. The argument
-# stop is function which returns a "release" time (for stop notes played). The
-# interval is the interval between note plays.
+# Finally let's create a Player whick takes as its arguments (amongst, some
+# other things), the notes generator and veocity functions from above. The
+# argument stop is function which returns a "release" time (for stop notes
+# played). The interval is the interval between note plays.
 
-player = Player(piano, notes, velocity, stop=lambda : random.randint(12,48), interval=0.25)
-
-
-def start():
+player = Player(piano, notes, velocity, stop=lambda: random.randint(12, 48),
+                interval=0.25)
 
 
-    player.startPlaying()
+player.startPlaying()
 
-
-    # Now try this exercise from the shell.
-    #
-    # player.stopPlaying() # Stop on the next measure
-    # player.interval = 0.125
-    # player.startPlaying()
-    # player.instr = bass_f()
+# Now try this exercise from the shell.
+#
+# player.stopPlaying() # Stop on the next measure
+# player.interval = 0.125
+# player.startPlaying()
+# player.instr = bass_f()
