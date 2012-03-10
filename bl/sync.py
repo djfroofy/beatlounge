@@ -4,12 +4,13 @@ import math
 import time
 import datetime
 
-
 from zope.interface import Interface, implements
+
 
 class ISyncClock(Interface):
     """
-    Canonical source of tick/time information which can be plugged into a BeatClock.
+    Canonical source of tick/time information which can be plugged into a
+    BeatClock.
     """
 
     def lastTick():
@@ -41,5 +42,3 @@ class SystemClock:
         bps = self.beatclock.tempo.bpm / 60. * self.beatclock.tempo.tpb
         tick = math.floor(bps * delta)
         return int(tick), self._start + (tick / bps)
-
-

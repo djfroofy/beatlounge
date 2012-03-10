@@ -17,6 +17,7 @@ try:
         NOTEON_CHAN3, NOTEOFF_CHAN3)
 except ImportError:
     pypm = None
+    MidiHandler = object 
 
 from bl.testlib import ClockRunner, TestReactor
 from bl.tests.test_player import TestInstrument
@@ -166,6 +167,7 @@ class NoteOnOffHandlerTests(TestCase):
 class ChordHandlerTests(TestCase):
 
     def setUp(self):
+        checkPypm()
         self.chords = []
         self.handler = ChordHandler(self.callback)
 
@@ -258,6 +260,7 @@ class NoteEventHandlerTests(TestCase):
 
 
     def setUp(self):
+        checkPypm()
         self.events = []
         self.handler = NoteEventHandler(self.noteon, self.noteoff)
 

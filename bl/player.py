@@ -11,20 +11,22 @@ from bl.debug import DEBUG
 from bl.filters import BaseFilter
 
 
-__all__ = [ 'IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
-    'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf', 'generateSounds',
-    'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw', 'StepSequencer', 'weighted',
-    'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E', 'quaver', 'sixteenth', 'S',
-    'semiquaver', 'thirtysecond', 'T', 'demisemiquaver', 'sequence', 'seq', 'cut',
-    'explode', 'lcycle', 'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W',
-    'SchedulePlayer']
+__all__ = ['IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
+    'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf',
+    'generateSounds', 'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw',
+    'StepSequencer', 'weighted', 'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E',
+    'quaver', 'sixteenth', 'S', 'semiquaver', 'thirtysecond', 'T',
+    'demisemiquaver', 'sequence', 'seq', 'cut', 'explode', 'lcycle',
+    'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W', 'SchedulePlayer'
+]
 
 
 class IPlayer(Interface):
     instr = Attribute('Instrument that provides playnote(note, velocity)')
     velocity = Attribute('IFilter to get current velocity')
-    stop = Attribute('Callable to get stop time on current note/chord, or None '
-                     'for non-stop')
+    stop = Attribute(
+        'Callable to get stop time on current note/chord,'
+        'or None for non-stop')
 
 
 class INotePlayer(IPlayer):
@@ -54,7 +56,8 @@ class PlayableMixin(object):
         if self._playSchedule:
             log.err('Playable %s already started' % self)
             return
-        ticks = self.meter.measure(self.clock.ticks) * self.meter.ticksPerMeasure
+        ticks = (self.meter.measure(self.clock.ticks) *
+                 self.meter.ticksPerMeasure)
         if self.clock.ticks > ticks:
             ticks = self.meter.nextMeasure(self.clock.ticks, 1)
         ticks = ticks - self.clock.ticks
@@ -63,11 +66,11 @@ class PlayableMixin(object):
 
     def stopPlaying(self, node=None):
         se = self._playSchedule
-        # Stop one tick before the next measure -
-        # This means if you try to schedule something at a granularity of 1
-        # you're kind of screwed - though I'm not sure of a nicer way to prevent
-        # the non-determinism on something stopping before it starts again when
-        # the stop and start are scheduled for the same tick
+        # Stop one tick before the next measure - This means if you try to
+        # schedule something at a granularity of 1 you're kind of screwed -
+        # though I'm not sure of a nicer way to prevent the non-determinism on
+        # something stopping before it starts again when the stop and start are
+        # scheduled for the same tick
         ticksd = self.clock.ticks % self.meter.ticksPerMeasure
         ticks = self.meter.ticksPerMeasure - 1 - ticksd
         self.clock.callLater(ticks, se.stop)
@@ -75,24 +78,18 @@ class PlayableMixin(object):
 
 
 
-#class _Activator(object):
-#    clock = getClock()
-#    tempo = None
-#    interval = None
-#
-#    def on(self):
-#        n, d = interval
-#        nextm = self.tempo.dtt(n, d)
-#        self._playSchedule = self.clock.schedule(self.play).startAfterTicks(nextm)
-
-class BasePlayer(PlayableMixin):#, _Activator):
+class BasePlayer(PlayableMixin):
     implements(IPlayer)
 
-    def __init__(self, instr, velocity, stop, clock=None, interval=None, meter=None):
+    def __init__(self, instr, velocity, stop,
+                                        clock=None, interval=None, meter=None):
         self.instr = instr
         if isinstance(velocity, BaseFilter):
-            warn('Filters are deprecated - make your velocity factory a no-arg callable instead')
-            # XXX pardon the transitory hack here - will be gone with filters one day soon
+            warn('Filters are deprecated '
+                '- make your velocity factory a no-arg callable instead')
+            # XXX pardon the transitory hack here
+            # - will be gone with filters one day soon
+
             def filter_adaptor():
                 v, o = velocity(110, None)
                 return v
@@ -101,7 +98,7 @@ class BasePlayer(PlayableMixin):#, _Activator):
             self.velocity = velocity
         if isinstance(stop, int):
             s = stop
-            stop = lambda : s
+            stop = lambda: s
         self.stop = stop
         if clock is None:
             from bl.scheduler import clock
@@ -127,43 +124,49 @@ class BasePlayer(PlayableMixin):#, _Activator):
         if stop is not None:
             self.clock.callLater(stop, self._off_method, n)
 
+
 def _wrapgen(o):
     if callable(o):
         return o
     if hasattr(o, 'next'):
         return noteFactory(o)
-    raise ValueError('Argument must be a callable or a generator with .next method')
+    raise ValueError('Argument must be a callable'
+                     ' or a generator with .next method')
 
 
 class NotePlayer(BasePlayer):
     implements(INotePlayer)
 
-    def __init__(self, instr, noteFactory, velocity, stop=lambda : None,
+    def __init__(self, instr, noteFactory, velocity, stop=lambda: None,
                  clock=None, interval=None):
         super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
         self.noteFactory = _wrapgen(noteFactory)
-        self._on_method = lambda n, v : self.instr.playnote(n, v)
-        self._off_method = lambda n : self.instr.stopnote(n)
+        self._on_method = lambda n, v: self.instr.playnote(n, v)
+        self._off_method = lambda n: self.instr.stopnote(n)
 
     def _next(self):
         return self.noteFactory()
 
+
 Player = NotePlayer
+
 
 class ChordPlayer(BasePlayer):
     implements(IChordPlayer)
 
-    def __init__(self, instr, chordFactory, velocity, stop=lambda : None, clock=None,
-                 interval=None):
-        super(ChordPlayer, self).__init__(instr, velocity, stop, clock, interval)
+    def __init__(self, instr, chordFactory, velocity,
+                stop=lambda: None, clock=None, interval=None):
+        super(ChordPlayer, self).__init__(
+                                        instr, velocity, stop, clock, interval)
         self.chordFactory = _wrapgen(chordFactory)
-        self._on_method = lambda c, v : self.instr.playchord(c, v)
-        self._off_method = lambda  c : self.instr.stopchord(c)
+        self._on_method = lambda c, v: self.instr.playchord(c, v)
+        self._off_method = lambda  c: self.instr.stopchord(c)
 
     def _next(self):
         return self.chordFactory()
 
 START = None
+
 
 class SchedulePlayer(PlayableMixin):
     """
@@ -172,11 +175,12 @@ class SchedulePlayer(PlayableMixin):
 
         (when, note, velocity, sustain)
 
-    * "when" is the relatives ticks from the time in ticks  when play() is
-      called to play the note
-    * "note" is the note to play
-    * "velocity" is the attack velocity to play the note with
-    * "sustain" is the duration in ticks  before calling noteoff
+    Tuple entries:
+        * "when" is the relatives ticks from the time in ticks  when play() is
+          called to play the note
+        * "note" is the note to play
+        * "velocity" is the attack velocity to play the note with
+        * "sustain" is the duration in ticks  before calling noteoff
 
     All of the above may also be a callable (possibly chaining other callables
     as well).
@@ -192,15 +196,17 @@ class SchedulePlayer(PlayableMixin):
         player = scheduleFactory(instr, simpleScheduleFactory, interval=1)
         player.startPlaying()
 
-    With the above setup, the player will on every measure play note 60 (middle
-    C) on the first quarter note with velocity 95 and sustain for 1 measure, note
-    64 on the second quater with velocity 70 and sustain for a half duration, and
-    note 48 on the last eighth with velocity 93 and sustain for a quarter duration.
+    With the above setup, the player will, on every measure:
 
+        * play note 60 (middle C) on the first quarter note with velocity 95
+          and sustain for 1 measure
+        * play note 64 on the second quater with velocity 70 and sustain for a
+          half duration
+        * play note 48 on the last eighth with velocity 93 and sustain for a
+          quarter duration.
 
     Schedules can also be generated, rather than returning a pre-computed list.
     Take the following example:
-
 
         def gen():
             when = 0
@@ -209,9 +215,8 @@ class SchedulePlayer(PlayableMixin):
                 yield (when, notes.next(), 120, 24)
                 when += 24
 
-        player = SchedulePlayer(instr, lambda : gen())
+        player = SchedulePlayer(instr, lambda: gen())
         clock.callAfterMeasures(1, player.play)
-
     """
 
     def __init__(self, instr, scheduleFactory, interval=0.25, clock=None,
@@ -227,13 +232,13 @@ class SchedulePlayer(PlayableMixin):
             self._on_method = lambda c, v: self.instr.playnote(c, v)
             self._off_method = lambda c: self.instr.stopnote(c)
         elif type == 'chord':
-            self._on_method = lambda c, v : self.instr.playchord(c, v)
-            self._off_method = lambda  c : self.instr.stopchord(c)
+            self._on_method = lambda c, v: self.instr.playchord(c, v)
+            self._off_method = lambda  c: self.instr.stopchord(c)
         else:
             raise ValueError('Invalid player type "%s"' % type)
 
     def play(self):
-        schedule = ( event for event in self.scheduleFactory() )
+        schedule = (event for event in self.scheduleFactory())
         self._advance(0, schedule)
 
     def _advance(self, last, schedule, event=None):
@@ -254,50 +259,57 @@ class SchedulePlayer(PlayableMixin):
             when, event = exhaustCall(event[0]), event[1:]
             delta = when - last
             if delta < 0:
-                log.err('scheduled value in past? relative last tick=%d, when=%d' % (last, when))
+                log.err(
+                    'scheduled value in past? relative last tick=%d, when=%d'
+                    % (last, when))
             else:
-                # TODO It would be nice to not do this and instead override callLater
-                # to ensure it really makes a call synchronously. (or maybe that's
+                # TODO It would be nice to not do this
+                # instead override callLater to ensure it really makes a call
+                # synchronously. (or maybe that's
                 # a horrible idea since it could run into maximum recursion).
-                #
-                #
                 if not delta:
                     self._advance(when, schedule, event)
                 else:
-                    self.clock.callLater(delta, self._advance, when, schedule, event)
+                    self.clock.callLater(
+                        delta, self._advance, when, schedule, event)
 
 
 class Conductor(object):
     """
-    A Conductor plays a score graphs which consists of nodes which each give
-    the duration in measures to play a node, a list of players (IPlayable) to start
-    and stop at the beginning and end of the duration and a list of trasitions
-    (other keys into) the graph to randomly transtition to.  The reserved key START
-    (equal to None) is for designating which node to start at.  The length of the
-    measure is determined by the supplied clock's (or the default global clock's)
-    default Meter (i.e. clock.meter).
+    A Conductor plays a score graphs which consists of nodes.
+    Each node has:
+
+        * The duration in measures to play a node,
+        * A list of players (IPlayable) to start and stop after the duration
+        * A list of other keys in the graph to randomly transtition to.
+        * Which node to start on (START)
+
+    The length of the measure is determined by the supplied clock's (or the
+    default global clock's) default Meter (i.e. clock.meters[0]).
 
     An example score graph and conductor:
 
         score = { START: 'a',
-                 'a': { 'players' : [player1, player2], 'duration': 2,
+                 'a': { 'players' : [player1, player2],
+                        'duration': 2,
                         'transitions' : ['a', 'b']},
-                 'b': { 'players' : [player1, player3], 'duration': 1,
+                 'b': { 'players' : [player1, player3],
+                        'duration': 1,
                         'transitions' : ['a']} }
         conductor = Conductor(score)
         conductor.start()
 
     In the above example, the conductor once started will play player1 and
     player2 for 2 measures, then transition to itself or the next node 'b' with
-    50/50 chance of either. When node 'b' is stated player1 and player3 with play
-    for one measure and then always transition back to 'a'.
+    50/50 chance of either.  When node 'b' is stated player1 and player3 with
+    play for one measure and then always transition back to 'a'.
     """
 
     def __init__(self, scoreGraph, clock=None):
         warn('Conductor is broken right now. Sorry about that. Might be removed, recoded.')
         self.clock = getClock(clock)
         self.scoreGraph = scoreGraph
-        self.currentNode = {'players':()}
+        self.currentNode = {'players': ()}
         self.nextNode = self.currentNode
         self._hold = None
 
@@ -306,8 +318,9 @@ class Conductor(object):
         Start the conductor.
 
         (Note that the actual start time is generally after two measures a 1
-        measure pause to resume at the start of the next measure and then an additional
-        measure before the the players begin after the initial call to startPlaying())
+        measure pause to resume at the start of the next measure and then an
+        additional measure before the the players begin after the initial call
+        to startPlaying())
         """
         node = self.scoreGraph[START]
         self.clock.callAfterMeasures(1, self._resume, node)
@@ -325,7 +338,7 @@ class Conductor(object):
             player.startPlaying(node)
         self.currentNode = next
         self.currentNode['key'] = node
-        self.clock.callAfterMeasures(duration-1, self._stop, node)
+        self.clock.callAfterMeasures(duration - 1, self._stop, node)
         self.clock.callAfterMeasures(duration, self._resume, None)
 
     def _stop(self, node):
@@ -334,9 +347,9 @@ class Conductor(object):
 
     def hold(self):
         """
-        Stop transitioning an continue playing current node for blocks of measures
-        given by the current node's duration. After calling release(), the conductor
-        will resume regular transitioning.
+        Stop transitioning and continue playing current node for blocks of
+        measures given by the current node's duration.  After calling
+        release(), the conductor will resume regular transitioning.
         """
         self._hold = self.currentNode['key']
 
@@ -349,9 +362,9 @@ class Conductor(object):
 
 def noteFactory(g):
     """
-    Convert a generator to a callable. This is mostly equivalent
-    to g.next, except if the value yielded is a callable it
-    will be called first before returing.
+    Convert a generator to a callable. This is mostly equivalent to g.next,
+    except if the value yielded is a callable it will be called first before
+    returning.
     """
     def f():
         s = g.next()
@@ -391,11 +404,13 @@ def Random(*c):
 
 R = Random
 
+
 def _randomPhraseGen(phrases):
     while 1:
         phrase = random.choice(phrases)
         for next in phrase:
             yield next
+
 
 def randomPhrase(*phrases):
     length = 0
@@ -439,22 +454,28 @@ def weighted(*notes):
     return ws
 w = weighted
 
+
 def Weight(*weights):
     ws = weighted(*weights)
     return R(*ws)
 
 W = Weight
 
+
 class Shifter(object):
     """
-    shifter = Shifter()
-    shifter.amount = 60
-    shift_cycle = cycle([0,4,7,12])
-    s = nf(shifter.shift(shift_cycle))
-    p = Player(instr, s, v1, interval... )
-    p.startPlaying()
-    shifter.amount = 55
-    shifter.shift(other_cycle)
+    Shifter is deprecated. User arps bl.arp.Adder instead.
+
+    Example usage:
+
+        shifter = Shifter()
+        shifter.amount = 60
+        shift_cycle = cycle([0,4,7,12])
+        s = nf(shifter.shift(shift_cycle))
+        p = Player(instr, s, v1, interval... )
+        p.startPlaying()
+        shifter.amount = 55
+        shifter.shift(other_cycle)
     """
 
     def __init__(self, gen=None):
@@ -474,7 +495,7 @@ class Shifter(object):
             if n is None:
                 yield next
             elif type(n) in (list, tuple):
-                yield [ i + self.amount for i in n ]
+                yield [i + self.amount for i in n]
             else:
                 yield n + self.amount
 
@@ -483,13 +504,16 @@ def quarter(n=0):
     return mtt(n * 0.25)
 Q = quarter
 
+
 def eighth(n=0):
     return mtt(n * 0.125)
 E = quaver = eighth
 
+
 def sixteenth(n=0):
     return mtt(n * 0.0625)
 S = semiquaver = sixteenth
+
 
 def thirtysecond(n=0):
     return mtt(n * 0.03125)
@@ -497,19 +521,20 @@ T = demisemiquaver = thirtysecond
 
 
 def sequence(schedule, length=8):
-    filler = [ N ]
-    notes = [ ]
+    filler = [N]
+    notes = []
     last = 0
     for (note, when) in schedule:
-        fill = ( when - last )
+        fill = (when - last)
         notes.extend(filler * fill)
         notes.append(note)
         last = when + 1
-    if last != length :
+    if last != length:
         notes.extend(filler * (length - last))
     return notes
 
 seq = sequence
+
 
 class callMemo:
     """
@@ -532,7 +557,7 @@ cm = callMemo
 
 def explode(notes, factor=2):
     notes2 = []
-    f = factor-1
+    f = factor - 1
     for note in notes:
         notes2.append(note)
         for i in range(f):
@@ -552,18 +577,20 @@ def cut(notes, aprob=0.25, bprob=0.25):
     m = size / 2
     if random.random() <= bprob:
         #print 'cutting right'
-        if random.random() <= 0.5: # half chop
+        if random.random() <= 0.5:  # half chop
             #print 'cutting middleway'
             slice = _cut(notes[m:])
             notes = notes[:m] + slice
-        else: # quarter chop
+        else:  # quarter chop
             #print 'cutting quarter way'
+            s = m + m / 2
             if random.random() <= bprob:
-                slice = _cut(notes[m+m/2:])
-                notes = notes[:m+m/2] + slice
+                slice = _cut(notes[s:])
+                notes = notes[:s] + slice
             else:
-                slice = _cut(notes[m:m+m/2])
-                notes = notes[:m] + slice + notes[m+m/2:]
+                slice = _cut(notes[m:s])
+                notes = notes[:m] + slice + notes[s:]
+
     if random.random() <= aprob:
         #print 'cutting left', len(notes)
         if random.random() <= 0.5:
@@ -573,14 +600,14 @@ def cut(notes, aprob=0.25, bprob=0.25):
             notes = slice + notes[m:]
         else:
             #print 'cutting quarter way'
+            s = m / 2
             if random.random() <= bprob:
-                slice = _cut(notes[:m/2])
-                notes = slice + notes[m/2:]
+                slice = _cut(notes[:s])
+                notes = slice + notes[s:]
             else:
-                slice = _cut(notes[m/2:m])
-                notes = notes[:m/2] + slice + notes[m:]
+                slice = _cut(notes[s:m])
+                notes = notes[:s] + slice + notes[m:]
     return notes
-
 
 
 def _cut(notes):
@@ -591,8 +618,8 @@ def _cut(notes):
         for (first, note) in enumerate(notes):
             if note != N:
                 break
-        repeat = size / (first+1)
-        notes = (notes[:first+1] * repeat)[:size]
+        repeat = size / (first + 1)
+        notes = (notes[:first + 1] * repeat)[:size]
         notes.extend([N] * (size - len(notes)))
         #print '1.', notes
         return notes
@@ -618,7 +645,8 @@ def lcycle(length, list):
 class StepSequencer(PlayableMixin):
     """
     A step sequencer allows you to pass an instr (typically a drum kit)
-    and a set of notes or chords (representing the rows in a step sequencer graph).
+    and a set of notes or chords
+    (representing the rows in a step sequencer graph).
     """
 
     def __init__(self, instr, notes, beats=16, clock=None, meter=None):
@@ -641,13 +669,14 @@ class StepSequencer(PlayableMixin):
 
     def setVelocity(self, beat, velocity):
         if DEBUG:
-            log.msg('[StepSequencer.setVelocity] setting velocity at beat=%d to %d' %
-                    (beat, velocity))
+            log.msg('[StepSequencer.setVelocity] beat=%d to velocity=%d' %
+                                                    (beat, velocity))
         self.velocity[beat] = velocity
 
     def setStep(self, beat, note, on_off):
         if DEBUG:
-            log.msg('[StepSequencer.setStep] setting %dx%d=%d' % (beat, note, on_off))
+            log.msg('[StepSequencer.setStep] setting %dx%d=%d' %
+                                                (beat, note, on_off))
         self.on_off[beat][note] = on_off
 
     def play(self):
@@ -658,6 +687,3 @@ class StepSequencer(PlayableMixin):
                 self._play(note, v)
             index += 1
         self.step = (self.step + 1) % self.beats
-
-
-

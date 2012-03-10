@@ -2,26 +2,32 @@ import sys
 import random
 import os
 import tty
-import sys
 import termios
 import getpass
 import struct
 import fcntl
 import signal
 
-from twisted.internet import stdio, protocol, defer
+from twisted.internet import stdio, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
-from twisted.conch.recvline import HistoricRecvLine
-from twisted.python import failure, reflect, log, usage
+from twisted.python import log, usage
 from twisted.python.filepath import FilePath
-
+#from twisted.python import failure, reflect, log, usage
+#from twisted.conch.recvline import HistoricRecvLine
 
 from bl.scheduler import Tempo, BeatClock, Meter, standardMeter
 
-__all__ = ['consoleNamespace', 'FriendlyConsoleManhole']
+__all__ = ['FriendlyConsoleManhole']
 
 # Todo - make this an opt flag instead
 EXPERIMENTAL = False
+
+if sys.platform == 'darwin':
+    defaultAudioDev = 'coreaudio'
+elif sys.platform == 'linux2':
+    defaultAudioDev = 'alsa'
+else:
+    defaultAudioDev = 'portaudio'
 
 
 def toMeter(s, tempo):
@@ -29,24 +35,27 @@ def toMeter(s, tempo):
     return Meter(int(count), int(division), tempo=tempo)
 
 class Options(usage.Options):
-    optParameters = [['channels', 'c', 'stereo', 'Number of channels or a label: stereo, mono, quad'],
-                     ['logfile', 'l', 'child.log', 'Path to logfile'],
-                     ['bpm', 'b', 130, 'The tempo in beats per minute', int],
-                     ['tpb', 't', 24, 'Ticks per beat', int],
-                     ['meter', 'm', '4/4', 'The meter (default 4/4)']
-                     ]
+    optParameters = [
+        ['channels', 'c', 'stereo', 'Number of channels or a label: stereo, '
+         'mono, quad'],
+        ['logfile', 'l', 'child.log', 'Path to logfile'],
+        ['bpm', 'b', 130, 'The tempo in beats per minute', int],
+        ['tpb', 't', 24, 'Ticks per beat', int],
+        ['meter', 'm', '4/4', 'The meter (default 4/4)']
+    ]
 
-    def parseArgs(self, audiodev='coreaudio'):
+    def parseArgs(self, audiodev=defaultAudioDev):
         self['audiodev'] = audiodev
+
 
 class FriendlyConsoleManhole(ConsoleManhole):
 
     persistent = True
-    historyFile = os.path.join(os.environ.get('HOME', ''), '.beatlounge.history')
-    maxLines = 2**12
+    historyFile = os.path.join(
+            os.environ.get('HOME', ''), '.beatlounge.history')
+    maxLines = 2 ** 12
     session = None
     _onPrompt = None
-
 
     def __init__(self, *p, **kw):
         from bl.utils import buildNamespace
@@ -67,12 +76,14 @@ class FriendlyConsoleManhole(ConsoleManhole):
 
     def _readHistoryFile(self):
         self._historySession = os.getpid()
-        self._historyFd = open(self.historyFile + ('.%d' % self._historySession), 'w')
+        histFd = self.historyFile + ('.%d' % self._historySession)
+        self._historyFd = open(histFd, 'w')
         if os.path.exists(self.historyFile):
             with open(self.historyFile) as fd:
                 lineCount = 0
                 for line in fd:
-                    if not line.strip(): continue
+                    if not line.strip():
+                        continue
                     if lineCount > self.maxLines:
                         self.historyLines.pop(0)
                     self.historyLines.append(line[:-1])
@@ -173,7 +184,6 @@ class FriendlyConsoleManhole(ConsoleManhole):
         self.terminal.write(self.ps[self.pn])
         self.terminal.write(current)
 
-
     # methods for host key verification ui
 
     def prompt(self, message):
@@ -229,12 +239,13 @@ try:
                 transport.factory.options['known-hosts'] or
                 os.path.expanduser('~/.ssh/known_hosts')
                 ))
-            return kh.verifyHostKey(console, actualHost, host, actualKey).addErrback(log.err)
+            return kh.verifyHostKey(
+                console, actualHost, host, actualKey
+            ).addErrback(log.err)
 
         connect.connect(host, port, opts,
                         verifyHostKey, userauth).addErrback(eb)
         return conn
-
 
     class SSHConnection(connection.SSHConnection):
 
@@ -292,11 +303,13 @@ try:
             winsz = fcntl.ioctl(0, tty.TIOCGWINSZ, '12345678')
             winSize = struct.unpack('4H', winsz)
             newSize = winSize[1], winSize[0], winSize[2], winSize[3]
-            self.conn.sendRequest(self, 'window-change', struct.pack('!4L', *newSize))
+            self.conn.sendRequest(
+                self, 'window-change', struct.pack('!4L', *newSize))
 
 except ImportError, ie:
     from warnings import warn
     warn('%s - connectConsole() will not be avaiable' % ie)
+
 
 def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
     fd = sys.__stdin__.fileno()
@@ -305,12 +318,13 @@ def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
     tempo = Tempo(bpm, tpb)
     meter = toMeter(meter, tempo)
     try:
-        # TODO - there should be a cleaner strategy for collecting parameters and
-        # initializing fluidsynth - initializing fluidsynth shouldn't really even be
-        # necessary
+        # TODO - cleaner strategy for collecting parameters and
+        # initializing fluidsynth
+        # - initializing fluidsynth shouldn't be necessary
         if EXPERIMENTAL:
             from bl.sync import SystemClock
-            clock = BeatClock(tempo=tempo, meter=meter, default=True, syncClockClass=SystemClock)
+            clock = BeatClock(tempo=tempo, meter=meter, default=True,
+                              syncClockClass=SystemClock)
         else:
             clock = BeatClock(tempo=tempo, meter=meter, default=True)
         clock.synthAudioDevice = audioDev
@@ -334,7 +348,8 @@ def main(argv=None, reactor=None):
     log.msg('tempo/BPM: %s' % opts['bpm'])
     log.msg('tempo/TPB: %s' % opts['tpb'])
     log.msg('meter: %s' % opts['meter'])
-    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['bpm'], opts['tpb'], opts['meter'])
+    runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['bpm'],
+                    opts['tpb'], opts['meter'])
 
 if __name__ == '__main__':
     main()

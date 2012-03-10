@@ -1,4 +1,3 @@
-
 Beatlounge
 ----------
 
@@ -8,8 +7,6 @@ Overview
 ~~~~~~~~
 
 The beatlounge is an experiment in computer music. It makes sound. It's fun.
-You can program melodies and wicked arpegiators, whatever your imagination
-and technical prowess allows. And it's simple. Really, really simple.
 
 It's written in Python and uses Twisted for its scheduling but you don't have
 to know anything about Twisted to use it. Promise.
@@ -18,14 +15,27 @@ to know anything about Twisted to use it. Promise.
 Some Features
 ~~~~~~~~~~~~~
 
-* Isochronous scheduler based on musical meters and tick rate (pulses per quarter)
-* MIDI integration and a decent abstraction layer over pyportmidi via bl.midi
-* OSC ingegration and some predefined device adaptors (uses txosc)
-* uses fluidsynth for loading and playing soundfonts
-* "pluggable" backends for virtual instruments
-* An extensible arpegiator library which can be used to control melodies and rhythms
-* Live-coding environment using twisted.conch.stdio
-* A fun set of toys like bl.osc.wiimote, bl.osc.touchosc, etc
+
+* Isochronous scheduler based on configured tempo and meter.
+* Pluggable clock synchronization (System Time and Midi Beat Clock)
+* Pluggable backends for virtual instruments (current implementations are
+  pyfluidsynth and generic)
+* A high-level interface for virtual instrument players
+* Arpeggiators, drum sequencers, and general pattern generators
+* Constants mapping musical notes/chords/scales to MIDI note values and some
+  fun-loving functions over those things: chord inversions, and some crazy (as in
+  crazy awesome) thing we've dubbed grasshoppers
+* A python console-based live-coding environment (beatlounge)
+* Beginnings of near plug-and-play integration with MIDI and OSC devices
+* Some OSC utilities leveraging txosc and mappings to popular embedded OSC
+  applications (touchosc, andosc, wiimote - via osculator)
+* A (malas palabras)y beat slicing algorithm that can almost sound boss given
+  the right conditions
+* A grab bag of almost good things that are about to get tossed and completely
+  rewritten with a different API.
+* Unit tests! Did I say they run fast?
+* Some things we'd rather not talk about.
+
 
 The project is still under active development and there are lots of half-baked
 parts as well total garbage that will likely go away in the near future.

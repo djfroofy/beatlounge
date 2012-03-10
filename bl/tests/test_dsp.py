@@ -6,7 +6,6 @@ except ImportError:
     dsp = None
 
 
-
 class FakeServer:
 
     calls = []
@@ -25,7 +24,6 @@ class FakeServer:
 
     def shutdown(self, **kw):
         FakeServer.calls.append(('shutdown', kw))
-
 
     @classmethod
     def reset(cls):
