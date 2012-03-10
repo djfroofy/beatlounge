@@ -1,5 +1,4 @@
-
-from twisted.python import failure, log
+#from twisted.python import failure, log
 
 import pypm
 
@@ -8,7 +7,8 @@ from bl.debug import debug
 
 __all__ = ['init', 'initialize', 'getInput', 'getOutput', 'printDeviceSummary',
            'ClockSender', 'MidiDispatcher', 'FUNCTIONS', 'ChordHandler',
-           'MonitorHandler', 'NoteEventHandler' ]
+           'MonitorHandler', 'NoteEventHandler']
+
 
 class PypmWrapper:
     """
@@ -39,17 +39,23 @@ class PypmWrapper:
         for devno in range(pypm.CountDevices()):
             info = pypm.GetDeviceInfo(devno)
 
-            m = cls.deviceMap.setdefault(info[1], {'output':None, 'input':None})
+            insouts = {'output': None, 'input': None}
+            m = cls.deviceMap.setdefault(info[1], insouts)
             if info[3]:
                 cls.outputs.append(devno)
                 m['output'] = devno
             if info[2]:
                 cls.inputs.append(devno)
                 m['input'] = devno
-        cls.inputNames = dict((v['input'],k) for (k,v) in cls.deviceMap.items()
-                                if v['input'] is not None)
-        cls.outputNames = dict((v['output'],k) for (k,v) in cls.deviceMap.items()
-                                if v['output'] is not None)
+
+        cls.inputNames = dict(
+                (v['input'], k) for (k, v) in cls.deviceMap.items()
+                if v['input'] is not None
+        )
+        cls.outputNames = dict(
+                (v['output'], k) for (k, v) in cls.deviceMap.items()
+                if v['output'] is not None
+        )
 
     @classmethod
     def getInput(cls, dev):
@@ -66,11 +72,10 @@ class PypmWrapper:
             cls._channels[key] = pypm.Input(no)
         return cls._channels[key]
 
-
     @classmethod
     def getOutput(cls, dev):
         """
-        Get an output with devive number 'dev' - dev may also be string matching
+        Get output with devive number 'dev' - dev may also be string matching
         the target device. If the output was previously loaded this will return
         the cached device.
         """
@@ -106,6 +111,7 @@ printDeviceSummary = PypmWrapper.printDeviceSummary
 FUNCTIONS = {}
 FUNCTION_ARITY = {}
 
+# @cleanup
 g = globals()
 def a(name, arity, v):
     g[name] = v
@@ -141,6 +147,7 @@ a('SYSTEMRESET', 2, 0xFF)
 
 del a, g
 
+
 class MidiDispatcher(object):
     """
     Dispatcher for events received from a midi input channel.
@@ -165,7 +172,7 @@ class MidiDispatcher(object):
         Start the MidiDispatcher - this will schedule an event to call
         all it's handlers every tick with any buffered events.
         """
-        self._event = self.clock.schedule(self).startLater(0, 1/96.)
+        self._event = self.clock.schedule(self).startLater(0, 1 / 96.)
 
     def __call__(self):
         """
@@ -181,16 +188,17 @@ class MidiHandler(object):
 
     def __call__(self, message):
         """
-        Parse method and call method on self based on midi function. For example
-        if function is NOTEON_CHAN1, this will call our method noteon(), etc. If
-        a message has a channel as part of it's function, this will be the first
-        argument. After the first optional channel argument, remaining positional
-        arguments are passed to the method in the same order as specified in MIDI.
-        Not all MIDI functions need to be supplied or implemented in a subclass.
+        Parse method and call method on self based on midi function.  For
+        example, if function is NOTEON_CHAN1, this will call our method
+        noteon(), etc.  If a message has a channel as part of it's function,
+        this will be the first argument.  After the first optional channel
+        argument, remaining positional arguments are passed to the method in
+        the same order as specified in MIDI.  Not all MIDI functions need to be
+        supplied or implemented in subclass.
         """
         packet, timestamp = message
         func, arg1, arg2, _pad = packet
-        args = [ arg1, arg2 ][:FUNCTION_ARITY.get(func, 0)]
+        args = [arg1, arg2][:FUNCTION_ARITY.get(func, 0)]
         args.append(timestamp)
         funcname = FUNCTIONS[func]
         tokens = funcname.split('_')
@@ -207,7 +215,6 @@ class MidiHandler(object):
 
     def noteoff(self, channel, note, velocity, timestamp):
         pass
-
 
 
 class _DummyInstrument:
@@ -247,6 +254,7 @@ class MonitorHandler(MidiHandler):
 
 NoteOnOffHandler = MonitorHandler
 
+
 class ChordHandler(MidiHandler):
     """
     A chord handler is a simple MidiHandler which recognizes chords and sends
@@ -271,7 +279,8 @@ class ChordHandler(MidiHandler):
 
         Note that channel, velocity and timestamp arguments are ignored.
         """
-        debug('noteon channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
+        debug('noteon channel=%s note=%s velocity=%s t=%s' % (
+                        channel, note, velocity, timestamp))
         if note not in self._chord:
             self._chord.append(note)
             debug('calling %s' % self.callback)
@@ -279,12 +288,14 @@ class ChordHandler(MidiHandler):
 
     def noteoff(self, channel, note, velocity, timestamp):
         """
-        Remove note from chord. If the attribute `sustain` is `True` then we do not
+        Remove note from chord.
+        If the attribute `sustain` is `True` then we do not
         call callback with the updated chord.
 
         Note that channel, velocity and timestamp arguments are ignored.
         """
-        debug('noteoff channel=%s note=%s velocity=%s t=%s' % (channel, note, velocity, timestamp))
+        debug('noteoff channel=%s note=%s velocity=%s t=%s' % (
+                        channel, note, velocity, timestamp))
         if note in self._chord:
             self._chord.remove(note)
             if not self.sustain:
@@ -295,7 +306,9 @@ class ChordHandler(MidiHandler):
 class NoteEventHandler(MidiHandler):
     """
     A generic note event handler which sends noteon/noteoff events to some
-    registered callbacks. Note that that noteon callback should take two arguments
+    registered callbacks.
+
+    Note that that noteon callback should take two arguments
     (note, velocity) and noteoff callback should take one argument (note).
     """
 
@@ -336,13 +349,12 @@ class ClockSender(object):
         Subsequent calls (24 per quarter note), will send bare TIMINGCLOCK
         events.
         """
-        self._event = self.clock.schedule(self).startLater(1, 1/96.)
+        self._event = self.clock.schedule(self).startLater(1, 1 / 96.)
 
     def __call__(self):
+        # where are TIMINGCLOCK, START defined?
+        # @cleanup
         if not self._started:
             self.midiOut.Write([[[START], pypm.Time()]])
             self._started = True
         self.midiOut.Write([[[TIMINGCLOCK], pypm.Time()]])
-
-
-

@@ -11,10 +11,13 @@ from bl.utils import minmax, getClock
 
 warn('bl.filters was a bad idea; this is deprecated, so do not use anymore')
 
-__all__ = ['IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker', 'StandardDucker',
-           'Chain', 'Standard8Ducker', 'Standard16Ducker', 'Standard32Ducker',
-           'Sin', 'Sinusoid', 'Sawtooth', 'Triangle', 'FadeIn', 'FadeOut',
-           'M34Ducker', 'M78Ducker', 'Stepper', 'Humanize']
+__all__ = [
+    'IFilter', 'BaseFilter', 'PassThru', 'Sustainer', 'Ducker',
+    'StandardDucker', 'Chain', 'Standard8Ducker', 'Standard16Ducker',
+    'Standard32Ducker', 'Sin', 'Sinusoid', 'Sawtooth', 'Triangle', 'FadeIn',
+    'FadeOut', 'M34Ducker', 'M78Ducker', 'Stepper', 'Humanize'
+]
+
 
 class IFilter(Interface):
 
@@ -23,22 +26,23 @@ class IFilter(Interface):
     def filter(value, original=None):
         """
         Optionally filter value and return tuple (filtered value, original).
-        If original is None, a filter should generally instead return (filtered value, value).
+        If original is None, a filter should return (filtered value, value).
         """
 
 
 class BaseFilter(object):
     implements(IFilter)
-    
+
     def filter(self, velocity, original):
         return velocity, original
 
     def __call__(self, velocity=None, original=None):
         if velocity is None:
             velocity = 127
-        return self.filter(velocity, original)        
+        return self.filter(velocity, original)
 
 PassThru = BaseFilter
+
 
 class Sustainer(BaseFilter):
 
@@ -85,7 +89,8 @@ class WeightNote(BaseFilter):
 
     def filter(self, velocity, original=None):
         scale, original = _scaleVelocity(velocity, original)
-        velocity = self.noteWeights.get(self.callMemo.currentValue, self.default)
+        velocity = self.noteWeights.get(
+                                self.callMemo.currentValue, self.default)
         return int(scale * velocity), original
 
 
@@ -135,7 +140,7 @@ class Stepper(BaseFilter):
         for i in range(int(factor * self._current_step)):
             self._stepcycle.next()
         self._count = count
-        
+
     steps = property(_get_steps, _set_steps)
 
     def filter(self, velocity, original=None):
@@ -161,40 +166,51 @@ class Chain(BaseFilter):
                 original = o
         return velocity, original
 
+
 class StandardDucker(Ducker):
-    peaks = [(0,0,0,0),(1,0,0,0),(2,0,0,0),(3,0,0,0)]
+    peaks = [
+        (0, 0, 0, 0), (1, 0, 0, 0),
+        (2, 0, 0, 0), (3, 0, 0, 0)
+    ]
+
 
 class Standard8Ducker(Ducker):
-    peaks = [(0,0,0,0),
-             (0,1,0,0),
-             (1,0,0,0),
-             (1,1,0,0),
-             (2,0,0,0),
-             (2,1,0,0),
-             (3,0,0,0),
-             (3,1,0,0)]
+    peaks = [(0, 0, 0, 0),
+             (0, 1, 0, 0),
+             (1, 0, 0, 0),
+             (1, 1, 0, 0),
+             (2, 0, 0, 0),
+             (2, 1, 0, 0),
+             (3, 0, 0, 0),
+             (3, 1, 0, 0)]
+
 
 class Standard16Ducker(Ducker):
-    peaks = [ (i,j,k,0) for i in range(4)
-              for j in range(2) for k in range(2) ]
+    peaks = [(i, j, k, 0) for i in range(4)
+        for j in range(2) for k in range(2)]
+
 
 class Standard32Ducker(Ducker):
-    peaks = [ (i,j,k,l) for i in range(4)
-               for j in range(2) for k in range(2)
-               for l in range(0,24,12) ]
+    peaks = [(i, j, k, l) for i in range(4)
+        for j in range(2) for k in range(2)
+        for l in range(0, 24, 12)]
+
 
 class M34Ducker(Ducker):
-    peaks = [(0,0,0,0),(1,0,0,0),(2,0,0,0)]
-
-
+    peaks = [(0, 0, 0, 0),
+             (1, 0, 0, 0),
+             (2, 0, 0, 0)]
+# what's going one with this?
 M78Ducker = M34Ducker
 
-duck34 = lambda peak, duckamount : Chain(Sustainer(peak), M78Ducker(duckamount)).filter
+
+def duck34(peak, duckamount):
+    return Chain(Sustainer(peak), M78Ducker(duckamount)).filter
 duck78 = duck34
 
 
 class FadeX(BaseFilter):
-    
+
     def __init__(self, min=0, max=127, step=1, tickrate=12, clock=None):
         self.clock = getClock(clock)
         self.min = min
@@ -236,7 +252,6 @@ class FadeOut(FadeX):
         return self.current, self.max
 
 
-
 class Sin(BaseFilter):
 
     min = 0
@@ -252,7 +267,11 @@ class Sin(BaseFilter):
     def filter(self, velocity, original=None):
         if original is None:
             original = velocity
-        velocity = self.center + self.amplitude * math.sin(self.frequency * self.clock.ticks + self.phase)
+        current = math.sin(self.frequency * self.clock.ticks + self.phase)
+        velocity = (
+            self.center +
+            self.amplitude * current
+        )
         velocity = max(self.min, int(velocity))
         velocity = min(velocity, self.max)
         return velocity, original
@@ -260,9 +279,10 @@ class Sin(BaseFilter):
 # backwards compat
 Sinusoid = Sin
 
+
 def _sawtooth(period, t):
     ft = float(t)
-    return 2 * (ft / period - math.floor(ft / period + 0.5))    
+    return 2 * (ft / period - math.floor(ft / period + 0.5))
 
 
 class Sawtooth(BaseFilter):
@@ -280,6 +300,7 @@ class Sawtooth(BaseFilter):
         velocity = _sawtooth(self.period, self.clock.ticks + self.phase)
         return int(self.center + self.amplitude * velocity), original
 
+
 class Triangle(Sawtooth):
 
     def __init__(self, amplitude, *p, **kw):
@@ -290,6 +311,5 @@ class Triangle(Sawtooth):
         if original is None:
             original = velocity
         velocity = abs(_sawtooth(self.period, self.clock.ticks + self.phase))
-        return int(self.center + self.amplitude * velocity - self._bump), original
-
-
+        velocity = int(self.center + self.amplitude * velocity - self._bump)
+        return velocity, original

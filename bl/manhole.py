@@ -1,10 +1,11 @@
-import binascii, base64
+import binascii
+import base64
 
 from zope.interface import implements
 
 from twisted.application import service, strports
 from twisted.cred import checkers, portal
-from twisted.conch import manhole, telnet
+from twisted.conch import telnet
 try:
     from twisted.conch import manhole_ssh, checkers as conchc
 except ImportError, ie:
@@ -19,8 +20,9 @@ from bl.console import consoleNamespace, FriendlyConsoleManhole
 
 # TODO
 # Beh ... don't know if we even want even ColoredManhole; the eventual
-# "idea" is to fork input to both the local console and a remote 
+# "idea" is to fork input to both the local console and a remote
 # manhole interpreter
+
 
 class FriendlyManhole(FriendlyConsoleManhole):
 
@@ -28,6 +30,7 @@ class FriendlyManhole(FriendlyConsoleManhole):
 
     def connectionLost(self, reason):
         pass
+
 
 class makeTelnetProtocol:
     # this curries the 'portal' argument into a later call to
@@ -38,6 +41,7 @@ class makeTelnetProtocol:
     def __call__(self):
         auth = telnet.AuthenticatingTelnetProtocol
         return telnet.TelnetTransport(auth, self.portal)
+
 
 class _TelnetRealm:
     implements(portal.IRealm)
@@ -71,7 +75,8 @@ if conchc:
                             return 1
                     except binascii.Error:
                         continue
-            return 0 
+            return 0
+
 
 class _BaseManhole(service.MultiService):
 
@@ -83,7 +88,6 @@ class _BaseManhole(service.MultiService):
         self.checker = checker
 
         def makeNamespace():
-            master = self.parent
             namespace = dict(consoleNamespace)
             return namespace
 
@@ -114,12 +118,13 @@ if manhole_ssh:
             c = AuthorizedKeysChecker(keyfile)
             _BaseManhole.__init__(self, port, c)
 
+
 class TelnetManhole(_BaseManhole):
 
     def __init__(self, port, username, password):
         self.username = username
         self.password = password
-        
+
         c = checkers.InMemoryUsernamePasswordDatabaseDontUse()
         c.addUser(username, password)
 

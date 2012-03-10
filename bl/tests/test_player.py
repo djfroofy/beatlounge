@@ -1,5 +1,5 @@
 import random
-from pprint import pformat
+#from pprint import pformat
 
 from itertools import cycle
 
@@ -7,8 +7,10 @@ from zope.interface.verify import verifyClass, verifyObject
 
 from twisted.trial.unittest import TestCase
 
-from bl.player import NotePlayer, ChordPlayer, SchedulePlayer, Player, noteFactory, N, R
-from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence, Q
+from bl.player import (
+    NotePlayer, ChordPlayer, SchedulePlayer, Player, noteFactory, N, R
+)
+from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence  # , Q
 from bl.player import Conductor, START
 from bl.player import explode, cut, callMemo
 from bl.scheduler import BeatClock, Meter, mtt
@@ -16,6 +18,7 @@ from bl.filters import BaseFilter, Stepper
 from bl.testlib import TestReactor, ClockRunner
 
 snd = noteFactory
+
 
 class TestInstrument:
 
@@ -53,19 +56,24 @@ class TestFilter(BaseFilter):
 class PlayerTests(TestCase, ClockRunner):
 
     def setUp(self):
-        self.meters = [ Meter(4,4), Meter(3,4) ]
+        self.meters = [Meter(4, 4), Meter(3, 4)]
         self.meterStandard = self.meters[0]
         self.meter34 = self.meters[1]
         self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
         self.notePlayerFilter = TestFilter(120)
-        self.notePlayer = NotePlayer(self.instr1, snd(cycle([0,1])), self.notePlayerFilter,
-                                     clock=self.clock, interval=0.25)
+        self.notePlayer = NotePlayer(self.instr1,
+                                        snd(cycle([0, 1])),
+                                        self.notePlayerFilter,
+                                        clock=self.clock,
+                                        interval=0.25)
         self.chordPlayerFilter = TestFilter(100)
-        self.chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3]])), self.chordPlayerFilter,
-                                     clock=self.clock, interval=0.125)
-
+        self.chordPlayer = ChordPlayer(self.instr2,
+                                        snd(cycle([[0, 1], [2, 3]])),
+                                        self.chordPlayerFilter,
+                                        clock=self.clock,
+                                        interval=0.125)
 
     def test_interfaces(self):
         verifyClass(INotePlayer, NotePlayer)
@@ -112,8 +120,11 @@ class PlayerTests(TestCase, ClockRunner):
         self.assertEquals(len(self.chordPlayerFilter.calls), 10)
 
     def test_stoppingNotes(self):
-        notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,2])), TestFilter(100),
-                                stop=lambda:2, clock=self.clock)
+        notePlayer = NotePlayer(self.instr1,
+                                snd(cycle([0, 1, 2])),
+                                TestFilter(100),
+                                stop=lambda: 2,
+                                clock=self.clock)
         for i in range(6):
             notePlayer.play()
             self.clock.tick()
@@ -122,26 +133,36 @@ class PlayerTests(TestCase, ClockRunner):
         self.assertEquals(self.instr1.stops, expectedStops)
 
     def test_stoppingChords(self):
-        chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3],[4,5]])), TestFilter(100),
-                                stop=lambda:2, clock=self.clock)
+        chordPlayer = ChordPlayer(self.instr2,
+                                snd(cycle([[0, 1], [2, 3], [4, 5]])),
+                                TestFilter(100),
+                                stop=lambda: 2,
+                                clock=self.clock)
         for i in range(6):
             chordPlayer.play()
             self.clock.tick()
-        expectedStops = [('chord', 2, [0, 1]), ('chord', 3, [2, 3]), ('chord', 4, [4, 5]),
-                         ('chord', 5, [0, 1]), ('chord', 6, [2, 3])]
+        expectedStops = [
+                        ('chord', 2, [0, 1]), ('chord', 3, [2, 3]),
+                        ('chord', 4, [4, 5]),
+                        ('chord', 5, [0, 1]), ('chord', 6, [2, 3])]
         self.assertEquals(self.instr2.stops, expectedStops)
 
     def test_PlayerIsAliasForNotePlayer(self):
         self.assertIdentical(Player, NotePlayer)
 
     def test_stopIsConvertedToFactory(self):
-        notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,2])), TestFilter(100),
-                                stop=2, clock=self.clock)
+        notePlayer = NotePlayer(self.instr1,
+                                snd(cycle([0, 1, 2])),
+                                TestFilter(100),
+                                stop=2,
+                                clock=self.clock)
         self.assertEquals(notePlayer.stop(), 2)
 
     def test_playSkipsNone(self):
-        notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,N])), TestFilter(100),
-                            clock=self.clock)
+        notePlayer = NotePlayer(self.instr1,
+                                snd(cycle([0, 1, N])),
+                                TestFilter(100),
+                                clock=self.clock)
         for i in range(6):
             notePlayer.play()
             self.clock.tick()
@@ -149,7 +170,7 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 0, 0, 100),
             ('note', 1, 1, 100),
             ('note', 3, 0, 100),
-            ('note', 4, 1, 100),]
+            ('note', 4, 1, 100)]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
     def test_playerExhaustsCallChain(self):
@@ -169,12 +190,11 @@ class PlayerTests(TestCase, ClockRunner):
             self.clock.tick()
         expectedPlays = [
             ('note', 0, 1, 100),
-            ('note', 1, 1, 100),]
+            ('note', 1, 1, 100)]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
-
     def test_generatorsAreWrapperInNoteFactory(self):
-        c = cycle([1,2])
+        c = cycle([1, 2])
         notePlayer = NotePlayer(self.instr1, c, TestFilter(100),
                             clock=self.clock)
         for i in range(3):
@@ -183,13 +203,14 @@ class PlayerTests(TestCase, ClockRunner):
         expectedPlays = [
             ('note', 0, 1, 100),
             ('note', 1, 2, 100),
-            ('note', 2, 1, 100),]
+            ('note', 2, 1, 100)]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
-
     def test_velocityGetsCalledEvenOnNoneNotes(self):
-        notePlayer = NotePlayer(self.instr1, snd(cycle([0,1,N])), Stepper([100, 90, 80]),
-                            clock=self.clock)
+        notePlayer = NotePlayer(self.instr1,
+                                snd(cycle([0, 1, N])),
+                                Stepper([100, 90, 80]),
+                                clock=self.clock)
         for i in range(6):
             notePlayer.play()
             self.clock.tick()
@@ -197,13 +218,12 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 0, 0, 100),
             ('note', 1, 1, 90),
             ('note', 3, 0, 100),
-            ('note', 4, 1, 90),]
+            ('note', 4, 1, 90)]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
     def test_valueErrorForBadNoteFactory(self):
-        self.assertRaises(ValueError, NotePlayer, self.instr1, '1234', TestFilter(100),
-                            clock=self.clock)
-
+        self.assertRaises(ValueError, NotePlayer, self.instr1, '1234',
+                                TestFilter(100), clock=self.clock)
 
     def test_startPlaying(self):
         self.notePlayer.startPlaying('a')
@@ -213,21 +233,19 @@ class PlayerTests(TestCase, ClockRunner):
                          ('note', 96, 0, 120)]
         self.assertEquals(self.instr1.plays, expectedPlays)
 
-
-
     def test_newVelocityFactory(self):
-        velocities = cycle([127,120,110,100])
+        velocities = cycle([127, 120, 110, 100])
+
         def v():
             return velocities.next()
-        notePlayer = NotePlayer(self.instr1, cycle([0,1]), v,
-                                clock=self.clock, interval=0.25)
+        notePlayer = NotePlayer(self.instr1, cycle([0, 1]), v,
+                                    clock=self.clock, interval=0.25)
         notePlayer.startPlaying('a')
         self.runTicks(96)
         expectedPlays = [('note', 0, 0, 127), ('note', 24, 1, 120),
                          ('note', 48, 0, 110), ('note', 72, 1, 100),
                          ('note', 96, 0, 127)]
         self.assertEquals(self.instr1.plays, expectedPlays)
-
 
     def test_startPlayingBeginsAtNextMeasure(self):
         self.runTicks(1)
@@ -251,20 +269,32 @@ class PlayerTests(TestCase, ClockRunner):
 class ConductorTests(TestCase, ClockRunner):
 
     def setUp(self):
-        self.meters = [ Meter(3,4) ]
+        self.meters = [Meter(3, 4)]
         self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
         self.instr3 = TestInstrument(self.clock)
-        self.notePlayer1 = NotePlayer(self.instr1, snd(cycle([0,1,2])), TestFilter(120),
-                                     clock=self.clock, interval=0.25)
-        self.notePlayer2 = NotePlayer(self.instr2, snd(cycle([3,4,5,6,7,8])), TestFilter(120),
-                                     clock=self.clock, interval=0.125)
-        self.chordPlayer = ChordPlayer(self.instr3, snd(cycle([[0,1],[2,3],[4,5]])), TestFilter(100),
-                                     clock=self.clock, interval=0.125)
-        score = { START : 'a',
-                 'a': { 'transitions': ['b'], 'players': [self.notePlayer1, self.notePlayer2], 'duration': 2},
-                 'b': { 'transitions': ['a'], 'players': [self.notePlayer1, self.chordPlayer], 'duration': 1} }
+        self.notePlayer1 = NotePlayer(self.instr1,
+                                    snd(cycle([0, 1, 2])),
+                                    TestFilter(120),
+                                    clock=self.clock, interval=0.25)
+        self.notePlayer2 = NotePlayer(self.instr2,
+                                    snd(cycle([3, 4, 5, 6, 7, 8])),
+                                    TestFilter(120),
+                                    clock=self.clock, interval=0.125)
+        self.chordPlayer = ChordPlayer(self.instr3,
+                                    snd(cycle([[0, 1], [2, 3], [4, 5]])),
+                                    TestFilter(100),
+                                    clock=self.clock, interval=0.125)
+        score = {
+            START: 'a',
+            'a': {'transitions': ['b'],
+                    'players': [self.notePlayer1, self.notePlayer2],
+                    'duration': 2},
+            'b': {'transitions': ['a'],
+                    'players': [self.notePlayer1, self.chordPlayer],
+                    'duration': 1}
+        }
         self.score = score
         self.conductor = Conductor(score, self.clock)
 
@@ -319,7 +349,6 @@ class ConductorTests(TestCase, ClockRunner):
                      ('chord', 276, [4, 5], 100)]
         self.assertEquals(self.instr3.plays, expected3)
 
-
     def test_hold(self):
         self.conductor.start()
         self.runTicks(144 + 72 + 24)
@@ -349,22 +378,25 @@ class ConductorTests(TestCase, ClockRunner):
         self.assertEquals(self.conductor.currentNode['key'], 'a')
 
 
-
 class SchedulePlayerTests(TestCase, ClockRunner):
 
     def setUp(self):
-        self.meters = [ Meter(4,4), Meter(3,4) ]
+        self.meters = [Meter(4, 4), Meter(3, 4)]
         self.clock = BeatClock(135, meters=self.meters, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
         self.instr3 = TestInstrument(self.clock)
-        self.schedulePlayer1 = SchedulePlayer(self.instr1, self.scheduleFactory,
-                                               interval=1, clock=self.clock)
-        self.schedulePlayer2 = SchedulePlayer(self.instr2, self.chordScheduleFactory,
-                                               interval=1, clock=self.clock, type='chord')
+        self.schedulePlayer1 = SchedulePlayer(self.instr1,
+                                            self.scheduleFactory,
+                                            interval=1, clock=self.clock)
+        self.schedulePlayer2 = SchedulePlayer(self.instr2,
+                                            self.chordScheduleFactory,
+                                            interval=1, clock=self.clock,
+                                            type='chord')
         self._callables = None
-        self.schedulePlayer3 = SchedulePlayer(self.instr3, self.factoryWithCallables,
-                                               interval=1, clock=self.clock)
+        self.schedulePlayer3 = SchedulePlayer(self.instr3,
+                                            self.factoryWithCallables,
+                                            interval=1, clock=self.clock)
 
     def scheduleFactory(self):
         return [
@@ -374,9 +406,9 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def chordScheduleFactory(self):
         return [
-            (mtt(0.000), [60,64,47], 95, mtt(1.00)),
-            (mtt(0.250), [48,52,55], 70, mtt(0.50)),
-            (mtt(0.875), [36,39,43], 93, mtt(0.25)), ]
+            (mtt(0.000), [60, 64, 47], 95, mtt(1.00)),
+            (mtt(0.250), [48, 52, 55], 70, mtt(0.50)),
+            (mtt(0.875), [36, 39, 43], 93, mtt(0.25)), ]
 
     def factoryWithCallables(self):
         if self._callables:
@@ -384,7 +416,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         when = cycle([mtt(0.25), cycle([mtt(0.5), mtt(0.75)]).next]).next
         note = cycle([64, cycle([67, 69]).next]).next
         velocity = cycle([100, cycle([80, 90]).next]).next
-        sustain = cycle([mtt(0.5), cycle([mtt(0.125),mtt(0.25)]).next]).next
+        sustain = cycle([mtt(0.5), cycle([mtt(0.125), mtt(0.25)]).next]).next
         self._callables = [
             (mtt(0), 60, 127, mtt(0.25)),
             (when, note,  velocity, sustain)]
@@ -392,7 +424,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def test_schedule_player_notes(self):
         self.schedulePlayer1.startPlaying()
-        self.runTicks(96*2-1)
+        self.runTicks(96 * 2 - 1)
         self.assertEquals(self.instr1.plays, [
              ('note', 0, 60, 95),
              ('note', 24, 64, 70),
@@ -408,7 +440,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def test_schedule_player_chords(self):
         self.schedulePlayer2.startPlaying()
-        self.runTicks(96*2-1)
+        self.runTicks(96 * 2 - 1)
         self.assertEquals(self.instr2.plays, [
              ('chord', 0, [60, 64, 47], 95),
              ('chord', 24, [48, 52, 55], 70),
@@ -424,7 +456,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def test_callables_in_schedule(self):
         self.schedulePlayer3.startPlaying()
-        self.runTicks(96*4-1)
+        self.runTicks(96 * 4 - 1)
         self.assertEquals(self.instr3.plays, [
              ('note', 0, 60, 127),
              ('note', 24, 64, 100),
@@ -447,7 +479,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         self.schedulePlayer1.startPlaying()
         self.runTicks(24)
         self.schedulePlayer1.stopPlaying()
-        self.runTicks(72+96)
+        self.runTicks(72 + 96)
         self.assertEquals(self.instr1.plays,
             [('note', 0, 60, 95),
              ('note', 24, 64, 70),
@@ -455,14 +487,13 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def test_schedule_player_with_bad_type(self):
         self.assertRaises(ValueError, SchedulePlayer,
-            self.instr1, lambda : [], 1, self.clock, 'bad')
-
+            self.instr1, lambda: [], 1, self.clock, 'bad')
 
     def test_schedule_is_generative(self):
         def gen():
             for i in range(12):
-                yield (0 + i * 6, (5 * i) % 12, 100+i, 24)
-        schedulePlayer = SchedulePlayer(self.instr1, lambda : gen(),
+                yield (0 + i * 6, (5 * i) % 12, 100 + i, 24)
+        schedulePlayer = SchedulePlayer(self.instr1, lambda: gen(),
                                         interval=1, clock=self.clock)
         schedulePlayer.startPlaying()
         self.runTicks(96)
@@ -496,26 +527,26 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         self.assertEquals(self.instr1.stops, expected_stops)
 
 
-
-
-
 class UtilityTests(TestCase):
 
     def test_noteFactory(self):
-        g = noteFactory(cycle([1,2,3, lambda : 4]))
+        g = noteFactory(
+            cycle([1, 2, 3, lambda: 4])
+        )
         snds = []
         for i in range(8):
             snds.append(g())
-        self.assertEquals(snds, [1,2,3,4] * 2)
+        self.assertEquals(snds, [1, 2, 3, 4] * 2)
 
     def test_miscFactories(self):
         self.assertEquals(N(), None)
-        self.assert_(R(1,2,3)() in [1,2,3])
+        self.assert_(R(1, 2, 3)() in [1, 2, 3])
 
     def test_randomPhrases(self):
 
-        phrases = [(1,2,3),(4,5,6),(7,8,9)]
+        phrases = [(1, 2, 3), (4, 5, 6), (7, 8, 9)]
         chosen = [phrases[0]]
+
         def choose(phrases):
             self.assertIn(chosen[0], phrases)
             return chosen[0]
@@ -533,30 +564,28 @@ class UtilityTests(TestCase):
         self.assertEquals(g.next(), 7)
         self.assertEquals(g.next(), 8)
 
-
     def test_randomPhrasesLength(self):
-        g = randomPhrase(3, (1,2,3), (4,5,6))
-
-        self.assertRaises(ValueError, randomPhrase, 4, (1,2,3,4), (5,6,7,8,9))
+        g = randomPhrase(3, (1, 2, 3), (4, 5, 6))
+        self.assertRaises(ValueError, randomPhrase, 4, (1, 2, 3, 4),
+                                                       (5, 6, 7, 8, 9))
 
         def choose(phrases):
-            self.assertEquals(phrases, ((1,2,3), (4,5,6)))
-            return (1,2,3)
+            self.assertEquals(phrases, ((1, 2, 3),  (4, 5, 6)))
+            return (1, 2, 3)
         self.patch(random, 'choice', choose)
         g.next()
 
-
     def test_sequence(self):
-        notes = sequence([(1, 0),(2, 2),(3, 4),(4, 6)], 8)
-        self.assertEquals(notes, [1,N,2,N,3,N,4,N])
+        notes = sequence([(1, 0), (2, 2), (3, 4), (4, 6)], 8)
+        self.assertEquals(notes, [1, N, 2, N, 3, N, 4, N])
         notes = sequence([(3, 4)], 8)
-        self.assertEquals(notes, [N,N,N,N,3,N,N,N])
+        self.assertEquals(notes, [N, N, N, N, 3, N, N, N])
 
-        chords = sequence([((1,2,3),2),([4,5],4)], 8)
-        self.assertEquals(chords, [N,N,(1,2,3),N,[4,5],N,N,N])
+        chords = sequence([((1, 2, 3), 2), ([4, 5], 4)], 8)
+        self.assertEquals(chords, [N, N, (1, 2, 3), N, [4, 5], N, N, N])
 
         # semiquaver triplet
-        notes = sequence([(4,3),(5,5),(1,21),(2,22),(3,23)], 24)
+        notes = sequence([(4, 3), (5, 5), (1, 21), (2, 22), (3, 23)], 24)
         self.assertEquals(notes,
             [N,N,N, 4,N,5,
              N,N,N, N,N,N,
@@ -564,7 +593,7 @@ class UtilityTests(TestCase):
              N,N,N, 1,2,3])
 
     def test_explode(self):
-        s = [1,2,3,4]
+        s = [1, 2, 3, 4]
         exploded = explode(s)
         self.assertEquals(exploded, [1, N, 2, N, 3, N, 4, N])
         exploded = explode(s, 4)
