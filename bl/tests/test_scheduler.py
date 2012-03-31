@@ -115,9 +115,9 @@ class ClockTests(TestCase, ClockRunner):
         t = self.clock.ticks
         self.clock.schedule(instr2).startAfterTicks(nm(t,1)-t, n(1,3))
         self._runTicks(96 * 2)
-        expected = [(216, 'f1'), (240, 'f1'), (264, 'f1'), (288, 'f2'), (288, 'f1'),
-                    (312, 'f1'), (320, 'f2'), (336, 'f1'), (352, 'f2'), (360, 'f1'),
-                    (384, 'f2'), (384, 'f1')]
+        expected = [(216, 'f1'), (240, 'f1'), (264, 'f1'), (288, 'f2'),
+                    (288, 'f1'), (312, 'f1'), (320, 'f2'), (336, 'f1'),
+                    (352, 'f2'), (360, 'f1'), (384, 'f2'), (384, 'f1')]
         self.assertEquals(called, expected)
 
     def test_startAfter(self):
@@ -126,7 +126,7 @@ class ClockTests(TestCase, ClockRunner):
         instr1 = TestInstrument('f1', self.clock, called)
 
 
-        self.clock.schedule(instr1).startAfter(0, (1,4))
+        self.clock.schedule(instr1).startAfter((0,1), (1,4))
         self._runTicks(96 * 2)
 
         expected = [(0, 'f1'), (24, 'f1'), (48, 'f1'), (72, 'f1'), (96, 'f1'),
@@ -137,11 +137,11 @@ class ClockTests(TestCase, ClockRunner):
 
         instr2 = TestInstrument('f2', self.clock, called)
 
-        self.clock.schedule(instr2).startAfter(1, (1,3))
+        self.clock.schedule(instr2).startAfter((1,1), (1,3))
         self._runTicks(96 * 2)
-        expected = [(216, 'f1'), (240, 'f1'), (264, 'f1'), (288, 'f2'), (288, 'f1'),
-                    (312, 'f1'), (320, 'f2'), (336, 'f1'), (352, 'f2'), (360, 'f1'),
-                    (384, 'f2'), (384, 'f1')]
+        expected = [(216, 'f1'), (240, 'f1'), (264, 'f1'), (288, 'f2'),
+                    (288, 'f1'), (312, 'f1'), (320, 'f2'), (336, 'f1'),
+                    (352, 'f2'), (360, 'f1'), (384, 'f2'), (384, 'f1')]
         self.assertEquals(called, expected)
 
 
@@ -156,7 +156,8 @@ class ClockTests(TestCase, ClockRunner):
         t = self.clock.ticks
         tempo = self.clock.tempo
 
-        self.clock.schedule(instr1).startAfterTicks(nm(t, 1), n(1,4)).stopAfterTicks(nm(t, 3) + n(1,2))
+        self.clock.schedule(instr1).startAfterTicks(nm(t, 1), n(1,4)
+                ).stopAfterTicks(nm(t, 3) + n(1,2))
         self._runTicks(96 * 5)
         expected = [
             (96,  'f1'),
@@ -174,6 +175,18 @@ class ClockTests(TestCase, ClockRunner):
         self.assertEquals(len(called), len(expected))
         self.assertEquals(called, expected)
 
+    def test_stopAfter(self):
+        called = []
+
+        instr1 = TestInstrument('f1', self.clock, called)
+
+
+        self.clock.schedule(instr1).startAfter((0,1), (1,4)).stopAfter((2,1))
+        self._runTicks(96 * 3)
+
+        expected = [(0, 'f1'), (24, 'f1'), (48, 'f1'), (72, 'f1'), (96, 'f1'),
+                    (120, 'f1'), (144, 'f1'), (168, 'f1'),]
+        self.assertEquals(called, expected)
 
     def test_setTempo(self):
         self.clock.setTempo(Tempo(60))
@@ -186,17 +199,19 @@ class ClockTests(TestCase, ClockRunner):
         self.assertEquals(60. / self.clock.tempo.tpm, interval_before / 2.)
         self.clock.task.stop()
 
-
     def test_nudge(self):
         self.clock.startTicking()
         self.clock.nudge()
         self.assertEquals(self.clock.reactor.scheduled,
-            [(0.1, self.clock.task.start, (60. / self.clock.tempo.tpm, True), {})])
+            [(0.1, self.clock.task.start, (60. / self.clock.tempo.tpm, True),
+             {})])
         self.clock.task.start(1, True)
         self.clock.nudge(pause=0.5)
         self.assertEquals(self.clock.reactor.scheduled,
-            [(0.1, self.clock.task.start, (60. / self.clock.tempo.tpm, True), {}),
-             (0.5, self.clock.task.start, (60. / self.clock.tempo.tpm, True), {})])
+            [(0.1, self.clock.task.start, (60. / self.clock.tempo.tpm, True),
+             {}),
+             (0.5, self.clock.task.start, (60. / self.clock.tempo.tpm, True),
+             {})])
 
 
 class TempoTests(TestCase):

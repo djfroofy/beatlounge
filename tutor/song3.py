@@ -10,6 +10,9 @@ from bl.scheduler import clock
 
 from tutor.complib import bass_f, kit_f
 
+
+dtt = clock.meter.dtt
+
 notes = Adder(RandomArp())
 notes.reset([60, 60, 62, 60, 60, 60, 60, 61, 48, 50, 60, 60, 60, 60, 60, 71, 60,
              60,60,60,60,60,60,50])
@@ -22,7 +25,7 @@ kit = kit_f()
 layer = Layer([bass, kit])
 
 player = Player(layer, notes, velocity, stop=lambda: random.randint(12,60),
-                interval=0.0625)
+                interval=dtt(1,16))
 player.startPlaying()
 
 
@@ -32,7 +35,7 @@ keys = cycle([-18] * 8 + [-18,-37,-18,-37] * 4 + [-18,-26,-18,-26,-37,-26,-18])
 def change_key():
     notes.amount = keys.next()
 change_key_event = clock.schedule(change_key)
-change_key_event.startLater(1, 1)
+change_key_event.startAfter((1,1), (1,1))
 
 
 # TODO say some things with some enthusiasm ... late

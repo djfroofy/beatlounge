@@ -255,7 +255,6 @@ class PlayerTests(TestCase, ClockRunner):
 
     def test_stopPlaying(self):
         self.notePlayer.startPlaying('a')
-        #self.runTicks(7)
         self.notePlayer.stopPlaying('a')
         self.runTicks(96 * 2)
         expectedPlays = [('note', 0, 0, 120), ('note', 24, 1, 120),

@@ -22,8 +22,10 @@ import random
 from itertools import cycle
 
 from bl.player import Player, R, N
+from bl.scheduler import clock
 from tutor.complib import piano_f
 
+dtt = clock.meter.dtt
 
 # VS: "Ja let's use meine convenience function ... instead"
 #
@@ -58,7 +60,7 @@ velocity = cycle([120, 80, 89, 83]).next
 # played). The interval is the interval between note plays.
 
 player = Player(piano, notes, velocity, stop=lambda: random.randint(12, 48),
-                interval=0.25)
+                interval=dtt(1,8))
 
 
 player.startPlaying()

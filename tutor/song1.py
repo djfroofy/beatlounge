@@ -58,7 +58,7 @@ def hitsomenote():
 
 
 event = clock.schedule(hitsomenote)
-event.startAfter(1, (1,8))
+event.startAfter((1,1), (1,8))
 
 
 # Now try this exercise from the shell.

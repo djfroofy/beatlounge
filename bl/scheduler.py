@@ -466,29 +466,18 @@ class ScheduledEvent(object):
         return self
 
 
-    def startAfter(self, measures=1, interval=(1,4), n=0, d=4):
+    def startAfter(self, divisions=(1,1), interval=(1,4)):
         """
-        Start event after measures and division (n/d). Interval is a two-tuple
-        expression interval (e.g. (1,4) for every quarter note). This will
-        calculate ticks based on active meter (the meter assigned to the clock
-        this schedule event was generated from) and call startAfterTicks().
         """
         meter = self.clock.meter
-        ticks = self._measures(measures, n, d)
+        ticks = self._divisions(divisions)
         self.startAfterTicks(ticks, meter.dtt(interval[0], interval[1]))
+        return self
 
-    def _measures(self, measures, n, d):
+    def _divisions(self, divisions):
         meter = self.clock.meter
-        ticks = None
-        if measures == 0:
-            m = meter.measure(self.clock.ticks) * meter.ticksPerMeasure
-            if self.clock.ticks > m:
-                measures = 1
-            else:
-                ticks = 0
-        if ticks is None:
-            ticks = (meter.nm(self.clock.ticks, measures) + meter.dtt(n,d)
-                     - self.clock.ticks)
+        ticks = (meter.nd(self.clock.ticks, divisions[0], divisions[1]) -
+                    self.clock.ticks)
         return ticks
 
     def start(self, ticks=None, now=True):
@@ -520,15 +509,13 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_schedule_stop)
         return self
 
-    def stopAfter(self, measures=1, n=0, d=4):
+    def stopAfter(self, divisions=(1,1)):
         """
-        Stop event after measures and division (n/d). This will calculate ticks
-        based on active meter (the meter assigned to the clock this schedule
-        event was generated from) and call stopAfterTicks().
         """
         meter = self.clock.meter
-        ticks = self._measures(measures, n, d)
+        ticks = self._divisions(divisions)
         self.stopAfterTicks(ticks)
+        return self
 
     def stop(self):
         """
@@ -537,6 +524,7 @@ class ScheduledEvent(object):
         """
         if hasattr(self, 'task') and self.task.running:
             self.task.stop()
+        return self
 
 
 clock = BeatClock()
