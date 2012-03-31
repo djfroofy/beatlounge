@@ -73,7 +73,6 @@ class MeterTests(TestCase):
         self.assertEquals(beats, data.measure_98_beats)
 
 
-
 class ClockTests(TestCase, ClockRunner):
 
 
@@ -81,7 +80,8 @@ class ClockTests(TestCase, ClockRunner):
         self.meters = [ Meter(4,4), Meter(3,4) ]
         self.meterStandard = self.meters[0]
         self.meter34 = self.meters[1]
-        self.clock = BeatClock(Tempo(135), meters=self.meters, reactor=TestReactor())
+        self.clock = BeatClock(Tempo(135), meters=self.meters,
+                               reactor=TestReactor())
 
 
     def test_defaultMeterIsStandard(self):

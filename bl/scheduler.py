@@ -89,6 +89,7 @@ class Meter(object):
     based on ticks, ticks into the current measure, etc.
     """
     strict = True
+    clock = None
 
     def __init__(self, length=4, division=4, number=1, tempo=TEMPO_120_24):
         self.length = length
@@ -272,7 +273,6 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         if hasattr(self, 'task'):
             self.task.stop()
             self.task.start(60. / self.tempo.tpm, True)
-
         if self.syncClock:
             lasttick, ignore = self.syncClock.lastTick()
             self.ticks = lasttick
@@ -419,9 +419,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     def callAfterMeasures(self, measures, f, *a, **kw):
         """
-        Call a function after measures have elapsed.  Measures can be a float
-        or 2-tuple (see measuresToTicks for details on how measures are
-        converted to ticks).
+        Call a function after measures have elapsed
 
         @param measures: Measures to wait before calling f
         @param f: A callable
@@ -476,6 +474,11 @@ class ScheduledEvent(object):
         this schedule event was generated from) and call startAfterTicks().
         """
         meter = self.clock.meter
+        ticks = self._measures(measures, n, d)
+        self.startAfterTicks(ticks, meter.dtt(interval[0], interval[1]))
+
+    def _measures(self, measures, n, d):
+        meter = self.clock.meter
         ticks = None
         if measures == 0:
             m = meter.measure(self.clock.ticks) * meter.ticksPerMeasure
@@ -486,7 +489,7 @@ class ScheduledEvent(object):
         if ticks is None:
             ticks = (meter.nm(self.clock.ticks, measures) + meter.dtt(n,d)
                      - self.clock.ticks)
-        self.startAfterTicks(ticks, meter.dtt(interval[0], interval[1]))
+        return ticks
 
     def start(self, ticks=None, now=True):
         """
@@ -524,7 +527,7 @@ class ScheduledEvent(object):
         event was generated from) and call stopAfterTicks().
         """
         meter = self.clock.meter
-        ticks = meter.nm(measures) + meter.dtt(n,d) - self.clock.ticks
+        ticks = self._measures(measures, n, d)
         self.stopAfterTicks(ticks)
 
     def stop(self):
@@ -537,4 +540,5 @@ class ScheduledEvent(object):
 
 
 clock = BeatClock()
+Meter.clock = clock
 
