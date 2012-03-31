@@ -17,7 +17,7 @@ __all__ = ['IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
     'StepSequencer', 'weighted', 'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E',
     'quaver', 'sixteenth', 'S', 'semiquaver', 'thirtysecond', 'T',
     'demisemiquaver', 'sequence', 'seq', 'cut', 'explode', 'lcycle',
-    'Conductor', 'START', 'callMemo', 'cm', 'Weight', 'W', 'SchedulePlayer'
+    'callMemo', 'cm', 'Weight', 'W', 'SchedulePlayer'
 ]
 
 
@@ -168,8 +168,6 @@ class ChordPlayer(BasePlayer):
     def _next(self):
         return self.chordFactory()
 
-START = None
-
 
 class SchedulePlayer(PlayableMixin):
     """
@@ -188,38 +186,7 @@ class SchedulePlayer(PlayableMixin):
     All of the above may also be a callable (possibly chaining other callables
     as well).
 
-    Here is a simple example:
-
-        def simpleScheduleFactory():
-            return [
-                (mtt(0.000), 60, 95, mtt(1.00)),
-                (mtt(0.250), 64, 70, mtt(0.50)),
-                (mtt(0.875), 48, 93, mtt(0.25)), ]
-
-        player = scheduleFactory(instr, simpleScheduleFactory, interval=1)
-        player.startPlaying()
-
-    With the above setup, the player will, on every measure:
-
-        * play note 60 (middle C) on the first quarter note with velocity 95
-          and sustain for 1 measure
-        * play note 64 on the second quater with velocity 70 and sustain for a
-          half duration
-        * play note 48 on the last eighth with velocity 93 and sustain for a
-          quarter duration.
-
-    Schedules can also be generated, rather than returning a pre-computed list.
-    Take the following example:
-
-        def gen():
-            when = 0
-            notes = cycle([60, 64, 67, 62])
-            while 1:
-                yield (when, notes.next(), 120, 24)
-                when += 24
-
-        player = SchedulePlayer(instr, lambda: gen())
-        clock.callAfterMeasures(1, player.play)
+    TODO Rewrite example without using obsolete mtt() function
     """
 
     def __init__(self, instr, scheduleFactory, interval=0.25, clock=None,
@@ -275,92 +242,6 @@ class SchedulePlayer(PlayableMixin):
                 else:
                     self.clock.callLater(
                         delta, self._advance, when, schedule, event)
-
-
-class Conductor(object):
-    """
-    A Conductor plays a score graphs which consists of nodes.
-    Each node has:
-
-        * The duration in measures to play a node,
-        * A list of players (IPlayable) to start and stop after the duration
-        * A list of other keys in the graph to randomly transtition to.
-        * Which node to start on (START)
-
-    The length of the measure is determined by the supplied clock's (or the
-    default global clock's) default Meter (i.e. clock.meters[0]).
-
-    An example score graph and conductor:
-
-        score = { START: 'a',
-                 'a': { 'players' : [player1, player2],
-                        'duration': 2,
-                        'transitions' : ['a', 'b']},
-                 'b': { 'players' : [player1, player3],
-                        'duration': 1,
-                        'transitions' : ['a']} }
-        conductor = Conductor(score)
-        conductor.start()
-
-    In the above example, the conductor once started will play player1 and
-    player2 for 2 measures, then transition to itself or the next node 'b' with
-    50/50 chance of either.  When node 'b' is stated player1 and player3 with
-    play for one measure and then always transition back to 'a'.
-    """
-
-    def __init__(self, scoreGraph, clock=None):
-        warn('Conductor is broken right now. Sorry about that. Might be removed, recoded.')
-        self.clock = getClock(clock)
-        self.scoreGraph = scoreGraph
-        self.currentNode = {'players': ()}
-        self.nextNode = self.currentNode
-        self._hold = None
-
-    def start(self):
-        """
-        Start the conductor.
-
-        (Note that the actual start time is generally after two measures a 1
-        measure pause to resume at the start of the next measure and then an
-        additional measure before the the players begin after the initial call
-        to startPlaying())
-        """
-        node = self.scoreGraph[START]
-        self.clock.callAfterMeasures(1, self._resume, node)
-
-    def _resume(self, node):
-        if self._hold:
-            node = self._hold
-        if node is None:
-            node = random.choice(self.currentNode['transitions'])
-        next = self.scoreGraph[node]
-        if DEBUG:
-            log.msg('[Conductor] transitioning %s' % next)
-        self._duration = duration = next["duration"]
-        for player in next['players']:
-            player.startPlaying(node)
-        self.currentNode = next
-        self.currentNode['key'] = node
-        self.clock.callAfterMeasures(duration - 1, self._stop, node)
-        self.clock.callAfterMeasures(duration, self._resume, None)
-
-    def _stop(self, node):
-        for player in self.currentNode.get('players', ()):
-            player.stopPlaying(node)
-
-    def hold(self):
-        """
-        Stop transitioning and continue playing current node for blocks of
-        measures given by the current node's duration.  After calling
-        release(), the conductor will resume regular transitioning.
-        """
-        self._hold = self.currentNode['key']
-
-    def release(self):
-        """
-        Continue transitioning - don't hold current node anymore.
-        """
-        self._hold = None
 
 
 def noteFactory(g):
