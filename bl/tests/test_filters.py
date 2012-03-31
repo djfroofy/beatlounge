@@ -3,7 +3,7 @@ from itertools import cycle
 from twisted.trial.unittest import TestCase
 
 from bl import filters
-from bl.scheduler import Meter, BeatClock
+from bl.scheduler import Meter, BeatClock, Tempo
 from bl.player import callMemo
 from bl.testlib import TestReactor
 from bl.tests import data
@@ -22,7 +22,7 @@ WeightNote = filters.WeightNote
 class FiltersTests(TestCase):
 
     def setUp(self):
-        self.clock = BeatClock(135, reactor=TestReactor())
+        self.clock = BeatClock(Tempo(135), reactor=TestReactor())
         self.sustainer = Sustainer(120)
         self.passthru = PassThru()
         self.ducker = StandardDucker(10, clock=self.clock)
@@ -39,7 +39,7 @@ class FiltersTests(TestCase):
         self.assertEquals(original, 127)
 
     def test_ducker(self):
-        
+
         for tick in (0,24,48,72):
             self.clock.ticks = tick
             velocity, original = self.ducker.filter(127, 127)
@@ -59,7 +59,7 @@ class FiltersTests(TestCase):
 
 
     def test_chain(self):
-        
+
         for tick in (0,24,48,72):
             self.clock.ticks = tick
             velocity, original = self.chain.filter(127)
@@ -78,7 +78,7 @@ class FiltersTests(TestCase):
         velocity, original = self.passthru.filter(60, 70)
         self.assertEquals(velocity, 60)
         self.assertEquals(original, 70)
-   
+
 
     def test_fadein(self):
         self.clock.ticks = 0
@@ -100,7 +100,7 @@ class FiltersTests(TestCase):
             self.assertEquals(velocity, 30)
             self.assertEquals(original, 30)
             self.clock.ticks += 1
-    
+
     def test_fadeout(self):
         self.clock.ticks = 0
 
@@ -178,4 +178,4 @@ class FiltersTests(TestCase):
         notes()
         v = wn(60, 120)
         self.assertEquals(v, (63, 120))
-        
+
