@@ -66,11 +66,14 @@ class PlayableMixin(object):
 
     def stopPlaying(self, node=None):
         se = self._playSchedule
+
+
         # Stop one tick before the next measure - This means if you try to
         # schedule something at a granularity of 1 you're kind of screwed -
         # though I'm not sure of a nicer way to prevent the non-determinism on
         # something stopping before it starts again when the stop and start are
         # scheduled for the same tick
+
         ticksd = self.clock.ticks % self.meter.ticksPerMeasure
         ticks = self.meter.ticksPerMeasure - 1 - ticksd
         self.clock.callLater(ticks, se.stop)

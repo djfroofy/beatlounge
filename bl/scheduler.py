@@ -22,6 +22,7 @@ __all__ = ['Tempo', 'Beat', 'Meter', 'standardMeter', 'BeatClock',
 _BeatBase = namedtuple('_BeatBase',
                        'measure quarter eighth sixteenth remainder')
 
+
 class Tempo(object):
     """
     Tempo gives the tempo in 3 forms for ready access:
@@ -65,7 +66,8 @@ class Beat(_BeatBase):
 
         (measure no, quarter no, eigth number no, sixteenth no, remaning ticks)
 
-    If we are on the 15th semiquaver of the 2nd measure for example, then the Beat would be:
+    If we are on the 15th semiquaver of the 2nd measure for example,
+    the Beat would be:
 
         (1, 3, 1, 1, 0)
 
@@ -289,8 +291,11 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             self.reactor.run()
 
     def _initBackends(self):
+
+
         # XXX this should be refactored some - make backends pluggable and
         # indicate which to start from a command line, etc.
+
         try:
             from bl.instrument import fsynth
             if self.synthChannels == 'stereo':

@@ -324,8 +324,11 @@ class NoteEventHandler(MidiHandler):
         """
         Call noteonCallback with the note and velocity.
         """
-        # todo - maybe do something smarter with the timestamp
+
+
+        # TODO - maybe do something smarter with the timestamp
         # ... like normalize to ticks
+
         self.noteonCallback(note, velocity)
 
     def noteoff(self, channel, note, velocity, timestamp):
@@ -360,8 +363,11 @@ class ClockSender(object):
             n(1,96))
 
     def __call__(self):
-        # where are TIMINGCLOCK, START defined?
-        # @cleanup
+
+
+        # START and TIMINGCLOCK are added to globals during module
+        # initialization - see a() defined and deleted above.
+
         if not self._started:
             self.midiOut.Write([[[START], pypm.Time()]])
             self._started = True

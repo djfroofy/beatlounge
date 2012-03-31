@@ -12,15 +12,23 @@ from twisted.internet import stdio, defer
 from twisted.conch.stdio import ServerProtocol, ConsoleManhole
 from twisted.python import log, usage
 from twisted.python.filepath import FilePath
-#from twisted.python import failure, reflect, log, usage
-#from twisted.conch.recvline import HistoricRecvLine
 
 from bl.scheduler import Tempo, BeatClock, Meter, standardMeter
 
+
 __all__ = ['FriendlyConsoleManhole']
 
-# Todo - make this an opt flag instead
+
+# TODO - make this an opt flag instead
+
 EXPERIMENTAL = False
+
+if sys.platform == 'darwin':
+    defaultAudioDev = 'coreaudio'
+elif sys.platform == 'linux2':
+    defaultAudioDev = 'alsa'
+else:
+    defaultAudioDev = 'portaudio'
 
 if sys.platform == 'darwin':
     defaultAudioDev = 'coreaudio'
@@ -33,6 +41,7 @@ else:
 def toMeter(s, tempo):
     count, division = s.split('/')
     return Meter(int(count), int(division), tempo=tempo)
+
 
 class Options(usage.Options):
     optParameters = [
@@ -210,7 +219,6 @@ class FriendlyConsoleManhole(ConsoleManhole):
 
 
 try:
-
     from twisted.conch.ssh import channel, session, keys, connection
     from twisted.conch.client import default, connect, options
     from twisted.conch.client.knownhosts import KnownHostsFile
@@ -272,9 +280,7 @@ try:
                 self.sendEOF()
 
             client = session.SSHSessionClient()
-            #client.dataReceived = dataReceived
             client.connectionLost = connectionLost
-
             conn.console.session = self
 
             # tty voodoo magic (my head is officially fucking hurting)
@@ -351,6 +357,6 @@ def main(argv=None, reactor=None):
     runWithProtocol(klass, opts['audiodev'], opts['channels'], opts['bpm'],
                     opts['tpb'], opts['meter'])
 
+
 if __name__ == '__main__':
     main()
-

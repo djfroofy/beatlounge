@@ -1,5 +1,4 @@
 import random
-#from pprint import pformat
 
 from itertools import cycle
 
@@ -7,10 +6,9 @@ from zope.interface.verify import verifyClass, verifyObject
 
 from twisted.trial.unittest import TestCase
 
-from bl.player import (
-    NotePlayer, ChordPlayer, SchedulePlayer, Player, noteFactory, N, R
-)
-from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence  # , Q
+from bl.player import (NotePlayer, ChordPlayer, SchedulePlayer, Player,
+                       noteFactory, N, R)
+from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence
 from bl.player import Conductor, START
 from bl.player import explode, cut, callMemo
 from bl.scheduler import BeatClock, Meter, Tempo
@@ -42,6 +40,7 @@ class TestInstrument:
 
 # TODO - refactor to use normal velocity filter
 # since filters are deprecated
+
 class TestFilter(BaseFilter):
 
     def __init__(self, sustain):
@@ -378,7 +377,6 @@ class ConductorTests(TestCase, ClockRunner):
         self.runTicks(72)
         self.assertEquals(self.instr3.plays, self._expected_held)
         self.assertEquals(self.conductor.currentNode['key'], 'a')
-
 
     test_release.todo = 'shit got brokeded'
 
