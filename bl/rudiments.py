@@ -2,11 +2,14 @@ from zope.interface import implements, Interface, Attribute
 
 import itertools
 
+
 __all__ = ['IRudiment', 'IDoubleStrokeOpenRoll', 'IFlam', 'FiveStrokeRoll',
-    'SixStrokeRoll', 'Flam', 'Flam32', 'Flam64', 'FlamAccent', 'FlamAccent32', 'FlamAccent64',
-    'FlamTap', 'FlamTap32', 'FlamTap64', 'Flamacue', 'Flamacue32', 'Flamacue64',
-    'InvertedFlamTap', 'InvertedFlamTap32', 'InvertedFlamTap64',
-    'strokeGenerator', 'timeGenerator', 'generator', 'chainRudiments']
+    'SixStrokeRoll', 'Flam', 'Flam32', 'Flam64', 'FlamAccent', 'FlamAccent32',
+    'FlamAccent64', 'FlamTap', 'FlamTap32', 'FlamTap64', 'Flamacue',
+    'Flamacue32', 'Flamacue64', 'InvertedFlamTap', 'InvertedFlamTap32',
+    'InvertedFlamTap64', 'strokeGenerator', 'timeGenerator', 'generator',
+    'chainRudiments']
+
 
 class IRudiment(Interface):
     """
@@ -15,14 +18,14 @@ class IRudiment(Interface):
     velocity.
     """
 
-    length = Attribute('The length of the rudiment = The number of smallest division '
-                       'beats that comprise one bar of the rudiment')
+    length = Attribute('The length of the rudiment = The number of smallest '
+                       'division beats that comprise one bar of the rudiment')
 
     def time(ticks, cycle=False, start=0):
         """
-        Generator for the relative timing for a rudiment. The timing begins and start
-        and increments by the ticks or greater between strokes; i.e. the ticks argument
-        is the shortest stroke in the rudiment.
+        Generator for the relative timing for a rudiment. The timing begins and
+        start and increments by the ticks or greater between strokes; i.e. the
+        ticks argument is the shortest stroke in the rudiment.
         """
 
     def strokes(r, l, cycle=False):
@@ -39,6 +42,7 @@ class IRudiment(Interface):
 class IDoubleStrokeOpenRoll(IRudiment):
     pass
 
+
 class IFlam(IRudiment):
     pass
 
@@ -47,6 +51,7 @@ def _maybeCycle(l, cycle=False):
     if cycle:
         return itertools.cycle(l)
     return l
+
 
 R = 0
 L = 1
@@ -58,6 +63,7 @@ def strokeGenerator(pattern):
         for hand in _maybeCycle(g, cycle=cycle):
             yield hand
     return gen
+
 
 def timeGenerator(times, length):
     def gen(self, ticks, cycle=False, start=0):
@@ -95,11 +101,10 @@ class _SustainMixin:
 class FiveStrokeRoll(_SustainMixin):
     implements(IDoubleStrokeOpenRoll)
 
-    length = 96
-    time = timeGenerator((0,6,12,18,24, 48,54,60,66,72), length)
+    length = 16
+    time = timeGenerator((0,1,2,3,4, 8,9,10,11,12), length)
     strokes = strokeGenerator((R,R,L,L,R, L,L,R,R,L))
     velocity = generator((90,70,80,67,120, 90,76,89,70,127))
-
 
 
 class SixStrokeRoll(_SustainMixin):
@@ -127,10 +132,12 @@ class Flam32(_SustainMixin):
 
 Flam = Flam32
 
+
 class Flam64(Flam):
 
     length = 64
     time = timeGenerator((0, 15,16, 31,32, 47,48, 63), length)
+
 
 class FlamAccent32(_SustainMixin):
     implements(IFlam)
@@ -140,7 +147,9 @@ class FlamAccent32(_SustainMixin):
     strokes = strokeGenerator((R,L,R,  R,L,R,L, L))
     velocity = generator((127,80,70, 60,120,90,80, 65))
 
+
 FlamAccent = FlamAccent32
+
 
 class FlamAccent64(FlamAccent):
     length = 96
@@ -198,6 +207,10 @@ class Flamacue64(Flamacue):
 # Utilities for combining and chaining different Rudiments
 
 def chainRudiments(rudimentFactory, ticksFactory, start=0):
+
+
+    # TODO test me
+
     t = start
     while 1:
         rudiment, hands = rudimentFactory()
@@ -208,7 +221,3 @@ def chainRudiments(rudimentFactory, ticksFactory, start=0):
         for tick in rudiment.time(ticks, start=t):
             yield (tick, strokes(), velocity(), sustain())
         t += ticks * rudiment.length
-
-
-
-

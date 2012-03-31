@@ -12,18 +12,18 @@ class RudimentsTest(TestCase):
     def test_fiveStrokeRoll(self):
 
         fsr = FiveStrokeRoll()
-        l = list(fsr.time(8))
-        self.assertEquals(l, [0, 8, 16, 24, 32, 48, 56, 64, 72, 80])
+        l = list(fsr.time(6))
+        self.assertEquals(l, [0, 6, 12, 18, 24,  48, 54, 60, 66, 72])
 
         ct = 20
         l = []
-        for tick in fsr.time(8, cycle=True):
+        for tick in fsr.time(6, cycle=True):
             l.append(tick)
             ct -= 1
             if not ct:
                 break
-        self.assertEquals(l, [0, 8, 16, 24, 32, 48, 56, 64, 72, 80,
-                              96, 104, 112, 120, 128, 144, 152, 160, 168, 176])
+        self.assertEquals(l, [0, 6, 12, 18, 24,  48, 54, 60, 66, 72,
+                              96, 102, 108, 114, 120,  144, 150, 156, 162, 168])
 
 
         l = list(fsr.strokes(25, 26))
@@ -48,8 +48,9 @@ class RudimentsTest(TestCase):
                 break
 
         self.assertEquals(l, [0, 12, 18, 24, 30, 36, 48, 60, 66, 72, 78, 84,
-                              96, 108, 114, 120, 126, 132, 144, 156, 162, 168, 174, 180,
-                              192, 204, 210, 216, 222, 228, 240, 252, 258, 264, 270, 276])
+                              96, 108, 114, 120, 126, 132, 144, 156, 162, 168,
+                              174, 180, 192, 204, 210, 216, 222, 228, 240, 252,
+                              258, 264, 270, 276])
 
         l = list(ssr.strokes(12,14))
         self.assertEquals(l, [14, 12, 12, 14, 14, 12, 14, 12, 12, 14, 14, 12])
@@ -59,24 +60,24 @@ class RudimentsTest(TestCase):
 
 
 
-    def test_chainRudiments(self):
-
-        fsr = FiveStrokeRoll()
-        ssr = SixStrokeRoll()
-
-
-        def rudimentFactory():
-            for rud, hands in zip((fsr,fsr,ssr,ssr,fsr),
-                                  ([0,1],[2,3],[0,1],[2,3],[4,5])):
-                yield rud, hands
-        ticksFactory = cycle([8,8,4,8,4]).next
-
-        played = []
-        for tup in chainRudiments(rudimentFactory().next, ticksFactory):
-            played.append(tup)
-
-        pprint(played)
-
+#    def test_chainRudiments(self):
+#
+#        fsr = FiveStrokeRoll()
+#        ssr = SixStrokeRoll()
+#
+#
+#        def rudimentFactory():
+#            for rud, hands in zip((fsr,fsr,ssr,ssr,fsr),
+#                                  ([0,1],[2,3],[0,1],[2,3],[4,5])):
+#                yield rud, hands
+#        ticksFactory = cycle([8,8,4,8,4]).next
+#
+#        played = []
+#        for tup in chainRudiments(rudimentFactory().next, ticksFactory):
+#            played.append(tup)
+#
+#        pprint(played)
+#
 
 
 
