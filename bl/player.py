@@ -228,6 +228,9 @@ class SchedulePlayer(PlayableMixin):
         if event:
             when, event = exhaustCall(event[0]), event[1:]
             delta = when - last
+            if DEBUG:
+                log.msg('%r last=%s, when=%s; delta=%s' % (
+                        self, last, when, delta))
             if delta < 0:
                 log.err(
                     'scheduled value in past? relative last tick=%d, when=%d'
@@ -242,6 +245,9 @@ class SchedulePlayer(PlayableMixin):
                 else:
                     self.clock.callLater(
                         delta, self._advance, when, schedule, event)
+
+    def startPlaying(self):
+        self.clock.callAfterMeasures(1, self.play)
 
 
 def noteFactory(g):

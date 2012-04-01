@@ -427,7 +427,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         @param kw: keyword args to call f with
         """
         ticks = self.meter.nextMeasure(self.ticks, measures)
-        self.callLater(ticks, f, *a, **kw)
+        delta = ticks -  self.ticks
+        self.callLater(delta, f, *a, **kw)
 
     def nudge(self, pause=0.1):
         """
