@@ -12,29 +12,9 @@ from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence
 from bl.player import explode, cut, callMemo
 from bl.scheduler import BeatClock, Meter, Tempo
 from bl.filters import BaseFilter, Stepper
-from bl.testlib import TestReactor, ClockRunner
+from bl.testlib import TestReactor, TestInstrument, ClockRunner
 
 snd = noteFactory
-
-
-class TestInstrument:
-
-    def __init__(self, clock):
-        self.clock = clock
-        self.plays = []
-        self.stops = []
-
-    def playnote(self, note, velocity):
-        self.plays.append(('note', self.clock.ticks, note, velocity))
-
-    def stopnote(self, note):
-        self.stops.append(('note', self.clock.ticks, note))
-
-    def playchord(self, chord, velocity):
-        self.plays.append(('chord', self.clock.ticks, chord, velocity))
-
-    def stopchord(self, chord):
-        self.stops.append(('chord', self.clock.ticks, chord))
 
 
 # TODO - refactor to use normal velocity filter

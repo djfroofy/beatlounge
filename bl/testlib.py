@@ -27,3 +27,23 @@ class TestReactor(object):
 
     def callLater(self, later, f, *a, **k):
         self.scheduled.append((later, f, a, k))
+
+
+class TestInstrument:
+
+    def __init__(self, clock):
+        self.clock = clock
+        self.plays = []
+        self.stops = []
+
+    def playnote(self, note, velocity):
+        self.plays.append(('note', self.clock.ticks, note, velocity))
+
+    def stopnote(self, note):
+        self.stops.append(('note', self.clock.ticks, note))
+
+    def playchord(self, chord, velocity):
+        self.plays.append(('chord', self.clock.ticks, chord, velocity))
+
+    def stopchord(self, chord):
+        self.stops.append(('chord', self.clock.ticks, chord))

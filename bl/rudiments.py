@@ -2,6 +2,9 @@ from zope.interface import implements, Interface, Attribute
 
 import itertools
 
+from bl.player import SchedulePlayer
+from bl.arp import OrderedArp
+
 
 __all__ = ['IRudiment', 'IDoubleStrokeOpenRoll', 'IFlam', 'FiveStrokeRoll',
     'SixStrokeRoll', 'Flam', 'Flam32', 'Flam64', 'FlamAccent', 'FlamAccent32',
@@ -272,4 +275,40 @@ def scaleRudiment(rudimentClass, ticksPerBeat):
         _rudiment_classes[name] = klass = type(name, (rudimentClass,), {})
         klass.defaultDivisionLength = int(q * klass.defaultDivisionLength)
     return _rudiment_classes[name]
-    
+
+
+class RudimentSchedulePlayer(SchedulePlayer):
+    """
+    A schedule player for a rudiment. This also gives us arps to manipulate
+    or change during the runtime.
+
+    noteArp: The note arp (OrderedArp)
+    velocityArp: The velocity arp (OrderedArp)
+    sustainArp: the sustain arp (OrderedArp)
+    """
+
+    def __init__(self, instrument, rudiment, r, l, sustainArp=None, **kw):
+        """
+        @param instrument: The backend instrument (Fsynth instrument etc)
+        @param rudiment: A IRudiment provider
+        @param r: The "right" note
+        @param l: the "left" note
+        @param sustainArp: An optional "sustain" value arp.
+        """
+        self.rudiment = rudiment
+        self.timeFactory = rudiment.time(cycle=True)
+        self.noteArp = OrderedArp(list(rudiment.strokes(r, l, cycle=False)))
+        self.velocityArp = OrderedArp(list(rudiment.velocity(cycle=False)))
+        if sustainArp is None:
+            sustainArp = OrderedArp([None])
+        self.sustainArp = sustainArp
+        _time = lambda : self.timeFactory.next()
+        _note = lambda : self.noteArp()
+        _velocity = lambda : self.velocityArp()
+        _sustain = lambda: self.sustainArp()
+        gen = ((_time(), _note(), _velocity(), _sustain())
+               for i in itertools.cycle([0]))
+        SchedulePlayer.__init__(self, instrument, lambda: gen, **kw)
+
+    def changeStrokes(self, r, l):
+        self.noteArp.reset(list(self.rudiment.strokes(r, l, cycle=False)))
