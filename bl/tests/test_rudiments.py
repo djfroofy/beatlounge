@@ -4,7 +4,7 @@ from itertools import cycle
 from twisted.trial.unittest import TestCase
 
 
-from bl.rudiments import *
+from bl.rudiments import FiveStrokeRoll, SixStrokeRoll, scaleRudiment
 
 
 class RudimentsTest(TestCase):
@@ -12,12 +12,12 @@ class RudimentsTest(TestCase):
     def test_fiveStrokeRoll(self):
 
         fsr = FiveStrokeRoll()
-        l = list(fsr.time(6))
+        l = list(fsr.time())
         self.assertEquals(l, [0, 6, 12, 18, 24,  48, 54, 60, 66, 72])
 
         ct = 20
         l = []
-        for tick in fsr.time(6, cycle=True):
+        for tick in fsr.time(cycle=True):
             l.append(tick)
             ct -= 1
             if not ct:
@@ -36,12 +36,12 @@ class RudimentsTest(TestCase):
     def test_sixStrokeRoll(self):
 
         ssr = SixStrokeRoll()
-        l = list(ssr.time(6))
+        l = list(ssr.time())
         self.assertEquals(l, [0, 12, 18, 24, 30, 36, 48, 60, 66, 72, 78, 84])
 
         ct = 36
         l = []
-        for tick in ssr.time(6, cycle=True):
+        for tick in ssr.time(cycle=True):
             l.append(tick)
             ct -= 1
             if not ct:
@@ -59,6 +59,19 @@ class RudimentsTest(TestCase):
         self.assertEquals(v, [120,90,70,80,67,120, 123,90,76,89,70,127])
 
 
+    def test_scaleRudiment(self):
+        ScaledSixStrokeRoll = scaleRudiment(SixStrokeRoll, 48)
+        self.assertEqual(ScaledSixStrokeRoll.defaultDivisionLength, 12)
+        self.assertEqual(ScaledSixStrokeRoll.__name__, 'SixStrokeRoll_TPB48')
+        ssr = ScaledSixStrokeRoll()
+        l = list(ssr.time())
+        self.assertEquals(l, [0, 24, 36, 48, 60, 72, 96, 120, 132, 144,
+                              156, 168])
+        # check the caching
+        cached = scaleRudiment(SixStrokeRoll, 48)
+        self.assertIdentical(cached, ScaledSixStrokeRoll)
+        ScaledFiveStrokRoll = scaleRudiment(FiveStrokeRoll, 48)
+        self.failIfIdentical(ScaledFiveStrokRoll, ScaledSixStrokeRoll)
 
 #    def test_chainRudiments(self):
 #
