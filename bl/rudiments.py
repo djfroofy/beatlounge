@@ -308,7 +308,7 @@ class RudimentSchedulePlayer(SchedulePlayer):
         _sustain = lambda: self.sustainArp()
         gen = ((_time(), _note(), _velocity(), _sustain())
                for i in itertools.cycle([0]))
-        SchedulePlayer.__init__(self, instrument, lambda: gen, **kw)
+        SchedulePlayer.__init__(self, instrument, gen, **kw)
 
     def changeStrokes(self, r, l):
         self.noteArp.reset(list(self.rudiment.strokes(r, l, cycle=False)))

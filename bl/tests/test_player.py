@@ -251,47 +251,66 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         self.instr2 = TestInstrument(self.clock)
         self.instr3 = TestInstrument(self.clock)
         self.dtt = n = self.clock.meter.dtt
-        self.schedulePlayer1 = SchedulePlayer(self.instr1, self.scheduleFactory,
-                                              interval=n(1,1),
+        self.schedulePlayer1 = SchedulePlayer(self.instr1,
+                                              self.scheduleFactory(),
                                               clock=self.clock)
         self.schedulePlayer2 = SchedulePlayer(self.instr2,
-                                              self.chordScheduleFactory,
-                                              interval=n(1,1),
+                                              self.chordScheduleFactory(),
                                               clock=self.clock, type='chord')
         self._callables = None
         self.schedulePlayer3 = SchedulePlayer(self.instr3,
-                                              self.factoryWithCallables,
-                                              interval=n(1,1), clock=self.clock)
+                                              self.factoryWithCallables(),
+                                              clock=self.clock)
+
+    def _timeGen(self, seq):
+        def mtt(measures):
+            return self.meter.ticksPerMeasure * measures
+        current = 0
+        while True:
+            for t in seq:
+                yield mtt(current + t)
+            current += 1
 
     def scheduleFactory(self):
         def mtt(measures):
             return self.meter.ticksPerMeasure * measures
-        return [
-            (mtt(0.000), 60, 95, mtt(1.00)),
-            (mtt(0.250), 64, 70, mtt(0.50)),
-            (mtt(0.875), 48, 93, mtt(0.25)), ]
+        t = self._timeGen([0.0, 0.25, 0.875])
+        events = cycle([
+            [60, 95, mtt(1.00)],
+            [64, 70, mtt(0.50)],
+            [48, 93, mtt(0.25)],])
+        return ([t.next()] + e for e in events)
 
     def chordScheduleFactory(self):
         def mtt(measures):
             return self.meter.ticksPerMeasure * measures
-        return [
-            (mtt(0.000), [60, 64, 47], 95, mtt(1.00)),
-            (mtt(0.250), [48, 52, 55], 70, mtt(0.50)),
-            (mtt(0.875), [36, 39, 43], 93, mtt(0.25)), ]
+        t = self._timeGen([0.0, 0.25, 0.875])
+        events = cycle([
+            [[60, 64, 47], 95, mtt(1.00)],
+            [[48, 52, 55], 70, mtt(0.50)],
+            [[36, 39, 43], 93, mtt(0.25)],])
+        return ([t.next()] + e for e in events)
 
     def factoryWithCallables(self):
         def mtt(measures):
             return self.meter.ticksPerMeasure * measures
-        if self._callables:
-            return list(self._callables)
-        when = cycle([mtt(0.25), cycle([mtt(0.5), mtt(0.75)]).next]).next
+        c = cycle([0.5, 0.75])
+        def w():
+            current = 0
+            while 1:
+                yield mtt(current)
+                if current % 2 == 0:
+                    yield  mtt(current + 0.25)
+                else:
+                    yield mtt(current + c.next())
+                current += 1
+        when = w().next
         note = cycle([64, cycle([67, 69]).next]).next
         velocity = cycle([100, cycle([80, 90]).next]).next
         sustain = cycle([mtt(0.5), cycle([mtt(0.125), mtt(0.25)]).next]).next
-        self._callables = [
-            (mtt(0), 60, 127, mtt(0.25)),
-            (when, note,  velocity, sustain)]
-        return list(self._callables)
+        return cycle([
+            [when, 60, 127, mtt(0.25)],
+            [when, note,  velocity, sustain]])
 
     def test_schedule_player_notes(self):
         self.schedulePlayer1.startPlaying()
@@ -362,10 +381,12 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def test_schedule_is_generative(self):
         def gen():
-            for i in range(12):
-                yield (0 + i * 6, (5 * i) % 12, 100 + i, 24)
-        schedulePlayer = SchedulePlayer(self.instr1, lambda: gen(),
-                                        interval=self.dtt(1, 1),
+            current = 0
+            while 1:
+                for i in range(12):
+                    yield (current + i * 6, (5 * i) % 12, 100 + i, 24)
+                current += 96
+        schedulePlayer = SchedulePlayer(self.instr1, gen(),
                                         clock=self.clock)
         schedulePlayer.startPlaying()
         self.runTicks(96)

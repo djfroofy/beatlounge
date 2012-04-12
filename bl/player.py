@@ -189,11 +189,10 @@ class SchedulePlayer(PlayableMixin):
     TODO Rewrite example without using obsolete mtt() function
     """
 
-    def __init__(self, instr, scheduleFactory, interval=0.25, clock=None,
+    def __init__(self, instr, schedule, clock=None,
                  type='note', meter=None):
-        self.scheduleFactory = scheduleFactory
+        self.schedule = schedule
         self.instr = instr
-        self.interval = interval
         self.clock = getClock(clock)
         self.meter = meter
         self._stopped = False
@@ -210,8 +209,8 @@ class SchedulePlayer(PlayableMixin):
 
     def play(self):
         self._stopped = False
-        schedule = (event for event in self.scheduleFactory())
-        self._advance(0, schedule)
+        #schedule = (event for event in self.schedule)
+        self._advance(0, self.schedule)
 
     def stop(self):
         self._stopped = True

@@ -89,7 +89,7 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
         rudiment = FiveStrokeRoll()
         n = self.meter.dtt
         player = RudimentSchedulePlayer(self.instr, rudiment, 60, 63,
-                interval=n(1,1), clock=self.clock)
+                                        clock=self.clock)
         player.startPlaying()
         self.runTicks(96 * 2 - 1)
         expected = [
@@ -104,6 +104,7 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
                 ('note', 66, 60, 70),
                 ('note', 72, 63, 127),
                 ('note', 96, 60, 90),
+                ('note', 102, 60, 70),
                 ('note', 108, 63, 80),
                 ('note', 114, 63, 67),
                 ('note', 120, 60, 120),
@@ -118,7 +119,7 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
         rudiment = FiveStrokeRoll()
         n = self.meter.dtt
         player = RudimentSchedulePlayer(self.instr, rudiment, 60, 63,
-                interval=n(1,1), clock=self.clock)
+                                        clock=self.clock)
         player.changeStrokes(45, 49)
         player.startPlaying()
         self.runTicks(96 * 2 - 1)
@@ -134,6 +135,7 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
                 ('note', 66, 45, 70),
                 ('note', 72, 49, 127),
                 ('note', 96, 45, 90),
+                ('note', 102, 45, 70),
                 ('note', 108, 49, 80),
                 ('note', 114, 49, 67),
                 ('note', 120, 45, 120),
