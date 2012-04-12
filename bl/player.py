@@ -196,6 +196,7 @@ class SchedulePlayer(PlayableMixin):
         self.interval = interval
         self.clock = getClock(clock)
         self.meter = meter
+        self._stopped = False
         if meter is None:
             self.meter = self.clock.meter
         if type == 'note':
@@ -208,10 +209,16 @@ class SchedulePlayer(PlayableMixin):
             raise ValueError('Invalid player type "%s"' % type)
 
     def play(self):
+        self._stopped = False
         schedule = (event for event in self.scheduleFactory())
         self._advance(0, schedule)
 
+    def stop(self):
+        self._stopped = True
+
     def _advance(self, last, schedule, event=None):
+        if self._stopped:
+            return
         if event is not None:
             (note, vel, sustain) = event
             note = exhaustCall(note)
@@ -248,6 +255,9 @@ class SchedulePlayer(PlayableMixin):
 
     def startPlaying(self):
         self.clock.callAfterMeasures(1, self.play)
+
+    def stopPlaying(self):
+        self.clock.callAfterMeasures(1, self.stop)
 
 
 def noteFactory(g):
