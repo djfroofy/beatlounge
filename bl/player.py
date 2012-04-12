@@ -254,10 +254,10 @@ class SchedulePlayer(PlayableMixin):
                         delta, self._advance, when, schedule, event)
 
     def startPlaying(self):
-        self.clock.callAfterMeasures(1, self.play)
+        self.clock.callAfterMeasures(0, self.play)
 
     def stopPlaying(self):
-        self.clock.callAfterMeasures(1, self.stop)
+        self.clock.callAfterMeasures(0, self.stop)
 
 
 def noteFactory(g):
