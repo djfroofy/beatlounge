@@ -19,7 +19,7 @@ triads = combinations(major_scale, 3)
 
 dtt = clock.meter.dtt
 
-#notes1 = Adder(RandomArp())
+notes1 = Adder(RandomArp())
 #for i in range(128):
 
 notes1.reset([60, 60, 62, 60, 60, 60, 60, 61, 48, 50, 60, 60, 60, 60, 60, 71,
@@ -28,7 +28,7 @@ notes1.amount = -18
 velocity1 = Adder(OrderedArp([120,80,89,83,120,120,80,79]))
 bass = Instrument('sf2/bass/PV_SynBass1.sf2', connection='mono')
 bass.controlChange(expression=86, reverb=50)
-bass_player = ChordPlayer(bass, notes1, velocity1,
+bass_player = Player(bass, notes1, velocity1,
                           stop=lambda: random.randint(12,60),
                           interval=dtt(1,16))
 #bass_player.startPlaying()
