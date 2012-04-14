@@ -417,6 +417,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
     def callWhenRunning(self, *a, **kw):
         return self.reactor.callWhenRunning(*a, **kw)
 
+    # TODO Add callOnDivision
+
     def callAfterMeasures(self, measures, f, *a, **kw):
         """
         Call a function after measures have elapsed

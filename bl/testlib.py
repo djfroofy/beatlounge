@@ -1,5 +1,3 @@
-
-
 class ClockRunner:
 
     def runTicks(self, ticks):
