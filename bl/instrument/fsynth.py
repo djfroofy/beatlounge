@@ -2,12 +2,15 @@ import os
 import random
 from warnings import warn
 
+from zope.interface import implements
 
 from twisted.python import log
 
 from fluidsynth import Synth
 
 from bl.utils import getClock
+from bl.instrument.interfaces import IMIDIInstrument
+
 
 __all__ = ['SynthRouter', 'SynthPool', 'StereoPool', 'QuadPool',
            'NConnectionPool', 'Instrument', 'MultiInstrument', 'Layer',
@@ -128,7 +131,6 @@ class ChordPlayerMixin(object):
             later = 1
             self.clock.callLater(i*later, self.playnote, note, v())
 
-
     def playchord(self, notes, velocity=80):
         if self.strumming:
             return self.strum(notes, velocity)
@@ -145,6 +147,7 @@ class ChordPlayerMixin(object):
 
 
 class Instrument(ChordPlayerMixin):
+    implements(IMIDIInstrument)
 
     def __init__(self, sfpath, synth=None, connection='mono',
                  channel=None, bank=0, preset=0, pool=None, clock=None):
@@ -173,16 +176,19 @@ class Instrument(ChordPlayerMixin):
     def cap(self, maxVelocity):
         self._max_velocity = maxVelocity
 
-    def playnote(self, note, velocity=80):
+    def noteon(self, note, velocity=80):
         velocity = min(velocity, self._max_velocity)
         self.synth.noteon(self.channel, note, velocity)
 
-    def stopnote(self, note):
+    playnote = noteon
+
+    def noteoff(self, note):
         self.synth.noteoff(self.channel, note)
 
+    stopnote = noteoff
 
-    def controlChange(self, vibrato=None, volume=None, pan=None,
-                      expression=None, sustain=None, reverb=None, chorus=None):
+    def controlChange(self, vibrato=None, pan=None, expression=None,
+                      sustain=None, reverb=None, chorus=None, **ignored):
         if vibrato is not None:
             self.synth.cc(self.channel, CC_VIBRATO, vibrato)
         if pan is not None:

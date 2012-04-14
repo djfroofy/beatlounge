@@ -1,5 +1,8 @@
+from zope.interface.verify import verifyClass, verifyObject
+
 from twisted.trial.unittest import TestCase
 
+from bl.instrument.interfaces import IMIDIInstrument
 from bl.instrument import fsynth
 
 import synthmodule
@@ -113,6 +116,10 @@ class InstrumentTests(TestCase):
 
     def tearDown(self):
         synthmodule.nextid = synthmodule._nextid(0)
+
+    def test_iface(self):
+        verifyClass(IMIDIInstrument, Instrument)
+        verifyObject(IMIDIInstrument, Instrument('sf2/instrument.sf2'))
 
     def test_instrumentsAreLoaded(self):
         instr1 = Instrument('sf2/instrument.sf2')
