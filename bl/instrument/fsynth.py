@@ -9,8 +9,9 @@ from fluidsynth import Synth
 
 from bl.utils import getClock
 
-__all__ = [ 'SynthRouter', 'SynthPool', 'StereoPool', 'QuadPool', 'NConnectionPool',
-            'Instrument', 'MultiInstrument', 'Layer', 'suggestDefaultPool' ]
+__all__ = ['SynthRouter', 'SynthPool', 'StereoPool', 'QuadPool',
+           'NConnectionPool', 'Instrument', 'MultiInstrument', 'Layer',
+           'suggestDefaultPool']
 
 
 class SynthRouter:
@@ -46,7 +47,6 @@ class SynthPool:
             self.audiodev = self.reactor.synthAudioDevice
         for connection in self.pool:
             fs = self.pool[connection]
-            #print 'starting synth %s with device %s' % (fs, self.audiodev)
             fs.start(self.audiodev)
 
     def synthObject(self, connection='mono'):
@@ -56,7 +56,8 @@ class SynthPool:
             fs = self.pool[connection]
         else:
             gain, samplerate = self.settings.get(connection, (0.5, 44100))
-            fs = self.router.connections[connection](gain=gain, samplerate=samplerate)
+            fs = self.router.connections[connection](gain=gain,
+                                                     samplerate=samplerate)
             def seq():
                 curr = 0
                 while 1:
@@ -65,8 +66,6 @@ class SynthPool:
             self._channel_gen[fs] = seq()
             self.pool[connection] = fs
             if self.reactor.running:
-                #print 'premptively starting synth object %r with audio dev %s' % (
-                #    fs, self.audiodev)
                 fs.start(self.audiodev)
         return fs
 
@@ -96,7 +95,8 @@ def StereoPool():
 
 
 def QuadPool():
-    router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth, mono=Synth)
+    router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth,
+                         mono=Synth)
     return SynthPool(router)
 
 def NConnectionPool(*p, **synth_factories):
@@ -163,10 +163,10 @@ class Instrument(ChordPlayerMixin):
         self._max_velocity = 127
 
     def __str__(self):
-        return 'Instrument path=%s sfid=%s channel=%s' % (self._file, self.sfid, self.channel)
+        return 'Instrument path=%s sfid=%s channel=%s' % (self._file, self.sfid,
+                                                          self.channel)
 
     def registerSoundfont(self, sfid, channel):
-        #print 'registered sound font', self.synth, sfid, channel
         self.sfid = sfid
         self.channel = channel
 
@@ -175,22 +175,20 @@ class Instrument(ChordPlayerMixin):
 
     def playnote(self, note, velocity=80):
         velocity = min(velocity, self._max_velocity)
-        #print 'playing note', self.synth, self.channel, note, velocity
         self.synth.noteon(self.channel, note, velocity)
 
     def stopnote(self, note):
-        #print 'stopping note', self.synth, self.channel, note
         self.synth.noteoff(self.channel, note)
 
 
-    def controlChange(self, vibrato=None, volume=None, pan=None, expression=None,
-                      sustain=None, reverb=None, chorus=None):
+    def controlChange(self, vibrato=None, volume=None, pan=None,
+                      expression=None, sustain=None, reverb=None, chorus=None):
         if vibrato is not None:
             self.synth.cc(self.channel, CC_VIBRATO, vibrato)
         if pan is not None:
             self.synth.cc(self.channel, CC_PAN, pan)
         if expression is not None:
-            self.synth.cc(self.channel, CC_EXPRESSION, expression) 
+            self.synth.cc(self.channel, CC_EXPRESSION, expression)
         if sustain is not None:
             self.synth.cc(self.channel, CC_SUSTAIN, sustain)
         if reverb is not None:
@@ -218,7 +216,6 @@ class MultiInstrument(ChordPlayerMixin):
                         warn(msg)
                 else:
                     self._mapping[to] = (instrument, from_)
-        
 
     def playnote(self, note, velocity=80):
         instr, realNote = self._mapping.get(note, (None, None))
@@ -264,5 +261,3 @@ class Layer(ChordPlayerMixin):
 def suggestDefaultPool(pool):
     global defaultPool
     defaultPool = pool
-
-
