@@ -1,3 +1,8 @@
+from zope.interface import implements
+
+from bl.instrument.interfaces import IMIDIInstrument
+
+
 class ClockRunner:
 
     def runTicks(self, ticks):
@@ -27,18 +32,23 @@ class TestReactor(object):
         self.scheduled.append((later, f, a, k))
 
 
-class TestInstrument:
+class TestInstrument(object):
+    implements(IMIDIInstrument)
 
     def __init__(self, clock):
         self.clock = clock
         self.plays = []
         self.stops = []
 
-    def playnote(self, note, velocity):
+    def noteon(self, note, velocity):
         self.plays.append(('note', self.clock.ticks, note, velocity))
 
-    def stopnote(self, note):
+    playnote = noteon
+
+    def noteoff(self, note):
         self.stops.append(('note', self.clock.ticks, note))
+
+    stopnote = noteoff
 
     def playchord(self, chord, velocity):
         self.plays.append(('chord', self.clock.ticks, chord, velocity))

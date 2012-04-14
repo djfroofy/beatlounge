@@ -70,6 +70,7 @@ class SchedulePlayer(object):
         self.clock.callLater(delta, self.play)
 
     def pausePlaying(self):
+        # FIXME Perhaps pause-playing should actually use value 1 here?
         self.clock.callAfterMeasures(0, self.pause)
 
 
