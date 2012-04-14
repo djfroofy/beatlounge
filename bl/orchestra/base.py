@@ -1,5 +1,4 @@
 from bl.utils import getClock, exhaustCall
-from bl.debug import DEBUG
 
 
 class SchedulePlayer(object):
@@ -44,9 +43,6 @@ class SchedulePlayer(object):
         if event:
             when, event = exhaustCall(event[0]), event[1:]
             delta = when - last
-            if DEBUG:
-                log.msg('%r last=%s, when=%s; delta=%s' % (
-                        self, last, when, delta))
             if delta < 0:
                 log.err(
                     'scheduled value in past? relative last tick=%d, when=%d'
@@ -65,8 +61,15 @@ class SchedulePlayer(object):
                     self.clock.callLater(
                         delta, self._advance, when, schedule, event)
 
-    def startPlaying(self):
-        self.clock.callAfterMeasures(0, self.play)
+    def resumePlaying(self):
+        clock = self.clock
+        mod = (self.last % clock.meter.ticksPerMeasure)
+        delta = clock.untilNextMeasure()
+        if mod:
+            delta += mod
+        self.clock.callLater(delta, self.play)
 
-    def stopPlaying(self):
-        self.clock.callAfterMeasures(0, self.stop)
+    def pausePlaying(self):
+        self.clock.callAfterMeasures(0, self.pause)
+
+

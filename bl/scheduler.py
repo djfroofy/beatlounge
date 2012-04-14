@@ -419,6 +419,13 @@ class BeatClock(SelectReactor, SynthControllerMixin):
 
     # TODO Add callOnDivision
 
+    def untilNextMeasure(self, measures=0):
+        delta = self.meter.nextMeasure(self.ticks, measures) - self.ticks
+        if delta < 0:
+            delta = self.meter.nextMeasure(self.ticks, 1) - self.ticks
+        return delta
+
+
     def callAfterMeasures(self, measures, f, *a, **kw):
         """
         Call a function after measures have elapsed
@@ -428,11 +435,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         @param a: postional args to call f with
         @param kw: keyword args to call f with
         """
-        ticks = self.meter.nextMeasure(self.ticks, measures)
-        delta = ticks - self.ticks
-        if delta < 0:
-            ticks = self.meter.nextMeasure(self.ticks, 1)
-            delta = ticks - self.ticks
+        delta = self.untilNextMeasure()
         self.callLater(delta, f, *a, **kw)
 
     def nudge(self, pause=0.1):
