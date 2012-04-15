@@ -37,20 +37,20 @@ class Player(OneSchedulePlayerMixin):
     onMethodName = 'noteon'
     offMethodName = 'noteoff'
 
-    def __init__(self, instr, notes, velocity=None, release=None,
+    def __init__(self, instr, note, velocity=None, release=None,
                  interval=(1,8), time=None, clock=None, cc=None):
         self.instr = IMIDIInstrument(instr)
         self.clock = getClock(clock)
         if velocity is None:
             velocity = cycle([127]).next
-        self.notes = notes
+        self.note = note
         self.velocity = velocity
         self.release = release
         if time is None:
             if type(interval) in (list, tuple):
                 interval = self.clock.meter.dtt(*interval)
             time = metronome(interval).next
-        noteMemo = CallMemo(notes)
+        noteMemo = CallMemo(note)
         noteonSchedule = schedule(time, self.noteon,
                                   {'note': noteMemo, 'velocity': velocity})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
