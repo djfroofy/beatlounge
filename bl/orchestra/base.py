@@ -1,3 +1,6 @@
+from twisted.python import log
+from twisted.python.failure import Failure
+
 from bl.utils import getClock, exhaustCall
 
 
@@ -78,9 +81,9 @@ class SchedulePlayer(object):
             when, event = exhaustCall(event[0]), event[1:]
             delta = when - last
             if delta < 0:
-                log.err(
+                log.err(Failure(ValueError(
                     'scheduled value in past? relative last tick=%d, when=%d'
-                    % (last, when))
+                    % (last, when))))
             else:
 
 

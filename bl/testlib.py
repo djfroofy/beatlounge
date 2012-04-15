@@ -50,8 +50,12 @@ class TestInstrument(object):
 
     stopnote = noteoff
 
-    def playchord(self, chord, velocity):
+    def chordon(self, chord, velocity):
         self.plays.append(('chord', self.clock.ticks, chord, velocity))
 
-    def stopchord(self, chord):
+    playchord = chordon
+
+    def chordoff(self, chord):
         self.stops.append(('chord', self.clock.ticks, chord))
+
+    stopchord = chordoff

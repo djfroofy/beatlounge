@@ -1,10 +1,10 @@
-from itertools import cycle, chain
+from itertools import cycle
 
 from twisted.trial.unittest import TestCase
 
 from bl.scheduler import Tempo, Meter, BeatClock
 from bl.testlib import TestInstrument, ClockRunner, TestReactor
-from bl.orchestra.midi import Player
+from bl.orchestra.midi import Player, ChordPlayer
 
 
 class PlayerTests(TestCase, ClockRunner):
@@ -113,6 +113,23 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 288, 0, 120)])
         self.assertEquals(self.instr1.plays, expectedPlays)
 
+    def test_chord_player_plays_chords(self):
+        notePlayer = ChordPlayer(self.instr1, cycle([[0,1],[1,0]]).next,
+                                 velocity=cycle([120]).next,
+                                 release=cycle([12]).next,
+                                 clock=self.clock, interval=self.dtt(1,4))
+        notePlayer.resumePlaying()
+        self.runTicks(96)
+        expectedPlays = [
+            ('chord', 0, [0, 1], 120),
+            ('chord', 24, [1, 0], 120),
+            ('chord', 48, [0, 1], 120),
+            ('chord', 72, [1, 0], 120),
+            ('chord', 96, [0, 1], 120)]
+        self.assertEquals(self.instr1.plays, expectedPlays)
+        self.assertEquals(self.instr1.stops,
+                          [('chord', 12, [0, 1]), ('chord', 36, [1, 0]),
+                           ('chord', 60, [0, 1]), ('chord', 84, [1, 0])])
 #    def test_chordPlayerPlaysChords(self):
 #        for i in range(10):
 #            self.chordPlayer.play()

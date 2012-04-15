@@ -38,6 +38,9 @@ class OneSchedulePlayerMixin(object):
 
 class Player(OneSchedulePlayerMixin):
 
+    onMethodName = 'noteon'
+    offMethodName = 'noteoff'
+
     def __init__(self, instr, notes, velocity=None, release=None,
                  interval=(1,8), time=None, clock=None):
         self.instr = IMIDIInstrument(instr)
@@ -56,21 +59,31 @@ class Player(OneSchedulePlayerMixin):
                     yield current
                     current += interval
             time = time().next
-        timeMemo = CallMemo(time)
         noteMemo = CallMemo(notes)
-        noteon = lambda note, velocity: self.instr.noteon(note, velocity)
-        noteonSchedule = schedule(timeMemo, noteon,
+        noteonSchedule = schedule(time, self.noteon,
                                   {'note': noteMemo, 'velocity': velocity})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
         if self.release:
-            self.noteoff = lambda note: self.instr.noteoff(note)
             self.schedulePlayer.addChild(((self._scheduleNoteoff,
                                      {'note': noteMemo.lastValue,
                                       'when': self.release})
                                      for i in cycle([1])))
+
+    def noteon(self, note, velocity):
+        m = getattr(self.instr, self.onMethodName)
+        return m(note, velocity)
+
+    def noteoff(self, note):
+        m = getattr(self.instr, self.offMethodName)
+        return m(note)
 
     def _scheduleNoteoff(self, note, when):
         if when is None:
             return
         self.clock.callLater(when, self.noteoff, note)
 
+
+class ChordPlayer(Player):
+
+    onMethodName = 'chordon'
+    offMethodName = 'chordoff'
