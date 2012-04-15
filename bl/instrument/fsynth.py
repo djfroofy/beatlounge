@@ -182,12 +182,16 @@ class Instrument(ChordPlayerMixin):
         self._max_velocity = maxVelocity
 
     def noteon(self, note, velocity=80):
+        if note is None:
+            return
         velocity = min(velocity, self._max_velocity)
         self.synth.noteon(self.channel, note, velocity)
 
     playnote = noteon
 
     def noteoff(self, note):
+        if note is None:
+            return
         self.synth.noteoff(self.channel, note)
 
     stopnote = noteoff
