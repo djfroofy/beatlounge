@@ -1,7 +1,12 @@
+from itertools import cycle
+
 from twisted.python import log
 from twisted.python.failure import Failure
 
 from bl.utils import getClock, exhaustCall
+
+
+__all__ = ['SchedulePlayer', 'schedule', 'childSchedule', 'metronome']
 
 
 class SchedulePlayer(object):
@@ -132,3 +137,34 @@ class SchedulePlayer(object):
         self.clock.callAfterMeasures(0, self.pause)
 
 
+def schedule(time, func, args):
+    """
+    Utility function which creates a schedule appropriate for initializing a
+    SchedulerPlayer with.
+
+    @param time: Time ugen
+    @param func: A function to call
+    @param args: Keyword arguments to C{func}
+    """
+    return ((time, func, args) for i in cycle([1]))
+
+
+def childSchedule(func, args):
+    """
+    Utility function which creates a child schedule appropriate to send to
+    SchedulePlayer.addChild().
+
+    @param fun: A function to call
+    @param args: Keyword args to C{func}
+    """
+    return ((func, args) for i in cycle([1]))
+
+def metronome(interval):
+    """
+    An infinite range beginning at 0 and stepping C{interval} with each
+    iteration.
+    """
+    current = 0
+    while 1:
+        yield current
+        current += interval

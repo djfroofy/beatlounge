@@ -2,7 +2,7 @@ from itertools import cycle
 
 from bl.utils import getClock
 from bl.instrument.interfaces import IMIDIInstrument
-from bl.orchestra.base import SchedulePlayer
+from bl.orchestra.base import SchedulePlayer, schedule, childSchedule, metronome
 
 
 class CallMemo(object):
@@ -16,13 +16,6 @@ class CallMemo(object):
 
     def lastValue(self):
         return self.value
-
-
-def schedule(time, func, args):
-    def gen():
-        while 1:
-            yield (time, func, args)
-    return gen()
 
 
 class OneSchedulePlayerMixin(object):
@@ -53,21 +46,16 @@ class Player(OneSchedulePlayerMixin):
         if time is None:
             if type(interval) in (list, tuple):
                 interval = self.clock.meter.dtt(*interval)
-            def time():
-                current = 0
-                while 1:
-                    yield current
-                    current += interval
-            time = time().next
+            time = metronome(interval).next
         noteMemo = CallMemo(notes)
         noteonSchedule = schedule(time, self.noteon,
                                   {'note': noteMemo, 'velocity': velocity})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
         if self.release:
-            self.schedulePlayer.addChild(((self._scheduleNoteoff,
+            releaseChild = childSchedule(self._scheduleNoteoff,
                                      {'note': noteMemo.lastValue,
                                       'when': self.release})
-                                     for i in cycle([1])))
+            self.schedulePlayer.addChild(releaseChild)
 
     def noteon(self, note, velocity):
         m = getattr(self.instr, self.onMethodName)
