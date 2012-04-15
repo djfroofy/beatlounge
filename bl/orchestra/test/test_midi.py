@@ -1,4 +1,4 @@
-from itertools import cycle
+from itertools import cycle, chain
 
 from twisted.trial.unittest import TestCase
 
@@ -47,8 +47,26 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 72, 1, 120),
             ('note', 96, 0, 120)]
         self.assertEquals(self.instr1.plays, expectedPlays)
-        self.assertEquals(self.instr1.stops, [('note', 36, 1), ('note', 60, 0),
-                                              ('note', 84, 1)])
+        self.assertEquals(self.instr1.stops,
+                          [('note', 12, 0), ('note', 36, 1),
+                           ('note', 60, 0), ('note', 84, 1)])
+
+    def test_player_skips_noteoff_scheduling_on_None(self):
+        notePlayer = Player(self.instr1, cycle([0,1]).next,
+                            velocity=cycle([120]).next,
+                            release=cycle([12,None]).next,
+                            clock=self.clock, interval=self.dtt(1,4))
+        notePlayer.resumePlaying()
+        self.runTicks(96)
+        expectedPlays = [
+            ('note', 0, 0, 120),
+            ('note', 24, 1, 120),
+            ('note', 48, 0, 120),
+            ('note', 72, 1, 120),
+            ('note', 96, 0, 120)]
+        self.assertEquals(self.instr1.plays, expectedPlays)
+        self.assertEquals(self.instr1.stops,
+                          [('note', 12, 0), ('note', 60, 0)])
 
     def test_default_interval(self):
         notePlayer = Player(self.instr1, cycle([0,1]).next,

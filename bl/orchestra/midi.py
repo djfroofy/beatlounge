@@ -25,20 +25,18 @@ def schedule(time, func, args):
     return gen()
 
 
-class ManySchedulePlayerMixin(object):
+class OneSchedulePlayerMixin(object):
 
-    schedulePlayers = ()
+    schedulePlayer = None
 
     def resumePlaying(self):
-        for player in self.schedulePlayers:
-            player.resumePlaying()
+        self.schedulePlayer.resumePlaying()
 
     def pausePlaying(self):
-        for player in self.schedulePlayers:
-            player.pausePlaying()
+        self.schedulePlayer.pausePlaying()
 
 
-class Player(ManySchedulePlayerMixin):
+class Player(OneSchedulePlayerMixin):
 
     def __init__(self, instr, notes, velocity=None, release=None,
                  interval=(1,8), time=None, clock=None):
@@ -63,17 +61,16 @@ class Player(ManySchedulePlayerMixin):
         noteon = lambda note, velocity: self.instr.noteon(note, velocity)
         noteonSchedule = schedule(timeMemo, noteon,
                                   {'note': noteMemo, 'velocity': velocity})
-        self.noteonPlayer = SchedulePlayer(noteonSchedule, self.clock)
-        self.schedulePlayers = [self.noteonPlayer]
-        self.noteoffPlayer = None
+        self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
         if self.release:
             self.noteoff = lambda note: self.instr.noteoff(note)
-            noteoffSchedule = schedule(timeMemo.lastValue, self._scheduleStop,
-                                       {'note': noteMemo.lastValue,
-                                        'when': self.release})
-            self.noteoffPlayer = SchedulePlayer(noteoffSchedule, self.clock)
-            self.schedulePlayers.append(self.noteoffPlayer)
+            self.schedulePlayer.addChild(((self._scheduleNoteoff,
+                                     {'note': noteMemo.lastValue,
+                                      'when': self.release})
+                                     for i in cycle([1])))
 
-    def _scheduleStop(self, note, when):
+    def _scheduleNoteoff(self, note, when):
+        if when is None:
+            return
         self.clock.callLater(when, self.noteoff, note)
 
