@@ -124,6 +124,7 @@ class ChordPlayerMixin(object):
     strumming = False
 
     def strum(self, notes, velocity=80):
+        # TODO - deprecate this function
         v = lambda : velocity
         if callable(velocity):
             v = lambda : velocity()
@@ -131,19 +132,23 @@ class ChordPlayerMixin(object):
             later = 1
             self.clock.callLater(i*later, self.playnote, note, v())
 
-    def playchord(self, notes, velocity=80):
+    def chordon(self, notes, velocity=80):
         if self.strumming:
             return self.strum(notes, velocity)
         for note in notes:
             self.playnote(note, velocity)
 
-    def stopchord(self, notes):
+    playchord = chordon
+
+    def chordoff(self, notes):
         for note in notes:
             self.stopnote(note)
 
+    stopchord = chordoff
+
     def stopall(self):
         for note in range(128):
-            self.stopnote(note)
+            self.noteoff(note)
 
 
 class Instrument(ChordPlayerMixin):
@@ -223,17 +228,21 @@ class MultiInstrument(ChordPlayerMixin):
                 else:
                     self._mapping[to] = (instrument, from_)
 
-    def playnote(self, note, velocity=80):
+    def noteon(self, note, velocity=80):
         instr, realNote = self._mapping.get(note, (None, None))
         if instr is None:
             return
-        instr.playnote(realNote, velocity)
+        instr.noteon(realNote, velocity)
 
-    def stopnote(self, note):
+    playnote = noteon
+
+    def noteoff(self, note):
         instr, realNote = self._mapping.get(note, (None, None))
         if instr is None:
             return
-        instr.stopnote(realNote)
+        instr.noteoff(realNote)
+
+    stopnote = noteoff
 
 
 class Layer(ChordPlayerMixin):
@@ -249,19 +258,23 @@ class Layer(ChordPlayerMixin):
             else:
                 self.instruments.append((entry, dict(self.MIDI)))
 
-    def playnote(self, note, velocity=80):
+    def noteon(self, note, velocity=80):
         for (instr, mapping) in self.instruments:
             realNote = mapping.get(note, None)
             if realNote is None:
                 continue
-            instr.playnote(realNote, velocity)
+            instr.noteon(realNote, velocity)
 
-    def stopnote(self, note):
+    playnote = noteon
+
+    def noteoff(self, note):
         for (instr, mapping) in self.instruments:
             realNote = mapping.get(note, None)
             if realNote is None:
                 continue
-            instr.stopnote(realNote)
+            instr.noteoff(realNote)
+
+    stopnote = noteoff
 
 
 def suggestDefaultPool(pool):

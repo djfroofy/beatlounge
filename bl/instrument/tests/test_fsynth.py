@@ -146,10 +146,10 @@ class MockInstrument:
     def __init__(self):
         self.record = []
 
-    def playnote(self, note, velocity):
+    def noteon(self, note, velocity):
         self.record.append(('play', note, velocity))
 
-    def stopnote(self, note):
+    def noteoff(self, note):
         self.record.append(('stop', note))
 
 
@@ -170,13 +170,13 @@ class MultiInstrumentTests(TestCase):
                                  (instr2, ((4, 23),(5, 24),(6, 25))),
                                  (instr3, ((7, 43),(8, 44)))])
 
-        minstr.playnote(0, 120)
-        minstr.playnote(1, 110)
-        minstr.playnote(2, 100)
-        minstr.playnote(3, 90)
-        minstr.stopnote(0)
-        minstr.playnote(4, 80)
-        minstr.playnote(8, 70)
+        minstr.noteon(0, 120)
+        minstr.noteon(1, 110)
+        minstr.noteon(2, 100)
+        minstr.noteon(3, 90)
+        minstr.noteoff(0)
+        minstr.noteon(4, 80)
+        minstr.noteon(8, 70)
         expected_instr1 = [('play', 43, 120), ('play', 44, 110),
                            ('play', 46, 100), ('play', 47, 90), ('stop', 43)]
         expected_instr2 = [('play', 23, 80)]
@@ -191,7 +191,7 @@ class MultiInstrumentTests(TestCase):
         self.assertEquals(instr2.record, [('play', 24, 120), ('stop', 24)])
         self.assertEquals(instr3.record, [('play', 44, 120), ('stop', 44)])
         instr1.record, instr2.record, instr3.record = [], [], []
-        minstr.playnote(120, 100)
+        minstr.noteon(120, 100)
         for instr in instr1, instr2, instr3:
             self.failIf(instr.record)
         minstr.stopall()
@@ -224,13 +224,13 @@ class LayerTests(TestCase):
         self.assertEquals(layer.instruments[1][0], self.instr2)
         self.assertEquals(layer.instruments[1][1], midi2)
 
-    def test_playnote_stopnote(self):
+    def test_noteon_noteoff(self):
         layer = self.layer
-        layer.playnote(45, 127)
-        layer.playnote(24, 100)
-        layer.playnote(30)
-        layer.stopnote(45)
-        layer.stopnote(24)
+        layer.noteon(45, 127)
+        layer.noteon(24, 100)
+        layer.noteon(30)
+        layer.noteoff(45)
+        layer.noteoff(24)
         self.assertEquals(self.instr1.record,
                           [('play', 45, 127), ('play', 24, 100),
                            ('play', 30, 80), ('stop', 45), ('stop', 24)])

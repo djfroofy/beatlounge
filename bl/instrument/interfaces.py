@@ -37,6 +37,21 @@ class IMIDIInstrument(Interface):
         @param note: The note [0,127]
         """
 
+    def chordon(chord, velocity):
+        """
+        Call noteon(note, velocity) for each note in chord.
+
+        @param chord: The notes (list)
+        @param velocity: The velocity for the chord.
+        """
+
+    def chordoff(chord):
+        """
+        Call noteoff(note) for each note in chord.
+
+        @param chord: The notes (list)
+        """
+
     def controlChange(vibrato=None, pan=None, expression=None, sustain=None,
                       reverb=None, chorus=None, **other):
         """
