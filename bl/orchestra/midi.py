@@ -5,6 +5,9 @@ from bl.instrument.interfaces import IMIDIInstrument
 from bl.orchestra.base import SchedulePlayer, schedule, childSchedule, metronome
 
 
+__all__ = ['Player', 'ChordPlayer']
+
+
 class CallMemo(object):
 
     def __init__(self, ugen):
