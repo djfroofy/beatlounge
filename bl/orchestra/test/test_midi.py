@@ -130,6 +130,28 @@ class PlayerTests(TestCase, ClockRunner):
         self.assertEquals(self.instr1.stops,
                           [('chord', 12, [0, 1]), ('chord', 36, [1, 0]),
                            ('chord', 60, [0, 1]), ('chord', 84, [1, 0])])
+
+    def test_player_control_changes(self):
+        notePlayer = Player(self.instr1, cycle([0,1]).next,
+                            velocity=cycle([120]).next,
+                            cc={'expression': cycle([100,115,120]).next,
+                                'sustain': cycle([50,120]).next},
+                            clock=self.clock, interval=self.dtt(1,4))
+        notePlayer.resumePlaying()
+        self.runTicks(96)
+        expectedPlays = [
+            ('note', 0, 0, 120),
+            ('note', 24, 1, 120),
+            ('note', 48, 0, 120),
+            ('note', 72, 1, 120),
+            ('note', 96, 0, 120)]
+        self.assertEquals(self.instr1.plays, expectedPlays)
+        self.assertEquals(self.instr1.cc,
+                          [(0, {'sustain': 50, 'expression': 100}),
+                           (24, {'sustain': 120, 'expression': 115}),
+                           (48, {'sustain': 50, 'expression': 120}),
+                           (72, {'sustain': 120, 'expression': 100}),
+                           (96, {'sustain': 50, 'expression': 115})])
 #    def test_chordPlayerPlaysChords(self):
 #        for i in range(10):
 #            self.chordPlayer.play()

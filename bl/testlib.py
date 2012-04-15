@@ -39,6 +39,7 @@ class TestInstrument(object):
         self.clock = clock
         self.plays = []
         self.stops = []
+        self.cc = []
 
     def noteon(self, note, velocity):
         self.plays.append(('note', self.clock.ticks, note, velocity))
@@ -59,3 +60,6 @@ class TestInstrument(object):
         self.stops.append(('chord', self.clock.ticks, chord))
 
     stopchord = chordoff
+
+    def controlChange(self, **kwargs):
+        self.cc.append((self.clock.ticks, kwargs))
