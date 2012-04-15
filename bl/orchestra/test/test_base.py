@@ -1,3 +1,5 @@
+from itertools import cycle
+
 from twisted.trial.unittest import TestCase
 
 from bl.scheduler import Tempo, Meter, BeatClock
@@ -48,6 +50,57 @@ class SchedulePlayerTestCase(TestCase, ClockRunner):
                           [(96, {'a': 0, 'b': 0}), (120, {'a': 1, 'b': 2}),
                            (144, {'a':2, 'b': 4}), (168, {'a': 3, 'b': 6}),
                            (192, {'a': 4, 'b':8})])
+
+    def test_children(self):
+        func = TestFunc(self.clock)
+        time = (v for v in xrange(0, 1024, 24)).next
+        a = (v for v in xrange(1024)).next
+        b = (v for v in xrange(0, 1024, 2)).next
+        func2 = TestFunc(self.clock)
+        c = (v for v in xrange(0, 1024, 7)).next
+        player = SchedulePlayer(schedule(time, func, a, b), clock=self.clock)
+        player.addChild(((func2, {'z':c}) for i in cycle([1])))
+        self.runTicks(25)
+        self.assertEquals(func.calls, [])
+        player.resumePlaying()
+        self.runTicks((96 - 25) + 96)
+        self.assertEquals(func.calls,
+                          [(96, {'a': 0, 'b': 0}), (120, {'a': 1, 'b': 2}),
+                           (144, {'a':2, 'b': 4}), (168, {'a': 3, 'b': 6}),
+                           (192, {'a': 4, 'b':8})])
+        self.assertEquals(func2.calls,
+                          [(96, {'z': 0}), (120, {'z': 7}), (144, {'z': 14}),
+                           (168, {'z': 21}), (192, {'z': 28})])
+
+    def test_children_that_stop(self):
+        func = TestFunc(self.clock)
+        time = (v for v in xrange(0, 1024, 24)).next
+        a = (v for v in xrange(1024)).next
+        b = (v for v in xrange(0, 1024, 2)).next
+        func2 = TestFunc(self.clock)
+        c = (v for v in xrange(0, 1024, 7)).next
+        func3 = TestFunc(self.clock)
+        d = (v for v in xrange(0, 1024, 3)).next
+        player = SchedulePlayer(schedule(time, func, a, b), clock=self.clock)
+        g1 = ((func2, {'z': c}) for i in cycle([1]))
+        player.addChild(g1)
+        g2 = ((func3, {'z': d}) for i in range(3))
+        player.addChild(g2)
+        self.runTicks(25)
+        self.assertEquals(func.calls, [])
+        player.resumePlaying()
+        self.runTicks((96 - 25) + 96)
+        self.assertEquals(func.calls,
+                          [(96, {'a': 0, 'b': 0}), (120, {'a': 1, 'b': 2}),
+                           (144, {'a':2, 'b': 4}), (168, {'a': 3, 'b': 6}),
+                           (192, {'a': 4, 'b':8})])
+        self.assertEquals(func2.calls,
+                          [(96, {'z': 0}), (120, {'z': 7}), (144, {'z': 14}),
+                           (168, {'z': 21}), (192, {'z': 28})])
+        self.assertEquals(func3.calls, [(96, {'z': 0}), (120, {'z': 3}),
+                                       (144, {'z': 6})])
+        self.failIf(g2 in player._scheduleChildren)
+        self.assert_(g1 in player._scheduleChildren)
 
     def test_pause(self):
         func = TestFunc(self.clock)

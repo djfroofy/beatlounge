@@ -17,17 +17,6 @@ class PlayerTests(TestCase, ClockRunner):
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
         self.dtt = self.clock.meter.dtt
-#        self.chordPlayerFilter = TestFilter(100)
-#        self.chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3]])),
-#                                       self.chordPlayerFilter,
-#                                       clock=self.clock, interval=n(1,8))
-
-
-#    def test_interfaces(self):
-#        verifyClass(INotePlayer, NotePlayer)
-#        verifyObject(INotePlayer, self.notePlayer)
-#        verifyClass(IChordPlayer, ChordPlayer)
-#        verifyObject(IChordPlayer, self.chordPlayer)
 
     def test_player_plays_notes(self):
         notePlayer = Player(self.instr1, cycle([0,1]).next,
