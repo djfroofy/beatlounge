@@ -4,7 +4,7 @@ from itertools import cycle
 import random
 
 from bl.arp import RandomArp, OrderedArp, Adder
-from bl.player import Player
+from bl.orchestra.midi import Player
 from bl.instrument.fsynth import Layer
 from bl.scheduler import clock
 
@@ -20,9 +20,9 @@ notes1.amount = -18
 velocity1 = Adder(OrderedArp([120,80,89,83,120,120,80,79]))
 bass = bass_f()
 bass_player = Player(bass, notes1, velocity1,
-                stop=lambda: random.randint(12,60),
-                interval=dtt(1,16))
-bass_player.startPlaying()
+                     release=(lambda: random.randint(12,60)),
+                     interval=dtt(1,16))
+bass_player.resumePlaying()
 
 
 notes2 = Adder(RandomArp())
@@ -30,9 +30,10 @@ notes2.reset([60, 60, 62])
 notes2.amount = -18
 velocity2 = Adder(OrderedArp([120,80,120,83,120,110,90,100]))
 kit = kit_f()
-kit_player = Player(kit, notes2, velocity2, stop=lambda: random.randint(12,60),
-                interval=dtt(1,16))
-kit_player.startPlaying()
+kit_player = Player(kit, notes2, velocity2,
+                    release=(lambda: random.randint(12,60)),
+                    interval=dtt(1,16))
+kit_player.resumePlaying()
 
 
 # Now we see how we can set up a simple "process" to change the key periodically

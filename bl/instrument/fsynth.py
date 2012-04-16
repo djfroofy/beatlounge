@@ -1,3 +1,4 @@
+from pprint import pformat
 import os
 import random
 from warnings import warn
@@ -151,8 +152,39 @@ class ChordPlayerMixin(object):
             self.noteoff(note)
 
 
+class Recorder(object):
+
+    def __init__(self, clock=None):
+        self._instruments = {}
+        self.clock = getClock(clock)
+
+    def __call__(self, object, commandname, **arguments):
+        recording = self._instruments.setdefault(object, [])
+        recording.append((self.clock.seconds(), commandname, arguments))
+
+    def __str__(self):
+        s = []
+        write = s.append
+        for instrument in self._instruments:
+            write('Instrument: %s' % instrument)
+            write(pformat(self._instruments[instrument]))
+            write('=' * 80)
+        return '\n'.join(s)
+
+    def toDict(self):
+        d = {}
+        for instrument in self._instruments:
+            # TODO - may have more than one instrument with same
+            # sfpath ...
+            key = os.path.basename(instrument.sfpath)
+            d[key] = self._instruments[instrument]
+        return d
+
+
 class Instrument(ChordPlayerMixin):
     implements(IMIDIInstrument)
+
+    recorder = None
 
     def __init__(self, sfpath, synth=None, connection='mono',
                  channel=None, bank=0, preset=0, pool=None, clock=None):
@@ -182,6 +214,8 @@ class Instrument(ChordPlayerMixin):
         self._max_velocity = maxVelocity
 
     def noteon(self, note, velocity=80):
+        if self.recorder is not None:
+            self.recorder(self, 'noteon', note=note, velocity=velocity)
         if note is None:
             return
         velocity = min(velocity, self._max_velocity)
@@ -190,6 +224,8 @@ class Instrument(ChordPlayerMixin):
     playnote = noteon
 
     def noteoff(self, note):
+        if self.recorder is not None:
+            self.recorder(self, 'noteoff', note=note)
         if note is None:
             return
         self.synth.noteoff(self.channel, note)
@@ -198,6 +234,10 @@ class Instrument(ChordPlayerMixin):
 
     def controlChange(self, vibrato=None, pan=None, expression=None,
                       sustain=None, reverb=None, chorus=None, **ignored):
+        if self.recorder is not None:
+            self.recorder(self, 'controlChange', vibrato=vibrato, pan=pan,
+                          expression=expression, sustain=sustain, reverb=reverb,
+                          chorus=channel, ignored=ignored)
         if vibrato is not None:
             self.synth.cc(self.channel, CC_VIBRATO, vibrato)
         if pan is not None:
@@ -212,6 +252,8 @@ class Instrument(ChordPlayerMixin):
             self.synth.cc(self.channel, CC_CHORUS, chorus)
 
     def pitchBend(self, value):
+        if self.recorder:
+            self.recorder(self, 'pitchBend', value=value)
         self.synth.pitch_bend(self.channel, value)
 
 

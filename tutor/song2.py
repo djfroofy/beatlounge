@@ -21,7 +21,8 @@
 import random
 from itertools import cycle
 
-from bl.player import Player, R, N
+from bl.player import R, N
+from bl.orchestra.midi import Player
 from bl.scheduler import clock
 from tutor.complib import piano_f
 
@@ -46,7 +47,7 @@ piano = piano_f()
 # return None (this translates to a pause in playing).
 
 notes = cycle([R(60, 64, 67, 69), R(36, 48, 60, N), R(48, 52, 55),
-               R(36, 40, 43, 45)])
+               R(36, 40, 43, 45)]).next
 
 
 # Next we'll create a callable for our velocity.
@@ -59,11 +60,12 @@ velocity = cycle([120, 80, 89, 83]).next
 # argument stop is function which returns a "release" time (for stop notes
 # played). The interval is the interval between note plays.
 
-player = Player(piano, notes, velocity, stop=lambda: random.randint(12, 48),
+player = Player(piano, notes, velocity,
+                release=(random.randint(12, 48) for i in cycle([1])).next,
                 interval=dtt(1,8))
 
 
-player.startPlaying()
+player.resumePlaying()
 
 # Now try this exercise from the shell.
 #

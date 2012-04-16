@@ -46,21 +46,23 @@ class Player(OneSchedulePlayerMixin):
         self.note = note
         self.velocity = velocity
         self.release = release
+        self.cc = cc
         if time is None:
             if type(interval) in (list, tuple):
                 interval = self.clock.meter.dtt(*interval)
             time = metronome(interval).next
-        noteMemo = CallMemo(note)
+        noteMemo = CallMemo(lambda : self.note())
         noteonSchedule = schedule(time, self.noteon,
-                                  {'note': noteMemo, 'velocity': velocity})
+                                  {'note': noteMemo,
+                                   'velocity': (lambda: self.velocity())})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
         if self.release:
             releaseChild = childSchedule(self._scheduleNoteoff,
                                      {'note': noteMemo.lastValue,
-                                      'when': self.release})
+                                      'when': (lambda: self.release())})
             self.schedulePlayer.addChild(releaseChild)
         if cc:
-            ccChild = childSchedule(self.instr.controlChange, cc)
+            ccChild = childSchedule(self.instr.controlChange, self.cc)
             self.schedulePlayer.addChild(ccChild)
 
     def noteon(self, note, velocity):

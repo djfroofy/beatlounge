@@ -5,7 +5,7 @@ from itertools import cycle
 import random
 
 from bl.arp import OrderedArp, OctaveArp, Adder
-from bl.player import Player
+from bl.orchestra.midi import Player
 from bl.instrument.fsynth import Layer
 from bl.scheduler import clock
 from bl.rudiments import FiveStrokeRoll, RudimentSchedulePlayer
@@ -23,9 +23,10 @@ notes.amount = 12
 velocity = Adder(OrderedArp([120,80,89,83,120,120,80,79]))
 
 piano = piano_f()
-pianoPlayer = Player(piano, notes, velocity, stop=lambda: random.randint(12,60),
-                    interval=dtt(1,16))
-pianoPlayer.startPlaying()
+pianoPlayer = Player(piano, notes, velocity,
+                     release=lambda: random.randint(12,60),
+                     interval=dtt(1,16))
+pianoPlayer.resumePlaying()
 
 
 kit = kit_f()
