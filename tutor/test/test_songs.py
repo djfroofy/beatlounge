@@ -21,7 +21,7 @@ Instrument.recorder = Recorder()
 here = FilePath(os.path.dirname(__file__))
 
 
-class IntegrationTestCase(TestCase, ClockRunner):
+class SongsAreOkTestCase(TestCase, ClockRunner):
 
     sleep = float(os.environ.get('BL_TESTSONGS_SLEEP', 0))
 
@@ -67,8 +67,9 @@ def method(basename):
         return d.addCallback(check)
     return test_song
 
+
 for child in here.parent().globChildren('song*'):
     basename, _ = os.path.splitext(child.basename())
-    setattr(IntegrationTestCase, 'test_%s' % basename, method(basename))
+    setattr(SongsAreOkTestCase, 'test_%s' % basename, method(basename))
 
 

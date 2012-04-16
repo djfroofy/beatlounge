@@ -98,4 +98,5 @@ def use_scale(steps, start, repeat=2):
 # Then try playing some with your own values instead of random_steps
 # and random_start.
 
+clock.callAfterMeasures(4, use_scale, random_steps, random_start)
 
