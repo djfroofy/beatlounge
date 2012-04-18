@@ -6,7 +6,7 @@ from warnings import warn
 
 from zope.interface import implements, Interface, Attribute
 
-from bl.utils import minmax, getClock
+from bl.utils import getClock
 
 
 warn('bl.filters was a bad idea; this is deprecated, so do not use anymore')
