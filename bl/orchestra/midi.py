@@ -2,7 +2,8 @@ from itertools import cycle
 
 from bl.utils import getClock
 from bl.instrument.interfaces import IMIDIInstrument
-from bl.orchestra.base import SchedulePlayer, schedule, childSchedule, metronome
+from bl.orchestra.base import (SchedulePlayer, schedule, childSchedule,
+                               timing, OneSchedulePlayerMixin)
 
 
 __all__ = ['Player', 'ChordPlayer']
@@ -21,17 +22,6 @@ class CallMemo(object):
         return self.value
 
 
-class OneSchedulePlayerMixin(object):
-
-    schedulePlayer = None
-
-    def resumePlaying(self):
-        self.schedulePlayer.resumePlaying()
-
-    def pausePlaying(self):
-        self.schedulePlayer.pausePlaying()
-
-
 class Player(OneSchedulePlayerMixin):
 
     onMethodName = 'noteon'
@@ -47,12 +37,9 @@ class Player(OneSchedulePlayerMixin):
         self.velocity = velocity
         self.release = release
         self.cc = cc
-        if time is None:
-            if type(interval) in (list, tuple):
-                interval = self.clock.meter.dtt(*interval)
-            time = metronome(interval).next
+        self.time = timing(self.clock, time, interval)
         noteMemo = CallMemo(lambda : self.note())
-        noteonSchedule = schedule(time, self.noteon,
+        noteonSchedule = schedule(self.time, self.noteon,
                                   {'note': noteMemo,
                                    'velocity': (lambda: self.velocity())})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)

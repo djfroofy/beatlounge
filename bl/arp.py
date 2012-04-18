@@ -8,7 +8,7 @@ from zope.interface import Interface, Attribute, implements
 from twisted.python import log
 
 from bl.debug import debug, DEBUG
-from bl.utils import getClock
+from bl.utils import getClock, exhaustCall
 
 
 __all__ = [
@@ -122,12 +122,6 @@ def RevOrderedArp(values=()):
     arp.direction = -1
     arp.index = len(values) - 1
     return arp
-
-
-def exhaustCall(v):
-    while callable(v):
-        v = v()
-    return v
 
 
 class RandomArp(BaseArp):
@@ -249,6 +243,25 @@ class OctaveArp(ArpSwitcher):
             else:
                 self.currentOctave = 0
         return v
+
+
+class ArpMap(ArpSwitcher):
+    """
+    An ArpSwitcher that maps values returning from underlying C{arp} through a
+    function C{func}.
+
+    Example:
+
+        from pyo import midiToHz
+        freqArp = ArpMap(midiToHz, RandomArp(range(128)))
+    """
+
+    def __init__(self, func, arp, values=None):
+        ArpSwitcher.__init__(self, arp, values)
+        self.func = func
+
+    def __call__(self):
+        return self.func(exhaustCall(self.arp()))
 
 
 class PhraseRecordingArp(BaseArp):

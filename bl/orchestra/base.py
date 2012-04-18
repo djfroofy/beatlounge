@@ -6,7 +6,8 @@ from twisted.python.failure import Failure
 from bl.utils import getClock, exhaustCall
 
 
-__all__ = ['SchedulePlayer', 'schedule', 'childSchedule', 'metronome']
+__all__ = ['SchedulePlayer', 'schedule', 'childSchedule', 'metronome',
+           'OneSchedulePlayerMixin', 'timing']
 
 
 class SchedulePlayer(object):
@@ -137,6 +138,18 @@ class SchedulePlayer(object):
         self.clock.callAfterMeasures(0, self.pause)
 
 
+class OneSchedulePlayerMixin(object):
+
+    schedulePlayer = None
+
+    def resumePlaying(self):
+        self.schedulePlayer.resumePlaying()
+
+    def pausePlaying(self):
+        self.schedulePlayer.pausePlaying()
+
+
+
 def schedule(time, func, args):
     """
     Utility function which creates a schedule appropriate for initializing a
@@ -159,6 +172,7 @@ def childSchedule(func, args):
     """
     return ((func, args) for i in cycle([1]))
 
+
 def metronome(interval):
     """
     An infinite range beginning at 0 and stepping C{interval} with each
@@ -168,3 +182,18 @@ def metronome(interval):
     while 1:
         yield current
         current += interval
+
+
+def timing(clock, time=None, interval=(1,8)):
+    """
+    Resolve a time generator. If C{time] is C{None} and C{interval} is a
+    C{tuple} then convert to C{int} ticks using C{clock} and create generator
+    with metronome.  If C{interval} is integral then this ticks value will be
+    used as is as arg to metronome.  Otherwise if time (via C{time}) is already
+    defined, this function is idempodent.
+    """
+    if time is None:
+        if type(interval) in (list, tuple):
+            interval = clock.meter.dtt(*interval)
+        time = metronome(interval).next
+    return time
