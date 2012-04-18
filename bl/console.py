@@ -13,7 +13,7 @@ from twisted.conch.stdio import ServerProtocol, ConsoleManhole
 from twisted.python import log, usage
 from twisted.python.filepath import FilePath
 
-from bl.scheduler import Tempo, BeatClock, Meter, standardMeter
+from bl.scheduler import Tempo, BeatClock, Meter
 
 
 __all__ = ['FriendlyConsoleManhole']
@@ -71,7 +71,7 @@ class FriendlyConsoleManhole(ConsoleManhole):
         namespace = buildNamespace('twisted.internet',
                 'itertools', 'functools', 'collections',
                 'bl.instrument.fsynth', 'bl.player', 'bl.notes',
-                'bl.filters', 'bl.scheduler', 'bl.debug', 'bl.arp',
+                'bl.scheduler', 'bl.debug', 'bl.arp',
                 'comps.complib', 'txosc.async', 'bl.osc')
         namespace.update({'random': random})
         self.namespace = namespace

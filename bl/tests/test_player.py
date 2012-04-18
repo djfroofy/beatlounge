@@ -6,12 +6,12 @@ from zope.interface.verify import verifyClass, verifyObject
 
 from twisted.trial.unittest import TestCase
 
+from bl.arp import OrderedArp
 from bl.player import (NotePlayer, ChordPlayer, SchedulePlayer, Player,
                        noteFactory, N, R)
 from bl.player import INotePlayer, IChordPlayer, randomPhrase, sequence
 from bl.player import explode, cut, callMemo
 from bl.scheduler import BeatClock, Meter, Tempo
-from bl.filters import BaseFilter, Stepper
 from bl.testlib import TestReactor, TestInstrument, ClockRunner
 
 snd = noteFactory
@@ -20,15 +20,16 @@ snd = noteFactory
 # TODO - refactor to use normal velocity filter
 # since filters are deprecated
 
-class TestFilter(BaseFilter):
+
+class TestFilter(object):
 
     def __init__(self, sustain):
         self.calls = []
         self.sustain = sustain
 
-    def filter(self, v, o):
-        self.calls.append((v, o))
-        return self.sustain, o
+    def __call__(self):
+        self.calls.append(1)
+        return self.sustain
 
 
 class PlayerTests(TestCase, ClockRunner):
@@ -185,7 +186,7 @@ class PlayerTests(TestCase, ClockRunner):
     def test_velocityGetsCalledEvenOnNoneNotes(self):
         notePlayer = NotePlayer(self.instr1,
                                 snd(cycle([0, 1, N])),
-                                Stepper([100, 90, 80]),
+                                OrderedArp([100, 90, 80]),
                                 clock=self.clock)
         for i in range(6):
             notePlayer.play()

@@ -1,6 +1,5 @@
 import random
 from itertools import cycle
-from warnings import warn
 
 from zope.interface import Interface, Attribute, implements
 
@@ -8,17 +7,13 @@ from twisted.python import log
 
 from bl.utils import getClock, exhaustCall
 from bl.debug import DEBUG
-from bl.filters import BaseFilter
 
 
 __all__ = ['IPlayer', 'INotePlayer', 'IChordPlayer', 'BasePlayer', 'Player',
-    'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf',
-    'generateSounds', 'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw',
-    'StepSequencer', 'weighted', 'w', 'Shifter', 'quarter', 'Q', 'eighth', 'E',
-    'quaver', 'sixteenth', 'S', 'semiquaver', 'thirtysecond', 'T',
-    'demisemiquaver', 'sequence', 'seq', 'cut', 'explode', 'lcycle',
-    'callMemo', 'cm', 'Weight', 'W', 'SchedulePlayer'
-]
+        'NotePlayer', 'ChordPlayer', 'N', 'Random', 'R', 'noteFactory', 'nf',
+        'generateSounds', 'snd', 'rp', 'randomPhrase', 'randomWalk', 'rw',
+        'StepSequencer', 'weighted', 'w', 'Shifter', 'sequence', 'seq', 'cut',
+        'explode', 'lcycle', 'callMemo', 'cm', 'Weight', 'W', 'SchedulePlayer']
 
 
 class IPlayer(Interface):
@@ -66,19 +61,15 @@ class PlayableMixin(object):
 
     def stopPlaying(self, node=None):
         se = self._playSchedule
-
-
         # Stop one tick before the next measure - This means if you try to
         # schedule something at a granularity of 1 you're kind of screwed -
         # though I'm not sure of a nicer way to prevent the non-determinism on
         # something stopping before it starts again when the stop and start are
         # scheduled for the same tick
-
         ticksd = self.clock.ticks % self.meter.ticksPerMeasure
         ticks = self.meter.ticksPerMeasure - 1 - ticksd
         self.clock.callLater(ticks, se.stop)
         self._playSchedule = None
-
 
 
 class BasePlayer(PlayableMixin):
@@ -87,18 +78,7 @@ class BasePlayer(PlayableMixin):
     def __init__(self, instr, velocity, stop,
                                         clock=None, interval=None, meter=None):
         self.instr = instr
-        if isinstance(velocity, BaseFilter):
-            warn('Filters are deprecated '
-                '- make your velocity factory a no-arg callable instead')
-            # XXX pardon the transitory hack here
-            # - will be gone with filters one day soon
-
-            def filter_adaptor():
-                v, o = velocity(110, None)
-                return v
-            self.velocity = filter_adaptor
-        else:
-            self.velocity = velocity
+        self.velocity = velocity
         if isinstance(stop, int):
             s = stop
             stop = lambda: s
@@ -142,7 +122,8 @@ class NotePlayer(BasePlayer):
 
     def __init__(self, instr, noteFactory, velocity, stop=lambda: None,
                  clock=None, interval=None):
-        super(NotePlayer, self).__init__(instr, velocity, stop, clock, interval)
+        super(NotePlayer, self).__init__(instr, velocity, stop, clock,
+                                         interval)
         self.noteFactory = _wrapgen(noteFactory)
         self._on_method = lambda n, v: self.instr.playnote(n, v)
         self._off_method = lambda n: self.instr.stopnote(n)
@@ -397,26 +378,6 @@ class Shifter(object):
                 yield [i + self.amount for i in n]
             else:
                 yield n + self.amount
-
-
-def quarter(n=0):
-    return mtt(n * 0.25)
-Q = quarter
-
-
-def eighth(n=0):
-    return mtt(n * 0.125)
-E = quaver = eighth
-
-
-def sixteenth(n=0):
-    return mtt(n * 0.0625)
-S = semiquaver = sixteenth
-
-
-def thirtysecond(n=0):
-    return mtt(n * 0.03125)
-T = demisemiquaver = thirtysecond
 
 
 def sequence(schedule, length=8):
