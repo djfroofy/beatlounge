@@ -5,7 +5,7 @@ from twisted.trial.unittest import TestCase
 
 from bl.testlib import ClockRunner, TestReactor
 from bl import arp
-from bl.player import N
+from bl.ugen import N
 from bl.scheduler import BeatClock, Tempo
 from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
     Adder, PhraseRecordingArp, ArpMap)

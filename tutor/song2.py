@@ -21,7 +21,7 @@
 import random
 from itertools import cycle
 
-from bl.player import R, N
+from bl.ugen import R, N
 from bl.orchestra.midi import Player
 from bl.scheduler import clock
 from tutor.complib import piano_f

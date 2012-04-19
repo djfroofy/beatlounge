@@ -1,6 +1,6 @@
 from twisted.trial.unittest import TestCase, SkipTest
 
-from bl.testlib import ClockRunner, TestReactor
+from bl.testlib import ClockRunner, TestReactor, TestInstrument
 from bl.scheduler import BeatClock, Meter, Tempo
 
 try:
@@ -17,8 +17,6 @@ try:
 except ImportError:
     pypm = None
     MidiHandler = object
-
-from bl.tests.test_player import TestInstrument
 
 
 def checkPypm():

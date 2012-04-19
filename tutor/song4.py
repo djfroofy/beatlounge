@@ -32,7 +32,7 @@ pianoPlayer.resumePlaying()
 kit = kit_f()
 drumRudiment = FiveStrokeRoll()
 drumPlayer = RudimentSchedulePlayer(kit, drumRudiment, 51, 48)
-drumPlayer.startPlaying()
+drumPlayer.resumePlaying()
 
 # Now we see how we can set up a simple "process" to change the key periodically
 

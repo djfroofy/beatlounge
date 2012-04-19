@@ -2,7 +2,7 @@ from zope.interface import implements, Interface, Attribute
 
 import itertools
 
-from bl.player import SchedulePlayer
+from bl.orchestra.midi import Player
 from bl.arp import OrderedArp
 
 
@@ -277,7 +277,7 @@ def scaleRudiment(rudimentClass, ticksPerBeat):
     return _rudiment_classes[name]
 
 
-class RudimentSchedulePlayer(SchedulePlayer):
+class RudimentSchedulePlayer(Player):
     """
     A schedule player for a rudiment. This also gives us arps to manipulate
     or change during the runtime.
@@ -287,7 +287,7 @@ class RudimentSchedulePlayer(SchedulePlayer):
     sustainArp: the sustain arp (OrderedArp)
     """
 
-    def __init__(self, instrument, rudiment, r, l, sustainArp=None, **kw):
+    def __init__(self, instrument, rudiment, r, l, release=None, **kw):
         """
         @param instrument: The backend instrument (Fsynth instrument etc)
         @param rudiment: A IRudiment provider
@@ -296,19 +296,12 @@ class RudimentSchedulePlayer(SchedulePlayer):
         @param sustainArp: An optional "sustain" value arp.
         """
         self.rudiment = rudiment
-        self.timeFactory = rudiment.time(cycle=True)
-        self.noteArp = OrderedArp(list(rudiment.strokes(r, l, cycle=False)))
-        self.velocityArp = OrderedArp(list(rudiment.velocity(cycle=False)))
-        if sustainArp is None:
-            sustainArp = OrderedArp([None])
-        self.sustainArp = sustainArp
-        _time = lambda: self.timeFactory.next()
-        _note = lambda: self.noteArp()
-        _velocity = lambda: self.velocityArp()
-        _sustain = lambda: self.sustainArp()
-        gen = ((_time(), _note(), _velocity(), _sustain())
-               for i in itertools.cycle([0]))
-        SchedulePlayer.__init__(self, instrument, gen, **kw)
+        time = rudiment.time(cycle=True).next
+        note = OrderedArp(list(rudiment.strokes(r, l, cycle=False)))
+        velocity = OrderedArp(list(rudiment.velocity(cycle=False)))
+        kw['time'] = time
+        kw['velocity'] = velocity
+        Player.__init__(self, instrument, note, **kw)
 
     def changeStrokes(self, r, l):
-        self.noteArp.reset(list(self.rudiment.strokes(r, l, cycle=False)))
+        self.note.reset(list(self.rudiment.strokes(r, l, cycle=False)))
