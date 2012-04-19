@@ -31,6 +31,3 @@ class MockSynth(object):
         self.sfonts[sfid] = (channel, bank, preset, path)
 
 Synth = MockSynth
-
-# Uncomment next line to use real synth
-#from fluidsynth import Synth
