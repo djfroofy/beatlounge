@@ -2,13 +2,7 @@ from functools import partial
 
 from twisted.python import log
 
-from txosc import dispatch
-from txosc.async import DatagramClientProtocol, ClientFactory
-
 from bl.debug import DEBUG
-from bl.player import StepSequencer
-from bl.osc.base import fallback 
-
 
 
 class PageWidget(object):
@@ -48,38 +42,45 @@ class GridWidget(PageWidget):
         self._recv_callbacks = []
         for (j, row) in enumerate(self.callbacks):
             for (k, cb) in enumerate(row):
-                node = self.addressPattern % (self.page, j+1, k+1)
+                node = self.addressPattern % (self.page, j + 1, k + 1)
                 recvcb = partial(self._callback, cb, node)
                 self._recv_callbacks.append((node, recvcb))
                 self.receiver.addCallback(node, recvcb)
         return self
-        
 
 
-class Push(PageWidget): 
+class Push(PageWidget):
     addressPattern = '/%d/push%d'
+
 
 class Fader(PageWidget):
     addressPattern = '/%d/fader%d'
 
+
 class MultiFader(PageWidget):
     addressPattern = '/%d/multifader/%d'
+
 
 class Rotary(PageWidget):
     addressPattern = '/%d/rotary%d'
 
+
 class Toggle(PageWidget):
     addressPattern = '/%d/toggle%d'
+
 
 class MultiToggle(GridWidget):
     addressPattern = '/%d/multitoggle/%d/%d'
 
+
 class MultiFaderGrid(GridWidget):
     addressPattern = '/%d/multifader%d/%d'
 
+
 class XY(object):
 
-    def __init__(self, receiver, callback=lambda x,y: None, callbacks=None, page=1):
+    def __init__(self, receiver, callback=lambda x, y: None, callbacks=None,
+                 page=1):
         self.receiver = receiver
         self.callbacks = callbacks
         self.callback = callback
@@ -101,7 +102,7 @@ class XY(object):
         return self
 
     def _callback(self, cb, node, message, address):
-        (x,y) = message.arguments
+        (x, y) = message.arguments
         x = float(x)
         y = float(y)
         if DEBUG:
@@ -121,10 +122,11 @@ class TouchOSCStepSequencer:
         self.page = page
         # Listeners for multifader and toggle widgets
         self._multifader = MultiFader(receiver,
-            [ partial(self.setVelocity, idx) for idx in range(ss.beats) ], page) 
+            [partial(self.setVelocity, idx) for idx in range(ss.beats)],
+            page)
         self._multitoggle = MultiToggle(receiver,
-            [ [ partial(ss.setStep, c, r) for c in range(ss.beats) ]
-               for r in range(len(ss.notes)) ], page)
+            [[partial(ss.setStep, c, r) for c in range(ss.beats)]
+             for r in range(len(ss.notes))], page)
 
     def attach(self):
         ss = self.stepSequencer
@@ -147,9 +149,11 @@ class TouchOSCStepSequencer:
         self._multifader.attach()
         self._multitoggle.attach()
 
-        self._led_schedule = clock.schedule(self.updateLEDs).startLater(1, 1. / beats)
+        self._led_schedule = clock.schedule(self.updateLEDs
+                ).startLater(1, 1. / beats)
         self._refresh_col = 0
-        self._refresh_ui_schedule = clock.schedule(self.refreshUI).startLater(1, 0.0625)
+        self._refresh_ui_schedule = clock.schedule(self.refreshUI
+                ).startLater(1, 0.0625)
         return self
 
     def detach(self):
@@ -168,7 +172,6 @@ class TouchOSCStepSequencer:
         # really only want this for udp, but alas
         self.send(self.ledAddressPattern % (self.page, on), 1.0)
         self.send(self.ledAddressPattern % (self.page, off), 0.0)
-        # log.msg('[TouchOSCStepSequencer.updateLEDs] sent off=%s, on=%s [%d]' % (off, on, ss.clock.ticks))            
 
     def setVelocity(self, idx, v):
         nv = int(v * 127)
@@ -183,6 +186,4 @@ class TouchOSCStepSequencer:
         for beat in range(ss.beats):
             self.send(MultiFader.addressPattern % (self.page, beat + 1),
                       ss.velocity[beat] / 127.)
-        self._refresh_col = (self._refresh_col + 1) % ss.beats 
-
-
+        self._refresh_col = (self._refresh_col + 1) % ss.beats

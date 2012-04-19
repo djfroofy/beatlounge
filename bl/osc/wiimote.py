@@ -1,5 +1,6 @@
 from bl.osc import FloatDispatcher, BoolDispatcher, DispatcherHub
 
+
 class Wiimote(object):
     pitch = 0
     roll = 0
@@ -19,32 +20,46 @@ class Wiimote(object):
 
     def on_pitch(self, pitch):
         self.pitch = pitch
+
     def on_roll(self, roll):
         self.roll = roll
+
     def on_yaw(self, yaw):
         self.yaw = yaw
+
     def on_accel(self, accel):
         self.accel = accel
+
     def on_one(self, one):
         self.one = one
+
     def on_two(self, two):
         self.two = two
+
     def on_A(self, A):
         self.A = A
+
     def on_B(self, B):
         self.B = B
+
     def on_up(self, up):
         self.up = up
+
     def on_down(self, down):
         self.down = down
+
     def on_left(self, left):
         self.left = left
+
     def on_right(self, right):
         self.right = right
+
     def on_home(self, home):
         self.home = home
+
     def on_minus(self, minus):
         self.minus = minus
+
     def on_plus(self, plus):
         self.plus = plus
 
@@ -67,18 +82,21 @@ BUTTON_PLUS = BUTTON_ROOT + 'Plus'
 BUTTON_RIGHT = BUTTON_ROOT + 'Right'
 BUTTON_UP = BUTTON_ROOT + 'Up'
 
+
 class PitchDispatcher(FloatDispatcher):
     address = PITCH_ADDR
+
 
 class RollDispatcher(FloatDispatcher):
     address = ROLL_ADDR
 
+
 class YawDispatcher(FloatDispatcher):
     address = YAW_ADDR
 
+
 class AccelDispatcher(FloatDispatcher):
     address = ACCEL_ADDR
-
 
 
 def wiimoteHub():
@@ -91,12 +109,13 @@ def wiimoteHub():
         from txosc.async import DatagramServerProtocol
         hub = wiimoteHub()
         wiimote = hub.wiimote
-        reactor.listenUDP(17779, DatagramServerProtocol(hub.receiver), interface='0.0.0.0')
+        reactor.listenUDP(17779, DatagramServerProtocol(hub.receiver),
+                          interface='0.0.0.0')
     """
     wiimote = Wiimote()
 
     hub_args = []
-    for Dispatcher,wii_meth in [
+    for Dispatcher, wii_meth in [
         (PitchDispatcher, wiimote.on_pitch),
         (RollDispatcher, wiimote.on_roll),
         (YawDispatcher, wiimote.on_yaw),
@@ -120,4 +139,3 @@ def wiimoteHub():
     hub = DispatcherHub(*hub_args)
     hub.wiimote = wiimote
     return hub
-

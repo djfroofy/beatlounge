@@ -36,21 +36,21 @@ class PlayerTests(TestCase, ClockRunner):
 
     def setUp(self):
         tempo = Tempo(135)
-        self.meter = Meter(4,4, tempo=tempo)
+        self.meter = Meter(4, 4, tempo=tempo)
         self.meterStandard = self.meter
         self.clock = BeatClock(tempo, meter=self.meter, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
         self.notePlayerFilter = TestFilter(120)
         n = self.dtt = self.clock.meter.dtt
-        self.notePlayer = NotePlayer(self.instr1, snd(cycle([0,1])),
+        self.notePlayer = NotePlayer(self.instr1, snd(cycle([0, 1])),
                                      self.notePlayerFilter,
-                                     clock=self.clock, interval=n(1,4))
+                                     clock=self.clock, interval=n(1, 4))
         self.chordPlayerFilter = TestFilter(100)
-        self.chordPlayer = ChordPlayer(self.instr2, snd(cycle([[0,1],[2,3]])),
+        self.chordPlayer = ChordPlayer(self.instr2,
+                                       snd(cycle([[0, 1], [2, 3]])),
                                        self.chordPlayerFilter,
-                                       clock=self.clock, interval=n(1,8))
-
+                                       clock=self.clock, interval=n(1, 8))
 
     def test_interfaces(self):
         verifyClass(INotePlayer, NotePlayer)
@@ -215,8 +215,8 @@ class PlayerTests(TestCase, ClockRunner):
 
         def v():
             return velocities.next()
-        notePlayer = NotePlayer(self.instr1, cycle([0,1]), v,
-                                clock=self.clock, interval=self.dtt(1,4))
+        notePlayer = NotePlayer(self.instr1, cycle([0, 1]), v,
+                                clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.startPlaying('a')
         self.runTicks(96)
         expectedPlays = [('note', 0, 0, 127), ('note', 24, 1, 120),
@@ -246,12 +246,12 @@ class SchedulePlayerTests(TestCase, ClockRunner):
 
     def setUp(self):
         tempo = Tempo(135)
-        self.meter = Meter(4,4,tempo=tempo)
+        self.meter = Meter(4, 4, tempo=tempo)
         self.clock = BeatClock(tempo, meter=self.meter, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
         self.instr3 = TestInstrument(self.clock)
-        self.dtt = n = self.clock.meter.dtt
+        self.dtt = self.clock.meter.dtt
         self.schedulePlayer1 = SchedulePlayer(self.instr1,
                                               self.scheduleFactory(),
                                               clock=self.clock)
@@ -279,7 +279,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         events = cycle([
             [60, 95, mtt(1.00)],
             [64, 70, mtt(0.50)],
-            [48, 93, mtt(0.25)],])
+            [48, 93, mtt(0.25)]])
         return ([t.next()] + e for e in events)
 
     def chordScheduleFactory(self):
@@ -289,13 +289,14 @@ class SchedulePlayerTests(TestCase, ClockRunner):
         events = cycle([
             [[60, 64, 47], 95, mtt(1.00)],
             [[48, 52, 55], 70, mtt(0.50)],
-            [[36, 39, 43], 93, mtt(0.25)],])
+            [[36, 39, 43], 93, mtt(0.25)]])
         return ([t.next()] + e for e in events)
 
     def factoryWithCallables(self):
         def mtt(measures):
             return self.meter.ticksPerMeasure * measures
         c = cycle([0.5, 0.75])
+
         def w():
             current = 0
             while 1:
@@ -305,6 +306,7 @@ class SchedulePlayerTests(TestCase, ClockRunner):
                 else:
                     yield mtt(current + c.next())
                 current += 1
+
         when = w().next
         note = cycle([64, cycle([67, 69]).next]).next
         velocity = cycle([100, cycle([80, 90]).next]).next
@@ -481,10 +483,10 @@ class UtilityTests(TestCase):
         # semiquaver triplet
         notes = sequence([(4, 3), (5, 5), (1, 21), (2, 22), (3, 23)], 24)
         self.assertEquals(notes,
-            [N,N,N, 4,N,5,
-             N,N,N, N,N,N,
-             N,N,N, N,N,N,
-             N,N,N, 1,2,3])
+            [N, N, N, 4, N, 5,
+             N, N, N, N, N, N,
+             N, N, N, N, N, N,
+             N, N, N, 1, 2, 3])
 
     def test_explode(self):
         s = [1, 2, 3, 4]
@@ -493,7 +495,7 @@ class UtilityTests(TestCase):
         exploded = explode(s, 4)
         self.assertEquals(exploded, [1, N, N, N, 2, N, N, N, 3, N, N, N, 4, N,
                                      N, N])
-        s = [1,N,2,N,N,3,4,N]
+        s = [1, N, 2, N, N, 3, 4, N]
         exploded = explode(s)
         self.assertEquals(exploded, [1, N, N, N, 2, N, N, N, N, N, 3, N, 4, N,
                                      N, N])
@@ -503,17 +505,18 @@ class UtilityTests(TestCase):
                                      N, N, N, N])
 
     def test_cut(self):
-        s = explode([1,N,2,N,N,3,4,N], 4)
+        s = explode([1, N, 2, N, N, 3, 4, N], 4)
         for i in range(512):
             chopped = cut(s)
             self.assertEquals(len(chopped), 32)
 
-
     def test_callMemo(self):
         start = [0]
+
         def func():
             start[0] = start[0] + 1
             return start[0]
+
         f = callMemo(func)
         values = []
         cur = 1
@@ -522,4 +525,4 @@ class UtilityTests(TestCase):
             self.assertEquals(v, cur)
             cur += 1
             values.append(f.currentValue)
-        self.assertEquals(values, [1,2])
+        self.assertEquals(values, [1, 2])

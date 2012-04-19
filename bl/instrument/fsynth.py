@@ -1,11 +1,8 @@
 from pprint import pformat
 import os
-import random
 from warnings import warn
 
 from zope.interface import implements
-
-from twisted.python import log
 
 from fluidsynth import Synth
 
@@ -38,7 +35,7 @@ class SynthPool:
         self.settings = {}
         self._channel_gen = {}
         if reactor is None:
-            clock = reactor = getClock()
+            reactor = getClock()
         self.reactor = reactor
         self.audiodev = audiodev
         self.reactor.callWhenRunning(self.startSynths)
@@ -62,11 +59,13 @@ class SynthPool:
             gain, samplerate = self.settings.get(connection, (0.5, 44100))
             fs = self.router.connections[connection](gain=gain,
                                                      samplerate=samplerate)
+
             def seq():
                 curr = 0
                 while 1:
                     yield curr
                     curr += 1
+
             self._channel_gen[fs] = seq()
             self.pool[connection] = fs
             if self.reactor.running:
@@ -80,18 +79,19 @@ class SynthPool:
         synth.program_select(channel, sfid, bank, preset)
         return sfid, channel
 
-
     def connectInstrument(self, synth, instr, sfpath=None,
                          channel=None, bank=0, preset=0, sfid=None):
         if sfid is not None:
             return instr.registerSoundfont(sfid, channel or 0)
-        sfid, channel = self.loadSoundFont(synth, sfpath, channel, bank, preset)
+        sfid, channel = self.loadSoundFont(synth, sfpath, channel, bank,
+                                           preset)
         instr.registerSoundfont(sfid, channel)
 
 
 def MonoPool():
     router = SynthRouter(mono=Synth)
     return SynthPool(router)
+
 
 def StereoPool():
     router = SynthRouter(left=Synth, right=Synth, mono=Synth)
@@ -102,6 +102,7 @@ def QuadPool():
     router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth,
                          mono=Synth)
     return SynthPool(router)
+
 
 def NConnectionPool(*p, **synth_factories):
     router = SynthRouter(*p, **synth_factories)
@@ -126,12 +127,12 @@ class ChordPlayerMixin(object):
 
     def strum(self, notes, velocity=80):
         # TODO - deprecate this function
-        v = lambda : velocity
+        v = lambda: velocity
         if callable(velocity):
-            v = lambda : velocity()
+            v = lambda: velocity()
         for (i, note) in enumerate(notes):
             later = 1
-            self.clock.callLater(i*later, self.playnote, note, v())
+            self.clock.callLater(i * later, self.playnote, note, v())
 
     def chordon(self, notes, velocity=80):
         if self.strumming:
@@ -196,15 +197,15 @@ class Instrument(ChordPlayerMixin):
         self.synth = synth
         self._file = os.path.basename(sfpath)
         self.sfpath = sfpath
-        self._options = dict( sfpath=sfpath, connection=connection,
-                              channel=channel, bank=bank, preset=preset )
+        self._options = dict(sfpath=sfpath, connection=connection,
+                             channel=channel, bank=bank, preset=preset)
         pool.connectInstrument(self.synth, self, sfpath, channel=channel,
                                bank=bank, preset=preset)
         self._max_velocity = 127
 
     def __str__(self):
-        return 'Instrument path=%s sfid=%s channel=%s' % (self._file, self.sfid,
-                                                          self.channel)
+        return 'Instrument path=%s sfid=%s channel=%s' % (
+                self._file, self.sfid, self.channel)
 
     def registerSoundfont(self, sfid, channel):
         self.sfid = sfid
@@ -236,8 +237,8 @@ class Instrument(ChordPlayerMixin):
                       sustain=None, reverb=None, chorus=None, **ignored):
         if self.recorder is not None:
             self.recorder(self, 'controlChange', vibrato=vibrato, pan=pan,
-                          expression=expression, sustain=sustain, reverb=reverb,
-                          chorus=channel, ignored=ignored)
+                          expression=expression, sustain=sustain,
+                          reverb=reverb, chorus=chorus, ignored=ignored)
         if vibrato is not None:
             self.synth.cc(self.channel, CC_VIBRATO, vibrato)
         if pan is not None:
@@ -265,7 +266,7 @@ class MultiInstrument(ChordPlayerMixin):
         for (instrument, noteMapping) in instrumentMapping:
             self.instruments.append(instrument)
             for (to, from_) in noteMapping:
-                if self._mapping.has_key(to):
+                if to in self._mapping:
                     msg = 'Reduant entry in instrumentMapping: %s' % to
                     if strict:
                         raise ValueError(msg)
@@ -293,7 +294,7 @@ class MultiInstrument(ChordPlayerMixin):
 
 class Layer(ChordPlayerMixin):
 
-    MIDI = dict([[n,n] for n in range(128)])
+    MIDI = dict([[n, n] for n in range(128)])
 
     def __init__(self, instruments):
         self.instruments = []

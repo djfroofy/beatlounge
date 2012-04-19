@@ -1,5 +1,4 @@
-
-__all__ = [ 'Synth' ]
+__all__ = ['Synth']
 
 
 def _nextid(id):
@@ -22,17 +21,14 @@ class MockSynth(object):
     def noteoff(self, note):
         pass
 
-
     def sfload(self, path):
         sfid = nextid.next()
         self.sfonts[sfid] = (None, None, None, path)
         return sfid
 
     def program_select(self, channel, sfid, bank, preset):
-        (_,_,_,path) = self.sfonts[sfid]
+        (_, _, _, path) = self.sfonts[sfid]
         self.sfonts[sfid] = (channel, bank, preset, path)
-
-        
 
 Synth = MockSynth
 

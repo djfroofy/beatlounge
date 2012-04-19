@@ -1,5 +1,4 @@
 import sys
-import time
 import math
 import warnings
 
@@ -7,9 +6,6 @@ from collections import namedtuple
 
 from twisted.python import log
 from twisted.python.failure import Failure
-from twisted.python.components import proxyForInterface
-from twisted.internet.interfaces import IReactorTime
-from twisted.internet.base import ReactorBase
 from twisted.internet.selectreactor import SelectReactor
 from twisted.internet.task import LoopingCall
 
@@ -39,7 +35,6 @@ class Tempo(object):
         self.bpm = bpm
         self.tpb = tpb
         self.tpm = self.bpm * self.tpb
-
 
     def reset(self, bpm=None, tpb=None, tpm=None):
         if bpm:
@@ -136,12 +131,12 @@ class Meter(object):
         Convert n/d (examples 1/4, 3/4, 3/32, 8/4..) For example, if the
         ticks-per-beat are 24, then n=1 and d=8 would return 12.
         """
-        tpm = self.tempo.tpb * 4 # Ticks per standard measure 4/4
-        ticks = float(n)/d * tpm
+        tpm = self.tempo.tpb * 4  # Ticks per standard measure 4/4
+        ticks = float(n) / d * tpm
         _, rem = divmod(ticks, 1)
         if rem and self.strict:
-            raise ValueError('<divisionToTicks> %s/%s does not evenly divide %s'
-                             % (n, d, tpm))
+            raise ValueError('<divisionToTicks> %s/%s does not evenly divide '
+                             '%s' % (n, d, tpm))
         elif rem and not self.strict:
             log.err(Failure(ValueError('<divisionToTicks> %s/%s does not '
                                        'evenly divide %s'
@@ -152,7 +147,6 @@ class Meter(object):
 
     def nextDivision(self, ticks, n, d):
         m = self.measure(ticks) * self.ticksPerMeasure
-        nm = m + self.ticksPerMeasure
         offset_ticks = self.divisionToTicks(n, d)
         next = m + offset_ticks
         if next < ticks:
@@ -238,7 +232,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.meters = meters
         self._meter_schedule = {}
         if not self.meters:
-            self.meters = [Meter(4,4,1,tempo=self.tempo)]
+            self.meters = [Meter(4, 4, 1, tempo=self.tempo)]
         else:
             warnings.warn('meters argument is deprecated, use '
                           'meter=oneMeterNotAList instead')
@@ -291,11 +285,8 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             self.reactor.run()
 
     def _initBackends(self):
-
-
         # XXX this should be refactored some - make backends pluggable and
         # indicate which to start from a command line, etc.
-
         try:
             from bl.instrument import fsynth
             if self.synthChannels == 'stereo':
@@ -425,7 +416,6 @@ class BeatClock(SelectReactor, SynthControllerMixin):
             delta = self.meter.nextMeasure(self.ticks, 1) - self.ticks
         return delta
 
-
     def callAfterMeasures(self, measures, f, *a, **kw):
         """
         Call a function after measures have elapsed
@@ -452,6 +442,7 @@ class BeatClock(SelectReactor, SynthControllerMixin):
         self.reactor.callLater(pause, self.task.start, 60. / self.tempo.tpm,
                                True)
 
+
 class ScheduledEvent(object):
     """
     A ScheduledEvent is a wrapper around a callable which can be scheduled at a
@@ -461,7 +452,6 @@ class ScheduledEvent(object):
     def __init__(self, clock, _f, *args, **kwargs):
         self.clock = clock
         self.call = (_f, args, kwargs)
-
 
     def startAfterTicks(self, ticks, interval):
         """
@@ -474,8 +464,7 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_start)
         return self
 
-
-    def startAfter(self, divisions=(1,1), interval=(1,4)):
+    def startAfter(self, divisions=(1, 1), interval=(1, 4)):
         """
         """
         meter = self.clock.meter
@@ -502,7 +491,6 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_start)
         return self
 
-
     def stopAfterTicks(self, ticks):
         """
         Stop schedule event after ticks. This is for raw tick-based scheduling;
@@ -518,10 +506,9 @@ class ScheduledEvent(object):
         self.clock.callWhenRunning(_schedule_stop)
         return self
 
-    def stopAfter(self, divisions=(1,1)):
+    def stopAfter(self, divisions=(1, 1)):
         """
         """
-        meter = self.clock.meter
         ticks = self._divisions(divisions)
         self.stopAfterTicks(ticks)
         return self
@@ -538,4 +525,3 @@ class ScheduledEvent(object):
 
 clock = BeatClock()
 Meter.clock = clock
-

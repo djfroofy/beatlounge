@@ -8,14 +8,12 @@ from txosc import async
 from txosc import osc
 from txosc import dispatch
 
-
-from bl.debug import DEBUG
-
 from bl.player import Player, snd
 
 
 def fallback(message, address):
     log.msg('[fallback] %s %s' % (message, address))
+
 
 class MessageSender(object):
     """
@@ -49,14 +47,14 @@ class MessageSender(object):
 
 class Play(object):
 
-    def __init__(self, instr, notes, velocity, stop=lambda : None, clock=None):
+    def __init__(self, instr, notes, velocity, stop=lambda: None, clock=None):
         self.notes = notes
         self.player = Player(instr, snd(self._iternotes()), velocity=velocity,
             stop=stop, clock=clock)
-    
+
     def _iternotes(self):
         while 1:
-            yield self.notes[self.index]    
+            yield self.notes[self.index]
 
     def play(self, index, on_off):
         if on_off:
@@ -75,15 +73,15 @@ class Play(object):
 # Everything under this note is deprecated.
 
 class AbstractDispatcher(object):
-    
+
     address = None
 
-    def __init__(self, address=None, transform=lambda v : v):
+    def __init__(self, address=None, transform=lambda v: v):
         warn('AbstractDispatcher is deprecated for rilz')
         self._listeners = []
         self.address = address or self.address
         self._transform = transform
-    
+
     def listen(self, handler):
         self._listeners.append(handler)
 
@@ -98,19 +96,19 @@ class AbstractDispatcher(object):
             except Exception, e:
                 f = Failure(e)
                 f.printTraceback()
-                cn = self.__class__.__name__
                 log.err(e)
-                #'[%s.dispatch] error' % cn, e)
 
     def __call__(self):
         return self
 
+
 class TouchDispatcher(AbstractDispatcher):
-    
+
     address = "touch"
 
     def handle(self, message, address):
-        log.msg('[TouchDispatcher.handle] %s, %s, %s' % (message, message.arguments, address))
+        log.msg('[TouchDispatcher.handle] %s, %s, %s' % (
+                message, message.arguments, address))
         try:
             x, y = message.arguments
             self.dispatch(self._transform(float(x)), self._transform(float(y)))
@@ -140,10 +138,12 @@ class Float2Dispatcher(AbstractDispatcher):
     def handle(self, message, address):
         try:
             (v1, v2) = message.arguments
-            self.dispatch(self._transform(float(v1)), self._transform(float(v2)))
+            self.dispatch(self._transform(float(v1)),
+                          self._transform(float(v2)))
         except Exception, e:
             log.msg('[Float2Dispatcher.handle] error', e)
-      
+
+
 class Float3Dispatcher(AbstractDispatcher):
 
     def handle(self, message, address):
@@ -152,10 +152,11 @@ class Float3Dispatcher(AbstractDispatcher):
             self.dispatch(
                 self._transform(float(v1)),
                 self._transform(float(v2)),
-                self._transform(sloat(v3)))
+                self._transform(float(v3)))
         except Exception, e:
             log.msg('[Float3Dispatcher.handle] error', e)
-      
+
+
 class DispatcherHub(object):
 
     def __init__(self, *dispatchers, **kw):
@@ -167,12 +168,14 @@ class DispatcherHub(object):
 
     def addDispatcher(self, dispatcher):
         if dispatcher.address in self._addresses:
-            raise ValueError('Dispatcher with address %s already added' % dispatcher.address)
+            raise ValueError('Dispatcher with address %s already added' %
+                             dispatcher.address)
         self._addresses[dispatcher.address] = dispatcher
         prefix = ''
         if dispatcher.address[0] != '/':
             prefix = '/'
-        self.receiver.addCallback(prefix + dispatcher.address, dispatcher.handle)  
+        self.receiver.addCallback(prefix + dispatcher.address,
+                                  dispatcher.handle)
 
     def fallback(self, message, address):
         log.msg('[fallback] %s %s' % (message, address))
@@ -185,6 +188,7 @@ class DispatcherHub(object):
 
 class Device(object):
     pass
+
 
 class Accelerometer(Device):
 
@@ -206,16 +210,12 @@ class TouchPad(Device):
 
     max_x = 640
     max_y = 480
-    
+
     x = 0
     y = 0
-    
+
     def on_x(self, v):
         self.x = v
 
     def on_y(self, v):
         self.y = v
-
-
-
-

@@ -111,41 +111,44 @@ printDeviceSummary = PypmWrapper.printDeviceSummary
 FUNCTIONS = {}
 FUNCTION_ARITY = {}
 
-# @cleanup
-g = globals()
-def a(name, arity, v):
-    g[name] = v
+
+def _add_global(name, arity, v):
+    globals()[name] = v
     FUNCTIONS[v] = name
     FUNCTION_ARITY[v] = arity
     __all__.append(name)
 
 for i in range(16):
     no = i + 1
-    a('NOTEOFF_CHAN%d' % no, 2, 0x80 + i)
-    a('NOTEON_CHAN%d' % no, 2, 0x90 + i)
-    a('POLYAFTERTOUCH_CHAN%d' % no, 2, 0xA0 + i)
-    a('CONTROLCHANGE_CHAN%d' % no, 2, 0xB0 + i)
-    a('PROGRAMCHANGE_CHAN%d' % no, 2, 0xC0 + i)
-    a('CHANAFTERTOUCH_CHAN%d' % no, 2, 0xD0 + i)
-    a('PITCHWHEEL_CHAN%d' % no, 2, 0xE0 + i)
+    _add_global('NOTEOFF_CHAN%d' % no, 2, 0x80 + i)
+    _add_global('NOTEON_CHAN%d' % no, 2, 0x90 + i)
+    _add_global('POLYAFTERTOUCH_CHAN%d' % no, 2, 0xA0 + i)
+    _add_global('CONTROLCHANGE_CHAN%d' % no, 2, 0xB0 + i)
+    _add_global('PROGRAMCHANGE_CHAN%d' % no, 2, 0xC0 + i)
+    _add_global('CHANAFTERTOUCH_CHAN%d' % no, 2, 0xD0 + i)
+    _add_global('PITCHWHEEL_CHAN%d' % no, 2, 0xE0 + i)
 
-a('SYSTEMEXCL', 2, 0xf0)
-a('MTC_QFRAME', 2, 0xf1)
-a('SONGPOSPOINTER', 2, 0xf2)
-a('SONGSELECT', 2, 0xF3)
-a('RESERVED1', 2, 0xF4)
-a('RESERVED2', 2, 0xF5)
-a('TUNEREQ', 2, 0xF6)
-a('EOX',  2, 0xF7)
-a('TIMINGCLOCK', 2, 0xF8)
-a('RESERVED3', 2, 0xF9)
-a('START',  2, 0xFA)
-a('CONTINUE', 2, 0xFB)
-a('STOP', 2, 0xFC)
-a('ACTIVESENSING', 2, 0xFE)
-a('SYSTEMRESET', 2, 0xFF)
+_add_global('SYSTEMEXCL', 2, 0xf0)
+_add_global('MTC_QFRAME', 2, 0xf1)
+_add_global('SONGPOSPOINTER', 2, 0xf2)
+_add_global('SONGSELECT', 2, 0xF3)
+_add_global('RESERVED1', 2, 0xF4)
+_add_global('RESERVED2', 2, 0xF5)
+_add_global('TUNEREQ', 2, 0xF6)
+_add_global('EOX',  2, 0xF7)
+_add_global('TIMINGCLOCK', 2, 0xF8)
+_add_global('RESERVED3', 2, 0xF9)
+_add_global('START',  2, 0xFA)
+_add_global('CONTINUE', 2, 0xFB)
+_add_global('STOP', 2, 0xFC)
+_add_global('ACTIVESENSING', 2, 0xFE)
+_add_global('SYSTEMRESET', 2, 0xFF)
 
-del a, g
+del _add_global
+
+# pyflakes
+START = globals()['START']
+TIMINGCLOCK = globals()['TIMINGCLOCK']
 
 
 class MidiDispatcher(object):
@@ -175,8 +178,8 @@ class MidiDispatcher(object):
         nm = self.clock.meter.nm
         n = self.clock.meter.dtt
         self._event = self.clock.schedule(self).startAfterTicks(
-            nm(self.clock.ticks, 1)-self.clock.ticks,
-            n(1,96))
+            nm(self.clock.ticks, 1) - self.clock.ticks,
+            n(1, 96))
 
     def __call__(self):
         """
@@ -324,11 +327,8 @@ class NoteEventHandler(MidiHandler):
         """
         Call noteonCallback with the note and velocity.
         """
-
-
         # TODO - maybe do something smarter with the timestamp
         # ... like normalize to ticks
-
         self.noteonCallback(note, velocity)
 
     def noteoff(self, channel, note, velocity, timestamp):
@@ -359,15 +359,12 @@ class ClockSender(object):
         nm = self.clock.meter.nm
         n = self.clock.meter.dtt
         self._event = self.clock.schedule(self).startAfterTicks(
-            nm(self.clock.ticks, 1)-self.clock.ticks,
-            n(1,96))
+            nm(self.clock.ticks, 1) - self.clock.ticks,
+            n(1, 96))
 
     def __call__(self):
-
-
         # START and TIMINGCLOCK are added to globals during module
         # initialization - see a() defined and deleted above.
-
         if not self._started:
             self.midiOut.Write([[[START], pypm.Time()]])
             self._started = True

@@ -22,17 +22,19 @@ def schedule(time, func, a, b):
         yield (time, func,
                {'a': a, 'b': b})
 
+
 def schedule2(time, func, a, b):
     while 1:
         t = time()
         yield (t, func,
                {'a': a, 'b': b})
 
+
 class SchedulePlayerTestCase(TestCase, ClockRunner):
 
     def setUp(self):
         self.tempo = Tempo(135)
-        self.meter = Meter(4,4, tempo=self.tempo)
+        self.meter = Meter(4, 4, tempo=self.tempo)
         self.clock = BeatClock(tempo=self.tempo, meter=self.meter,
                                reactor=TestReactor())
 
@@ -59,7 +61,7 @@ class SchedulePlayerTestCase(TestCase, ClockRunner):
         func2 = TestFunc(self.clock)
         c = (v for v in xrange(0, 1024, 7)).next
         player = SchedulePlayer(schedule(time, func, a, b), clock=self.clock)
-        player.addChild(((func2, {'z':c}) for i in cycle([1])))
+        player.addChild(((func2, {'z': c}) for i in cycle([1])))
         self.runTicks(25)
         self.assertEquals(func.calls, [])
         player.resumePlaying()
@@ -123,7 +125,7 @@ class SchedulePlayerTestCase(TestCase, ClockRunner):
         expected.extend([(288, {'a': 5, 'b': 10}), (312, {'a': 6, 'b': 12}),
                          (336, {'a': 7, 'b': 14}), (360, {'a': 8, 'b': 16}),
                          (384, {'a': 9, 'b': 18}), (408, {'a': 10, 'b': 20}),
-                         (432, {'a': 11,'b': 22}), (456, {'a': 12, 'b': 24}),
+                         (432, {'a': 11, 'b': 22}), (456, {'a': 12, 'b': 24}),
                          (480, {'a': 13, 'b': 26})])
         self.assertEquals(func.calls, expected)
 
@@ -144,7 +146,7 @@ class SchedulePlayerTestCase(TestCase, ClockRunner):
 
     def test_time_in_past_busts_the_scheduler(self):
         func = TestFunc(self.clock)
-        time = (v for v in [0,24,12,48,96]).next
+        time = (v for v in [0, 24, 12, 48, 96]).next
         a = (v for v in xrange(1024)).next
         b = (v for v in xrange(0, 1024, 2)).next
         player = SchedulePlayer(schedule(time, func, a, b),

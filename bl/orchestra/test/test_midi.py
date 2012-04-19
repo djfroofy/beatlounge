@@ -11,7 +11,7 @@ class PlayerTests(TestCase, ClockRunner):
 
     def setUp(self):
         tempo = Tempo(135)
-        self.meter = Meter(4,4, tempo=tempo)
+        self.meter = Meter(4, 4, tempo=tempo)
         self.meterStandard = self.meter
         self.clock = BeatClock(tempo, meter=self.meter, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
@@ -19,9 +19,9 @@ class PlayerTests(TestCase, ClockRunner):
         self.dtt = self.clock.meter.dtt
 
     def test_player_plays_notes(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             velocity=cycle([120]).next,
-                            clock=self.clock, interval=self.dtt(1,4))
+                            clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.resumePlaying()
         self.runTicks(96)
         expectedPlays = [
@@ -34,10 +34,10 @@ class PlayerTests(TestCase, ClockRunner):
         self.failIf(self.instr1.stops)
 
     def test_player_releases_notes(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             velocity=cycle([120]).next,
                             release=cycle([12]).next,
-                            clock=self.clock, interval=self.dtt(1,4))
+                            clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.resumePlaying()
         self.runTicks(96)
         expectedPlays = [
@@ -52,10 +52,10 @@ class PlayerTests(TestCase, ClockRunner):
                            ('note', 60, 0), ('note', 84, 1)])
 
     def test_player_skips_noteoff_scheduling_on_None(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             velocity=cycle([120]).next,
-                            release=cycle([12,None]).next,
-                            clock=self.clock, interval=self.dtt(1,4))
+                            release=cycle([12, None]).next,
+                            clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.resumePlaying()
         self.runTicks(96)
         expectedPlays = [
@@ -69,7 +69,7 @@ class PlayerTests(TestCase, ClockRunner):
                           [('note', 12, 0), ('note', 60, 0)])
 
     def test_default_interval(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             velocity=cycle([120]).next,
                             release=cycle([12]).next,
                             clock=self.clock)
@@ -80,7 +80,7 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 48, 0, 120)])
 
     def test_default_velocity(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             release=cycle([12]).next,
                             clock=self.clock)
         notePlayer.resumePlaying()
@@ -90,9 +90,9 @@ class PlayerTests(TestCase, ClockRunner):
             ('note', 48, 0, 127)])
 
     def test_pause_playing(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             velocity=cycle([120]).next,
-                            clock=self.clock, interval=self.dtt(1,4))
+                            clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.resumePlaying()
         self.runTicks(96)
         expectedPlays = [
@@ -114,10 +114,10 @@ class PlayerTests(TestCase, ClockRunner):
         self.assertEquals(self.instr1.plays, expectedPlays)
 
     def test_chord_player_plays_chords(self):
-        notePlayer = ChordPlayer(self.instr1, cycle([[0,1],[1,0]]).next,
+        notePlayer = ChordPlayer(self.instr1, cycle([[0, 1], [1, 0]]).next,
                                  velocity=cycle([120]).next,
                                  release=cycle([12]).next,
-                                 clock=self.clock, interval=self.dtt(1,4))
+                                 clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.resumePlaying()
         self.runTicks(96)
         expectedPlays = [
@@ -132,11 +132,11 @@ class PlayerTests(TestCase, ClockRunner):
                            ('chord', 60, [0, 1]), ('chord', 84, [1, 0])])
 
     def test_player_control_changes(self):
-        notePlayer = Player(self.instr1, cycle([0,1]).next,
+        notePlayer = Player(self.instr1, cycle([0, 1]).next,
                             velocity=cycle([120]).next,
-                            cc={'expression': cycle([100,115,120]).next,
-                                'sustain': cycle([50,120]).next},
-                            clock=self.clock, interval=self.dtt(1,4))
+                            cc={'expression': cycle([100, 115, 120]).next,
+                                'sustain': cycle([50, 120]).next},
+                            clock=self.clock, interval=self.dtt(1, 4))
         notePlayer.resumePlaying()
         self.runTicks(96)
         expectedPlays = [

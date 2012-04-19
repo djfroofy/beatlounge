@@ -28,7 +28,7 @@ class Player(OneSchedulePlayerMixin):
     offMethodName = 'noteoff'
 
     def __init__(self, instr, note, velocity=None, release=None,
-                 interval=(1,8), time=None, clock=None, cc=None):
+                 interval=(1, 8), time=None, clock=None, cc=None):
         self.instr = IMIDIInstrument(instr)
         self.clock = getClock(clock)
         if velocity is None:
@@ -38,7 +38,7 @@ class Player(OneSchedulePlayerMixin):
         self.release = release
         self.cc = cc
         self.time = timing(self.clock, time, interval)
-        noteMemo = CallMemo(lambda : self.note())
+        noteMemo = CallMemo(lambda: self.note())
         noteonSchedule = schedule(self.time, self.noteon,
                                   {'note': noteMemo,
                                    'velocity': (lambda: self.velocity())})

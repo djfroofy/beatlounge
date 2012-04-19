@@ -80,7 +80,6 @@ hoppers = [
 ]
 
 
-
 major = [-12,-10,-8,-7,-5,-3,-1,0,2,4,5,7,9,11,12]
 aeolian = [-12,-10,-9,-7,-5,-4,-2,0,2,3,5,7,8,10,12]
 pent = [-12,-9,-7,-5,-2,0,3,5,7,10,12]
@@ -89,14 +88,11 @@ pent = [-12,-9,-7,-5,-2,0,3,5,7,10,12]
 def _stretch(scale):
     return [ n - 12 for n in scale[:-1] ] + scale
 
+
 def hoppers_in(scale):
     if scale[0] > -1: scale = _stretch(scale)
     return [candidate for candidate in hoppers if all([a in scale for a in candidate])]
 
+
 major_hoppers = hoppers_in(major)
 aeolian_hoppers = hoppers_in(aeolian)
-
-
-
-
-

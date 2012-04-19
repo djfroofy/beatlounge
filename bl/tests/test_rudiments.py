@@ -1,6 +1,3 @@
-from pprint import pprint
-from itertools import cycle
-
 from twisted.trial.unittest import TestCase
 
 from bl.scheduler import Meter, Tempo, BeatClock
@@ -25,15 +22,14 @@ class RudimentsTest(TestCase):
             if not ct:
                 break
         self.assertEquals(l, [0, 6, 12, 18, 24,  48, 54, 60, 66, 72,
-                              96, 102, 108, 114, 120,  144, 150, 156, 162, 168])
-
+                              96, 102, 108, 114, 120,  144, 150, 156,
+                              162, 168])
 
         l = list(fsr.strokes(25, 26))
         self.assertEquals(l, [25, 25, 26, 26, 25, 26, 26, 25, 25, 26])
 
-
         v = list(fsr.velocity())
-        self.assertEquals(v, [90,70,80,67,120, 90,76,89,70,127])
+        self.assertEquals(v, [90, 70, 80, 67, 120, 90, 76, 89, 70, 127])
 
     def test_sixStrokeRoll(self):
 
@@ -54,12 +50,12 @@ class RudimentsTest(TestCase):
                               174, 180, 192, 204, 210, 216, 222, 228, 240, 252,
                               258, 264, 270, 276])
 
-        l = list(ssr.strokes(12,14))
+        l = list(ssr.strokes(12, 14))
         self.assertEquals(l, [14, 12, 12, 14, 14, 12, 14, 12, 12, 14, 14, 12])
 
         v = list(ssr.velocity())
-        self.assertEquals(v, [120,90,70,80,67,120, 123,90,76,89,70,127])
-
+        self.assertEquals(v, [120, 90, 70, 80, 67, 120, 123, 90, 76, 89, 70,
+                              127])
 
     def test_scaleRudiment(self):
         ScaledSixStrokeRoll = scaleRudiment(SixStrokeRoll, 48)
@@ -80,14 +76,12 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
 
     def setUp(self):
         tempo = Tempo(135)
-        self.meter = Meter(4,4,tempo=tempo)
+        self.meter = Meter(4, 4, tempo=tempo)
         self.clock = BeatClock(tempo, meter=self.meter, reactor=TestReactor())
         self.instr = TestInstrument(self.clock)
 
-
     def test_rudiment_schedule_player(self):
         rudiment = FiveStrokeRoll()
-        n = self.meter.dtt
         player = RudimentSchedulePlayer(self.instr, rudiment, 60, 63,
                                         clock=self.clock)
         player.startPlaying()
@@ -117,7 +111,6 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
 
     def test_changeStrokes(self):
         rudiment = FiveStrokeRoll()
-        n = self.meter.dtt
         player = RudimentSchedulePlayer(self.instr, rudiment, 60, 63,
                                         clock=self.clock)
         player.changeStrokes(45, 49)
@@ -145,30 +138,3 @@ class RudimentsSchedulePlayerTests(TestCase, ClockRunner):
                 ('note', 162, 45, 70),
                 ('note', 168, 49, 127)]
         self.assertEquals(self.instr.plays, expected)
-
-
-#    def test_chainRudiments(self):
-#
-#        fsr = FiveStrokeRoll()
-#        ssr = SixStrokeRoll()
-#
-#
-#        def rudimentFactory():
-#            for rud, hands in zip((fsr,fsr,ssr,ssr,fsr),
-#                                  ([0,1],[2,3],[0,1],[2,3],[4,5])):
-#                yield rud, hands
-#        ticksFactory = cycle([8,8,4,8,4]).next
-#
-#        played = []
-#        for tup in chainRudiments(rudimentFactory().next, ticksFactory):
-#            played.append(tup)
-#
-#        pprint(played)
-#
-
-
-
-
-
-
-

@@ -64,7 +64,7 @@ class SchedulePlayer(object):
             # something
 
             exhaustedArgs = dict((k, exhaustCall(v))
-                                  for (k,v) in args.iteritems())
+                                  for (k, v) in args.iteritems())
             func(**exhaustedArgs)
             stoppedChildren = []
             for child in self._scheduleChildren:
@@ -74,7 +74,7 @@ class SchedulePlayer(object):
                     stoppedChildren.append(child)
                     continue
                 exhaustedArgs = dict((k, exhaustCall(v))
-                                      for (k,v) in args.iteritems())
+                                      for (k, v) in args.iteritems())
                 func(**exhaustedArgs)
             for child in stoppedChildren:
                 while child in self._scheduleChildren:
@@ -91,13 +91,10 @@ class SchedulePlayer(object):
                     'scheduled value in past? relative last tick=%d, when=%d'
                     % (last, when))))
             else:
-
-
                 # TODO It would be nice to not do this instead override
                 # callLater to ensure it really makes a call synchronously. (or
                 # maybe that's a horrible idea since it could run into maximum
                 # recursion).
-
                 if not delta:
                     self._advance(when, schedule, event)
                 else:
@@ -149,7 +146,6 @@ class OneSchedulePlayerMixin(object):
         self.schedulePlayer.pausePlaying()
 
 
-
 def schedule(time, func, args):
     """
     Utility function which creates a schedule appropriate for initializing a
@@ -184,7 +180,7 @@ def metronome(interval):
         current += interval
 
 
-def timing(clock, time=None, interval=(1,8)):
+def timing(clock, time=None, interval=(1, 8)):
     """
     Resolve a time generator. If C{time] is C{None} and C{interval} is a
     C{tuple} then convert to C{int} ticks using C{clock} and create generator

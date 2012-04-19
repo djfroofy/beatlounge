@@ -1,10 +1,9 @@
 from functools import partial
 
 
-
 class OSCCallbackBase(object):
 
-    def __init__(self, receiver, callback=lambda x,y: None, callbacks=None):
+    def __init__(self, receiver, callback=lambda x, y: None, callbacks=None):
         self.receiver = receiver
         self.callbacks = callbacks
         self.callback = callback
@@ -30,28 +29,26 @@ class Touch(OSCCallbackBase):
         pass
 
 
-class Acc(OriCallbackBase):
+class Acc(OSCCallbackBase):
     address = "/acc"
 
     def _callback(self, cb, node, message, address):
         compass, pitch, roll = message.arguments
-        compass = float(compass)/360.
-        pitch = (float(pitch)+180)/360.
-        roll = (float(roll)+90)/180.
+        compass = float(compass) / 360.
+        pitch = (float(pitch) + 180) / 360.
+        roll = (float(roll) + 90) / 180.
         cb(compass, pitch, roll)
 
 
-
-class Ori(OriCallbackBase):
+class Ori(OSCCallbackBase):
     address = "/ori"
 
     def _callback(self, cb, node, message, address):
         compass, pitch, roll = message.arguments
-        compass = int(compass)/360.
-        pitch = (int(pitch)+180)/360.
-        roll = (int(roll)+90)/180.
+        compass = int(compass) / 360.
+        pitch = (int(pitch) + 180) / 360.
+        roll = (int(roll) + 90) / 180.
         cb(compass, pitch, roll)
-
 
 
 def main():
@@ -61,23 +58,21 @@ def main():
 
     from twisted.internet import reactor
     from txosc.dispatch import Receiver
-    from txosc.async import DatagramServerProtocol, DatagramClientProtocol
-    from bl.osc.base import fallback
+    from txosc.async import DatagramServerProtocol
 
     receiver = Receiver()
-    #receiver.fallback = fallback
-    reactor.listenUDP(17779, DatagramServerProtocol(receiver), interface='0.0.0.0')
+    reactor.listenUDP(17779, DatagramServerProtocol(receiver),
+                      interface='0.0.0.0')
 
     sineMulMul = Sine(1)
     sineMul = Sine(1, mul=sineMulMul)
-    sine = Sine([110,110+(55/32.)], mul=sineMul)
+    sine = Sine([110, 110 + (55 / 32.)], mul=sineMul)
 
-    def cb(x,y,z):
-        sine.freq = [x*220, x*220+(55/32.)]
-        sine.mul.freq = y*55
-        sine.mul.mul.freq = z*55
+    def cb(x, y, z):
+        sine.freq = [x * 220, x * 220 + (55 / 32.)]
+        sine.mul.freq = y * 55
+        sine.mul.mul.freq = z * 55
 
     ori = Ori(receiver, cb)
     acc = Acc(receiver, cb)
-    return s,ori,acc,sine
-
+    return s, ori, acc, sine

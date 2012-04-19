@@ -1,5 +1,4 @@
 import random
-from pprint import pformat
 from itertools import cycle
 
 from twisted.trial.unittest import TestCase
@@ -13,8 +12,8 @@ from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
 from bl.arp import (SingleParadiddle, DoubleParadiddle, TripleParadiddle,
     ParadiddleDiddle)
 
-class ArpTests(TestCase):
 
+class ArpTests(TestCase):
 
     def setUp(self):
         self.arpeggio = arpeggio = [0, 2, 1, 3]
@@ -43,11 +42,13 @@ class ArpTests(TestCase):
 
     def test_randomArp(self):
         r = cycle([1, 2, 0, 0, 2, 0, 1, 0])
-        class random:
+
+        class myrandom:
             @classmethod
             def randint(cls, *blah):
                 return r.next()
-        self.patch(arp, 'random', random)
+
+        self.patch(arp, 'random', myrandom)
 
         arpeggio = []
         for i in range(8):
@@ -158,7 +159,7 @@ class ArpTests(TestCase):
              25, 26, 27, 28,
              13, 14, 15, 16,
              1, 2, 3, 4,
-             37, 38, 39, 40,])
+             37, 38, 39, 40])
 
     def test_octave_arp_with_0_octaves(self):
         arpeggio = []
@@ -167,7 +168,6 @@ class ArpTests(TestCase):
             arpeggio.append(octaveArp())
         self.assertEquals(arpeggio,
             [1, 2, 3, 4, 1, 2, 3, 4])
-
 
     def test_octave_arp_oscillate(self):
         arpeggio = []
@@ -187,7 +187,7 @@ class ArpTests(TestCase):
 
     def test_adder(self):
         arpeggio = []
-        octaveArp = OctaveArp(AscArp(), [1,2,3,4])
+        octaveArp = OctaveArp(AscArp(), [1, 2, 3, 4])
         adder = Adder(octaveArp)
         for i in range(16):
             arpeggio.append(adder())
@@ -201,7 +201,7 @@ class ArpTests(TestCase):
         for i in range(16):
             arpeggio.append(adder())
         self.assertEquals(arpeggio,
-            [v+2 for v in
+            [v + 2 for v in
              [1, 2, 3, 4,
               13, 14, 15, 16,
               25, 26, 27, 28,
@@ -211,38 +211,38 @@ class ArpTests(TestCase):
         for klass in (AscArp, DescArp, OrderedArp):
             a = klass([])
             for i in range(4):
-                n = a()
+                a()
 
     def test_paradiddle_patterns(self):
-        notes = [ 1, 2 ]
+        notes = [1, 2]
         single = SingleParadiddle(notes)
-        pattern = [ single() for i in range(16) ]
+        pattern = [single() for i in range(16)]
         self.assertEquals(pattern,
-            [1,2,1,1,2,1,2,2, 1,2,1,1,2,1,2,2])
+            [1, 2, 1, 1, 2, 1, 2, 2, 1, 2, 1, 1, 2, 1, 2, 2])
 
         double = DoubleParadiddle(notes)
-        pattern = [ double() for i in range(24) ]
+        pattern = [double() for i in range(24)]
         self.assertEquals(pattern,
-            [1,2,1,2,1,1, 2,1,2,1,2,2] * 2)
+            [1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 2] * 2)
 
         triple = TripleParadiddle(notes)
-        pattern = [ triple() for i in range(32) ]
+        pattern = [triple() for i in range(32)]
         self.assertEquals(pattern,
-            [1,2,1,2,1,2,1,1, 2,1,2,1,2,1,2,2] * 2)
+            [1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 2] * 2)
 
         pdd = ParadiddleDiddle(notes)
-        pattern = [ pdd() for i in range(24) ]
+        pattern = [pdd() for i in range(24)]
         self.assertEquals(pattern,
-            [1,2,1,1,2,2, 1,2,1,1,2,2,
-             2,1,2,2,1,1, 2,1,2,2,1,1])
+            [1, 2, 1, 1, 2, 2, 1, 2, 1, 1, 2, 2,
+             2, 1, 2, 2, 1, 1, 2, 1, 2, 2, 1, 1])
 
     def test_arp_map(self):
         random.seed(0)
-        arpmap = ArpMap(lambda x : x * 2, OrderedArp([1, 2, 3]))
-        results = [ arpmap() for i in range(6) ]
+        arpmap = ArpMap(lambda x: x * 2, OrderedArp([1, 2, 3]))
+        results = [arpmap() for i in range(6)]
         self.assertEquals(results, [2, 4, 6, 2, 4, 6])
-        arpmap = ArpMap(lambda x : x * 2, RandomArp([1, 2, lambda : 3]))
-        results = [ arpmap() for i in range(6) ]
+        arpmap = ArpMap(lambda x: x * 2, RandomArp([1, 2, lambda: 3]))
+        results = [arpmap() for i in range(6)]
         self.assertEquals(results, [6, 4, 2, 6, 2, 6])
 
 
@@ -252,7 +252,6 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         tempo = Tempo(135)
         self.clock = BeatClock(tempo, reactor=TestReactor())
         self.phraseRecorder = PhraseRecordingArp(self.clock)
-
 
     def test_phrase_recording(self):
         clock, phraseRecorder = self.clock, self.phraseRecorder
@@ -284,7 +283,6 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         self.assertEquals(phrase,
             [(24, 60, 110, 12), (132, 64, 90, 250), (180, 67, 90, 72)])
 
-
     def test_noteoff_from_past_phrase(self):
         """
         todo - we should handle noteoff from past phrases better - maybe
@@ -304,7 +302,6 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         # note how the past phrase got updated with a prolonged sustain
         self.assertEquals(phrase, [(0, 60, 120, 120)])
 
-
     def test_phrase_killing(self):
         clock, phraseRecorder = self.clock, self.phraseRecorder
         phraseRecorder.recordNoteOn(60, 120)
@@ -312,7 +309,7 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         phraseRecorder.recordNoteOff(60)
         self.runTicks(96)
         phrase = phraseRecorder()
-        self.assertEquals(phrase, [(0,60,120,48)])
+        self.assertEquals(phrase, [(0, 60, 120, 48)])
         phraseRecorder.phrase = []
         self.runTicks(96)
         phrase = phraseRecorder()
@@ -320,4 +317,3 @@ class PhraseRecordingArpTests(TestCase, ClockRunner):
         self.runTicks(96)
         phrase = phraseRecorder()
         self.failIf(phrase)
-

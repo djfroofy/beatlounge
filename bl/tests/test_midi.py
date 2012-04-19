@@ -1,5 +1,3 @@
-from pprint import pformat
-
 from twisted.trial.unittest import TestCase, SkipTest
 
 from bl.testlib import ClockRunner, TestReactor
@@ -15,16 +13,18 @@ try:
     from bl.midi import (NOTEON_CHAN1, NOTEON_CHAN2,
         NOTEOFF_CHAN1, NOTEOFF_CHAN2,
         NOTEON_CHAN3, NOTEOFF_CHAN3)
+    [pypm]
 except ImportError:
     pypm = None
-    MidiHandler = object 
+    MidiHandler = object
 
-from bl.testlib import ClockRunner, TestReactor
 from bl.tests.test_player import TestInstrument
+
 
 def checkPypm():
     if pypm is None:
         raise SkipTest('pypm not installed')
+
 
 class PypmWrapperTests(TestCase):
 
@@ -98,27 +98,30 @@ class MidiDispatcherTests(TestCase, ClockRunner):
     def setUp(self):
         checkPypm()
         tempo = Tempo(153)
-        self.meter = Meter(4,4,tempo=tempo)
-        self.clock = BeatClock(tempo=tempo, meter=self.meter, reactor=TestReactor())
+        self.meter = Meter(4, 4, tempo=tempo)
+        self.clock = BeatClock(tempo=tempo, meter=self.meter,
+                               reactor=TestReactor())
         self.midiin = FakeMidiInput()
-        self.midiin._buffer.extend([[NOTEON_CHAN1, i%128, 100, 0], i] for i in range(32*3+5))
+        self.midiin._buffer.extend([[NOTEON_CHAN1, i % 128, 100, 0], i]
+                                    for i in range(32 * 3 + 5))
         self.handler = TestHandler()
-        self.dispatcher = MidiDispatcher(self.midiin, [self.handler], clock=self.clock)
+        self.dispatcher = MidiDispatcher(self.midiin, [self.handler],
+                                         clock=self.clock)
         self.dispatcher.start()
 
     def test_scheduling(self):
         self.runTicks(97)
-        expected = [ ('noteon', 1, i%128, 100, i) for i in range(64) ]
+        expected = [('noteon', 1, i % 128, 100, i) for i in range(64)]
         self.assertEquals(self.handler.events, expected)
 
         self.handler.events[:] = []
         self.runTicks(1)
-        expected = [ ('noteon', 1, i%128, 100, i) for i in range(64,96) ]
+        expected = [('noteon', 1, i % 128, 100, i) for i in range(64, 96)]
         self.assertEquals(self.handler.events, expected)
 
         self.handler.events[:] = []
         self.runTicks(1)
-        expected = [ ('noteon', 1, i%128, 100, i) for i in range(96, 101) ]
+        expected = [('noteon', 1, i % 128, 100, i) for i in range(96, 101)]
         self.assertEquals(self.handler.events, expected)
 
         self.handler.events[:] = []
@@ -134,30 +137,28 @@ class NoteOnOffHandlerTests(TestCase):
         self.clock = BeatClock(tempo, reactor=TestReactor())
         self.instr1 = TestInstrument(self.clock)
         self.instr2 = TestInstrument(self.clock)
-        self.handler = NoteOnOffHandler({1:self.instr1, 2:self.instr2})
-
+        self.handler = NoteOnOffHandler({1: self.instr1, 2: self.instr2})
 
     def test_noteon(self):
-        self.handler([[NOTEON_CHAN1, 60, 120, 0],1])
+        self.handler([[NOTEON_CHAN1, 60, 120, 0], 1])
         self.assertEquals(self.instr1.plays, [('note', 0, 60, 120)])
         self.failIf(self.instr2.plays)
-
-        self.handler([[NOTEON_CHAN2, 75, 127, 0],2])
+        self.handler([[NOTEON_CHAN2, 75, 127, 0], 2])
         self.assertEquals(self.instr1.plays, [('note', 0, 60, 120)])
         self.assertEquals(self.instr2.plays, [('note', 0, 75, 127)])
 
     def test_noteoff(self):
-        self.handler([[NOTEOFF_CHAN1, 60, 120, 0],1])
+        self.handler([[NOTEOFF_CHAN1, 60, 120, 0], 1])
         self.assertEquals(self.instr1.stops, [('note', 0, 60)])
         self.failIf(self.instr2.stops)
 
-        self.handler([[NOTEOFF_CHAN2, 75, 127, 0],2])
+        self.handler([[NOTEOFF_CHAN2, 75, 127, 0], 2])
         self.assertEquals(self.instr1.stops, [('note', 0, 60)])
         self.assertEquals(self.instr2.stops, [('note', 0, 75)])
 
     def test_wrong_channel(self):
-        self.handler([[NOTEON_CHAN3, 60, 120, 0],1])
-        self.handler([[NOTEOFF_CHAN3, 60, 120, 0],1])
+        self.handler([[NOTEON_CHAN3, 60, 120, 0], 1])
+        self.handler([[NOTEOFF_CHAN3, 60, 120, 0], 1])
         self.failIf(self.instr1.plays)
         self.failIf(self.instr2.plays)
         self.failIf(self.instr1.stops)
@@ -208,13 +209,16 @@ class ChordHandlerTests(TestCase):
         self.handler.noteoff(1, 60, 120, 0)
         self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67]])
         self.handler.noteon(1, 48, 120, 0)
-        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48]])
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67],
+                                        [64, 67, 48]])
         self.handler.noteoff(1, 64, 120, 0)
         self.handler.noteoff(1, 67, 120, 0)
         self.handler.noteoff(1, 48, 120, 0)
-        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48]])
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67],
+                                        [64, 67, 48]])
         self.handler.noteon(1, 52, 120, 0)
-        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67], [64,67,48], [52]])
+        self.assertEquals(self.chords, [[60], [60, 64], [60, 64, 67],
+                                        [64, 67, 48], [52]])
 
 
 class FakeMidiOutput:
@@ -233,6 +237,7 @@ class FakeTime:
 
     def Time(self):
         return self.clock.ticks
+
 
 class ClockSenderTests(TestCase, ClockRunner):
 
@@ -258,7 +263,6 @@ class ClockSenderTests(TestCase, ClockRunner):
 
 class NoteEventHandlerTests(TestCase):
 
-
     def setUp(self):
         checkPypm()
         self.events = []
@@ -270,12 +274,9 @@ class NoteEventHandlerTests(TestCase):
     def noteoff(self, note):
         self.events.append(('noteoff', note))
 
-
     def test_noteonoff_events(self):
         self.handler.noteon(1, 60, 120, 0)
         self.handler.noteon(1, 64, 100, 0)
         self.handler.noteoff(1, 60, 120, 0)
         self.assertEquals(self.events, [
                 ('noteon', 60, 120), ('noteon', 64, 100), ('noteoff', 60)])
-
-

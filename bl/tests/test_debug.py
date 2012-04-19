@@ -3,15 +3,19 @@ from twisted.trial.unittest import TestCase
 import bl.debug
 from bl.debug import DEBUG, setDebug, debug
 
+
 class DebugTests(TestCase):
 
     def setUp(self):
         self._debug = DEBUG.debug
         self.messages = []
+
         class Log:
+
             @classmethod
             def msg(cls, message):
                 self.messages.append(message)
+
         self.patch(bl.debug, 'log', Log)
 
     def tearDown(self):
@@ -34,4 +38,3 @@ class DebugTests(TestCase):
         setDebug(False)
         debug('e')
         self.assertEquals(self.messages, ['b', 'c'])
-

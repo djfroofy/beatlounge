@@ -74,4 +74,3 @@ class IMIDIInstrument(Interface):
 
         @param value: The pitch bend amount [0,127]
         """
-

@@ -23,7 +23,7 @@ class SynthRouterTests(TestCase):
 
     def test_connectionsDict(self):
         router = SynthRouter(left=Synth, right=Synth)
-        self.assertEquals(router.connections, {'left':Synth, 'right':Synth})
+        self.assertEquals(router.connections, {'left': Synth, 'right': Synth})
 
 
 class TestInstrument:
@@ -40,7 +40,6 @@ class TestInstrument:
 
 
 class SynthPoolTests(TestCase):
-
 
     def setUp(self):
         self.router = SynthRouter(left=Synth, right=Synth, mono=Synth)
@@ -73,7 +72,7 @@ class SynthPoolTests(TestCase):
 
     def test_loadSoundFont(self):
         synth = self.pool.synthObject()
-        soundft = self.pool.loadSoundFont(synth, 'sound.sf2')
+        self.pool.loadSoundFont(synth, 'sound.sf2')
         self.assertEquals(synth.sfonts, {0: (0, 0, 0, 'sound.sf2')})
 
     def test_connectInstrument(self):
@@ -166,9 +165,10 @@ class MultiInstrumentTests(TestCase):
         instr1 = Instrument()
         instr2 = Instrument()
         instr3 = Instrument()
-        minstr = MultiInstrument([(instr1, ((0, 43),(1, 44),(2, 46),(3, 47))),
-                                 (instr2, ((4, 23),(5, 24),(6, 25))),
-                                 (instr3, ((7, 43),(8, 44)))])
+        minstr = MultiInstrument([(instr1, ((0, 43), (1, 44), (2, 46),
+                                            (3, 47))),
+                                 (instr2, ((4, 23), (5, 24), (6, 25))),
+                                 (instr3, ((7, 43), (8, 44)))])
 
         minstr.noteon(0, 120)
         minstr.noteon(1, 110)
@@ -185,8 +185,8 @@ class MultiInstrumentTests(TestCase):
         self.assertEquals(instr2.record, expected_instr2)
         self.assertEquals(instr3.record, expected_instr3)
         instr1.record, instr2.record, instr3.record = [], [], []
-        minstr.playchord([0,5,8], 120)
-        minstr.stopchord([0,5,8])
+        minstr.playchord([0, 5, 8], 120)
+        minstr.stopchord([0, 5, 8])
         self.assertEquals(instr1.record, [('play', 43, 120), ('stop', 43)])
         self.assertEquals(instr2.record, [('play', 24, 120), ('stop', 24)])
         self.assertEquals(instr3.record, [('play', 44, 120), ('stop', 44)])
@@ -212,7 +212,7 @@ class LayerTests(TestCase):
         Instrument = MockInstrument
         self.instr1 = Instrument()
         self.instr2 = Instrument()
-        self.layer = Layer([self.instr1, (self.instr2, ([24,25],))])
+        self.layer = Layer([self.instr1, (self.instr2, ([24, 25],))])
 
     def test_instruments_initialization(self):
         midi = Layer.MIDI
@@ -237,8 +237,3 @@ class LayerTests(TestCase):
         self.assertEquals(self.instr2.record,
                           [('play', 45, 127), ('play', 25, 100),
                            ('play', 30, 80), ('stop', 45), ('stop', 25)])
-
-
-
-
-
