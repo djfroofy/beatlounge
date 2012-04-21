@@ -53,5 +53,6 @@ arp = ArpMap(f, ChordPatternArp(notes.next(), pattern))
 player = ChordPlayer(piano, arp,
                      velocity=OrderedArp([127, 80, 90, 80, 90, 120, 120, 80]),
                      release=RandomArp([11, 10, 9, 8]))
-clock.schedule(lambda: arp.reset(notes.next())).startAfter((2, 1), (2, 1))
+resetter = clock.schedule(lambda: arp.reset(notes.next())
+        ).startAfter((2, 1), (2, 1))
 player.resumePlaying()
