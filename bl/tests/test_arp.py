@@ -8,7 +8,7 @@ from bl import arp
 from bl.ugen import N
 from bl.scheduler import BeatClock, Tempo
 from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
-    Adder, PhraseRecordingArp, ArpMap)
+    Adder, PhraseRecordingArp, ArpMap, PatternArp, ChordPatternArp)
 from bl.arp import (SingleParadiddle, DoubleParadiddle, TripleParadiddle,
     ParadiddleDiddle)
 
@@ -222,17 +222,17 @@ class ArpTests(TestCase):
 
         double = DoubleParadiddle(notes)
         pattern = [double() for i in range(24)]
-        self.assertEquals(pattern,
+        self.assertEqual(pattern,
             [1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 2] * 2)
 
         triple = TripleParadiddle(notes)
         pattern = [triple() for i in range(32)]
-        self.assertEquals(pattern,
+        self.assertEqual(pattern,
             [1, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 1, 2, 2] * 2)
 
         pdd = ParadiddleDiddle(notes)
         pattern = [pdd() for i in range(24)]
-        self.assertEquals(pattern,
+        self.assertEqual(pattern,
             [1, 2, 1, 1, 2, 2, 1, 2, 1, 1, 2, 2,
              2, 1, 2, 2, 1, 1, 2, 1, 2, 2, 1, 1])
 
@@ -240,10 +240,31 @@ class ArpTests(TestCase):
         random.seed(0)
         arpmap = ArpMap(lambda x: x * 2, OrderedArp([1, 2, 3]))
         results = [arpmap() for i in range(6)]
-        self.assertEquals(results, [2, 4, 6, 2, 4, 6])
+        self.assertEqual(results, [2, 4, 6, 2, 4, 6])
         arpmap = ArpMap(lambda x: x * 2, RandomArp([1, 2, lambda: 3]))
         results = [arpmap() for i in range(6)]
-        self.assertEquals(results, [6, 4, 2, 6, 2, 6])
+        self.assertEqual(results, [6, 4, 2, 6, 2, 6])
+
+    def test_pattern_arp(self):
+        pattern = [0, 1, 2, 0, 0, 3, 2]
+        notes = [1, 2, 3, 4]
+        arp = PatternArp(notes, pattern)
+        played = [arp() for i in range(14)]
+        self.assertEqual(played, [1, 2, 3, 1, 1, 4, 3] * 2)
+        arp.resetPattern([0, 0, 1, 1])
+        played = [arp() for i in range(4)]
+        self.assertEqual(played, [1, 1, 2, 2])
+        arp.resetPattern(cycle([0, 1, 2, 3]).next)
+        played = [arp() for i in range(8)]
+        self.assertEqual(played, [1, 2, 3, 4, 1, 2, 3, 4])
+
+    def test_chord_pattern_arp(self):
+        pattern = [0, 1, 2, [1, 2, 3], 3, 2, 1]
+        notes = [1, 2, 3, 4]
+        arp = ChordPatternArp(notes, pattern)
+        played = [arp() for i in range(14)]
+        self.assertEqual(played,
+                         [(1,), (2,), (3,), [2, 3, 4], (4,), (3,), (2,)] * 2)
 
 
 class PhraseRecordingArpTests(TestCase, ClockRunner):
