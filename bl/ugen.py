@@ -1,5 +1,8 @@
+import math
 import random
 from itertools import cycle
+
+from bl.utils import getClock
 
 
 __all__ = ['N', 'Cycle', 'C', 'Random', 'R', 'RandomPhrase', 'RP',
@@ -121,3 +124,43 @@ def Weight(*weights):
 
 
 W = Weight
+
+
+def _intceil(n):
+    return int(math.ceil(n))
+
+
+class LinearOsc(object):
+
+    def __init__(self, points, duration=(1, 1), clock=None, meter=None,
+                 transform=_intceil):
+        self.clock = getClock(clock)
+        if meter is None:
+            meter = self.clock.meter
+        self.meter = meter
+        self.duration = self.clock.meter.divisionToTicks(*duration)
+        self._buildTable(points, transform)
+
+    def _buildTable(self, points, transform):
+        lastTime, lastValue = (0, 0)
+        self._table = []
+        startValue = points[0][1]
+        for (interval, value) in points:
+            interval = self.meter.divisionToTicks(*interval)
+            offset = lastTime + interval
+            steps = offset - lastTime
+            if not steps:
+                lastValue = value
+                continue
+            slope = (value - lastValue) / float(steps)
+            for i in range(steps):
+                self._table.append(transform(lastValue + i * slope))
+            lastTime, lastValue = offset, value
+        steps = self.duration - lastTime
+        if steps:
+            slope = (startValue - lastValue) / float(steps)
+            for i in range(steps):
+                self._table.append(transform(lastValue + i * slope))
+
+    def __call__(self):
+        return self._table[self.clock.ticks % self.duration]

@@ -2,8 +2,10 @@ import random
 
 from twisted.trial.unittest import TestCase
 
+from bl.testlib import TestReactor
+from bl.scheduler import BeatClock
 from bl.ugen import (N, R, Random, RandomPhrase, RP, RandomWalk, RW, Weight, W,
-                     C, Cycle, O, Oscillate)
+                     C, Cycle, O, Oscillate, LinearOsc)
 
 
 class UGensTestCase(TestCase):
@@ -73,3 +75,21 @@ class UGensTestCase(TestCase):
         results = [a() for i in range(15)]
         self.assertEqual(results, [60, 60, 60, 60, 67, 60, 60, 67, 60, 60, 69,
                                    64, 60, 64, 60])
+
+    def test_LinearOsc(self):
+        clock = BeatClock(reactor=TestReactor())
+        clock.ticks = 0
+        results = []
+        osc = LinearOsc([((0, 1), 110), ((1, 4), 60), ((1, 4), 127)],
+                        clock=clock)
+        self.assertEqual(len(osc._table), 96)
+        for i in range(0, 192, 3):
+            results.append(osc())
+            clock.ticks += 3
+        self.assertEqual(results,
+                         [110, 104, 98, 92, 85, 79, 73, 67, 60, 69, 77, 86, 94,
+                          102, 111, 119, 127, 126, 125, 124, 123, 122, 121,
+                          120, 119, 118, 117, 116, 115, 114, 113, 112, 110,
+                          104, 98, 92, 85, 79, 73, 67, 60, 69, 77, 86, 94,
+                          102, 111, 119, 127, 126, 125, 124, 123, 122, 121,
+                          120, 119, 118, 117, 116, 115, 114, 113, 112])
