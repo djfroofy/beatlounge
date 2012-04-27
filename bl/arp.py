@@ -16,7 +16,8 @@ __all__ = [
     'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
     'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder', 'PhraseRecordingArp',
     'Paradiddle', 'SingleParadiddle', 'DoubleParadiddle', 'TripleParadiddle',
-    'ParadiddleDiddle', 'ArpMap', 'PatternArp', 'ChordPatternArp', 'TimingArp']
+    'ParadiddleDiddle', 'ArpMap', 'PatternArp', 'ChordPatternArp', 'TimingArp',
+    'ScheduleArp']
 
 
 class IArp(Interface):
@@ -196,6 +197,16 @@ class ChordPatternArp(PatternArp):
 
 
 class TimingArp(object):
+    """
+    A Timing generates tick intervals which can be used in various scheduled
+    calls such as clock.callLater.
+
+    Example:
+
+        >>> arp = TimingArp([(0,1), (1,4)], duration=(1,1))
+        >>> [arp() for i in range(6)] == [0, 24, 72, 24, 72, 24]
+        True
+    """
     implements(IArp)
 
     _end = object()
@@ -225,6 +236,42 @@ class TimingArp(object):
         self._current += interval
         self._current %= self.duration
         return interval
+
+
+class ScheduleArp(object):
+    """
+    A ScheduleArp wraps a TimingArp when called incrementally returns ticks
+    appropriate for describing a schedule. Of note: A L{ScheduleArp} can be
+    given as the C{time} for an instance of
+    L{bl.orchestra.base.SchedulePlayer}. Also, the underlying C{TimingArp} can
+    be changed on the fly.
+
+    Example:
+
+        >>> timingArp = TimingArp([(0,1), (1,4)], duration=(1,1))
+        >>> arp = ScheduleArp(timingArp)
+        >>> [arp() for i in range(4)] == [0, 24, 96, 120]
+        True
+    """
+    implements(IArp)
+
+    def __init__(self, arp, start=0):
+        self.arp = arp
+        self.values = arp.values
+        self._current = start
+
+    def reset(self, values, duration=None):
+        self.arp.reset(values, duration=duration)
+        self.values = values
+
+    def switch(self, arp):
+        self.arp = arp
+        self.values = arp.values
+
+    def __call__(self):
+        next = self.arp()
+        self._current += next
+        return self._current
 
 
 class ArpSwitcher(BaseArp):
