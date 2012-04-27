@@ -6,11 +6,13 @@ from twisted.trial.unittest import TestCase
 from bl.testlib import ClockRunner, TestReactor
 from bl import arp
 from bl.ugen import N
-from bl.scheduler import BeatClock, Tempo
+from bl.scheduler import BeatClock, Tempo, Meter
+from bl.utils import getClock
 from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
     Adder, PhraseRecordingArp, ArpMap, PatternArp, ChordPatternArp)
 from bl.arp import (SingleParadiddle, DoubleParadiddle, TripleParadiddle,
     ParadiddleDiddle)
+from bl.arp import TimingArp
 
 
 class ArpTests(TestCase):
@@ -265,6 +267,38 @@ class ArpTests(TestCase):
         played = [arp() for i in range(14)]
         self.assertEqual(played,
                          [(1,), (2,), (3,), [2, 3, 4], (4,), (3,), (2,)] * 2)
+
+
+class TimingArpTestCase(TestCase):
+
+    def setUp(self):
+        self.meter = Meter(4, 4, tempo=Tempo(tpb=24))
+
+    def test_default_meter(self):
+        arp = TimingArp([(0, 1)])
+        self.assertIdentical(arp.meter, getClock(None).meter)
+
+    def test_timing_arp_call(self):
+        arp = TimingArp([(0, 1), (1, 4), (1, 4), (1, 4), (1, 8)],
+                        meter=self.meter)
+        values = [arp() for i in range(16)]
+        self.assertEqual(values, [0, 24, 24, 24, 12, 12, 24, 24, 24,
+                                  12, 12, 24, 24, 24, 12, 12])
+        arp = TimingArp([(1, 4), (1, 8)], meter=self.meter)
+        values = [arp() for i in range(16)]
+        self.assertEqual(values, [24, 12, 84, 12, 84, 12, 84, 12, 84, 12,
+                                  84, 12, 84, 12, 84, 12])
+
+    def test_reset(self):
+        arp = TimingArp([(0, 1), (1, 4), (1, 4), (1, 4), (1, 8)],
+                        meter=self.meter)
+        values = [arp() for i in range(16)]
+        self.assertEqual(values, [0, 24, 24, 24, 12, 12, 24, 24, 24,
+                                  12, 12, 24, 24, 24, 12, 12])
+        arp.reset([(1, 16), (1, 16)], duration=(1, 4))
+        values = [arp() for i in range(16)]
+        self.assertEqual(values, [6, 6, 18, 6, 18, 6, 18, 6, 18,
+                                  6, 18, 6, 18, 6, 18, 6])
 
 
 class PhraseRecordingArpTests(TestCase, ClockRunner):
