@@ -6,7 +6,7 @@ from bl.utils import getClock
 
 
 __all__ = ['N', 'Cycle', 'C', 'Random', 'R', 'RandomPhrase', 'RP',
-           'RandomWalk', 'RW', 'W', 'Weight', 'Oscillate', 'O']
+           'RandomWalk', 'RW', 'W', 'Weight', 'Oscillate', 'O', 'LinearOsc']
 
 
 class _Nothing(object):
