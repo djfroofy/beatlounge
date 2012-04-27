@@ -16,7 +16,8 @@ __all__ = [
     'IArp', 'IndexedArp', 'AscArp', 'DescArp', 'OrderedArp', 'RevOrderedArp',
     'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder', 'PhraseRecordingArp',
     'Paradiddle', 'SingleParadiddle', 'DoubleParadiddle', 'TripleParadiddle',
-    'ParadiddleDiddle', 'ArpMap', 'PatternArp', 'ChordPatternArp'
+    'ParadiddleDiddle', 'ArpMap', 'PatternArp', 'ChordPatternArp',
+    'MetronomeArp',
 ]
 
 
@@ -179,9 +180,16 @@ class PatternArp(BaseArp):
             return
         p = self._pattern()
         if type(p) in (tuple, list):
-            next = [self.values[i] for i in p]
+            next = []
+            for i in p:
+                if i >= len(self.values):
+                    continue
+                next.append(self.values[i])
         else:
-            next = self.values[p]
+            if p >= len(self.values):
+                next = []
+            else:
+                next = self.values[p]
         return self.coerce(next)
 
 
@@ -194,6 +202,31 @@ class ChordPatternArp(PatternArp):
         if type(noteOrChord) not in (list, tuple):
             return (noteOrChord,)
         return noteOrChord
+
+
+class MetronomeArp(BaseArp):
+
+    def __init__(self, values=(), current=0, clock=None):
+        self._index = 0
+        self._length = len(values)
+        self.clock = getClock(clock)
+        BaseArp.__init__(self, values)
+
+    def reset(self, values):
+        old_count = self.count
+        self.count = len(values)
+        if self.values:
+            factor = self.count / float(old_count)
+            if factor != 1:
+                index = int(self._index * factor)
+                index = index % self.count
+                if index == self.count:
+                    index -= 1
+            elif index >= self.count:
+                index = index % self.count
+            values = values[index:] + values[:index]
+        interval = self.clock.meter.resolveInterval
+        self.values = [interval(i) for i in values]
 
 
 class ArpSwitcher(BaseArp):

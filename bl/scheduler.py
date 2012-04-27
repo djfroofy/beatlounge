@@ -145,6 +145,11 @@ class Meter(object):
 
     dtt = divisionToTicks
 
+    def resolveInterval(self, interval):
+        if type(interval) in (list, tuple):
+            return self.divisionToTicks(interval)
+        return interval
+
     def nextDivision(self, ticks, n, d):
         m = self.measure(ticks) * self.ticksPerMeasure
         offset_ticks = self.divisionToTicks(n, d)

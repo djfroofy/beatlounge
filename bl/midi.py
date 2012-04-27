@@ -187,6 +187,7 @@ class MidiDispatcher(object):
         are processed).
         """
         for message in self.midiInput.Read(32):
+            debug('midiInput read message=%r' % message)
             for call in self.handlers:
                 call(message)
 

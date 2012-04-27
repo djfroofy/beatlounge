@@ -49,6 +49,14 @@ class SchedulePlayer(object):
         """
         self.paused = True
 
+    def resetInterval(self, interval):
+        if type(interval) in (list, tuple):
+            c = self.last + self.clock.dtt(*interval)
+            interval = self.last - c
+        else:
+            c = self.last + interval
+        self.time = metronome(interval=interval, current=c).next
+
     def _advance(self, last, schedule, event=None):
         self.last = last
         if self.paused:
@@ -169,18 +177,17 @@ def childSchedule(func, args):
     return ((func, args) for i in cycle([1]))
 
 
-def metronome(interval):
+def metronome(interval, current=0):
     """
-    An infinite range beginning at 0 and stepping C{interval} with each
-    iteration.
+    An infinite range beginning at C{current} (or C{0}) and stepping
+    C{interval} with each iteration.
     """
-    current = 0
     while 1:
         yield current
         current += interval
 
 
-def timing(clock, time=None, interval=(1, 8)):
+def timing(clock, time=None, interval=(1, 8), current=0):
     """
     Resolve a time generator. If C{time] is C{None} and C{interval} is a
     C{tuple} then convert to C{int} ticks using C{clock} and create generator
@@ -191,5 +198,5 @@ def timing(clock, time=None, interval=(1, 8)):
     if time is None:
         if type(interval) in (list, tuple):
             interval = clock.meter.dtt(*interval)
-        time = metronome(interval).next
+        time = metronome(interval, current).next
     return time

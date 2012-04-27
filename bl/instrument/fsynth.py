@@ -135,6 +135,8 @@ class ChordPlayerMixin(object):
             self.clock.callLater(i * later, self.playnote, note, v())
 
     def chordon(self, notes, velocity=80):
+        if notes is None:
+            return
         if self.strumming:
             return self.strum(notes, velocity)
         for note in notes:
@@ -143,6 +145,8 @@ class ChordPlayerMixin(object):
     playchord = chordon
 
     def chordoff(self, notes):
+        if notes is None:
+            return
         for note in notes:
             self.stopnote(note)
 
@@ -293,6 +297,7 @@ class MultiInstrument(ChordPlayerMixin):
 
 
 class Layer(ChordPlayerMixin):
+    implements(IMIDIInstrument)
 
     MIDI = dict([[n, n] for n in range(128)])
 
