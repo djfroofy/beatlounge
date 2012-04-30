@@ -29,10 +29,25 @@ class Player(OneSchedulePlayerMixin):
 
     def __init__(self, instr, note, velocity=None, release=None,
                  interval=(1, 8), time=None, clock=None, cc=None):
+        """
+        @param note: A ugen for notes
+        @param velocity: A ugen for the velocity
+        @param release: A ugen for the release (amount of time before calling
+        noteoff)
+        @param time: A ugen for relative time (values returned must be greater
+        than or equal to previously returned value - monotonically increasing)
+        @param interval: An interval division (e.g. C{(1, 4)}) that may be
+        specified as an alternative to time--this creates a metronome with the
+        given interval.
+        @param cc: C{dict} of control-change ugens.
+        @param clock: A L{BeatClock} (defaults to global default clock)
+        """
         self.instr = IMIDIInstrument(instr)
         self.clock = getClock(clock)
         if velocity is None:
             velocity = cycle([127]).next
+        if release is None:
+            release = cycle([None]).next
         self.note = note
         self.velocity = velocity
         self.release = release
@@ -43,11 +58,10 @@ class Player(OneSchedulePlayerMixin):
                                   {'note': noteMemo,
                                    'velocity': (lambda: self.velocity())})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
-        if self.release:
-            releaseChild = childSchedule(self._scheduleNoteoff,
-                                     {'note': noteMemo.lastValue,
-                                      'when': (lambda: self.release())})
-            self.schedulePlayer.addChild(releaseChild)
+        releaseChild = childSchedule(self._scheduleNoteoff,
+                                 {'note': noteMemo.lastValue,
+                                  'when': (lambda: self.release())})
+        self.schedulePlayer.addChild(releaseChild)
         if cc:
             ccChild = childSchedule(self.instr.controlChange, self.cc)
             self.schedulePlayer.addChild(ccChild)
