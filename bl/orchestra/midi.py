@@ -46,6 +46,8 @@ class Player(OneSchedulePlayerMixin):
         self.clock = getClock(clock)
         if velocity is None:
             velocity = cycle([127]).next
+        if release is None:
+            release = cycle([None]).next
         self.note = note
         self.velocity = velocity
         self.release = release
@@ -56,11 +58,10 @@ class Player(OneSchedulePlayerMixin):
                                   {'note': noteMemo,
                                    'velocity': (lambda: self.velocity())})
         self.schedulePlayer = SchedulePlayer(noteonSchedule, self.clock)
-        if self.release:
-            releaseChild = childSchedule(self._scheduleNoteoff,
-                                     {'note': noteMemo.lastValue,
-                                      'when': (lambda: self.release())})
-            self.schedulePlayer.addChild(releaseChild)
+        releaseChild = childSchedule(self._scheduleNoteoff,
+                                 {'note': noteMemo.lastValue,
+                                  'when': (lambda: self.release())})
+        self.schedulePlayer.addChild(releaseChild)
         if cc:
             ccChild = childSchedule(self.instr.controlChange, self.cc)
             self.schedulePlayer.addChild(ccChild)
