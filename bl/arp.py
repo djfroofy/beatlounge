@@ -215,9 +215,13 @@ class TimingArp(object):
         if meter is None:
             meter = getClock(None).meter
         self.meter = meter
+        self._timing = self._switch = None
         self.reset(values, duration)
 
-    def reset(self, values, duration=None):
+    def reset(self, values, duration=(1, 1)):
+        if self._timing:
+            self._switch = (values, duration)
+            return
         if duration:
             self.duration = self.meter.divisionToTicks(*duration)
         self._current = 0
@@ -227,14 +231,19 @@ class TimingArp(object):
     def __call__(self):
         offset = 0
         interval = self._timing()
+        switch = False
         if interval is self._end:
+            if self._switch:
+                switch = True
             offset = self.duration - self._current
             interval = self._timing()
         interval = offset + self.meter.divisionToTicks(*interval)
-        if not self._current and not interval:
-            return 0
         self._current += interval
         self._current %= self.duration
+        if switch:
+            switch = self._switch
+            self._switch = self._timing = None
+            self.reset(*switch)
         return interval
 
 
@@ -257,16 +266,14 @@ class ScheduleArp(object):
 
     def __init__(self, arp, start=0):
         self.arp = arp
-        self.values = arp.values
         self._current = start
 
     def reset(self, values, duration=None):
         self.arp.reset(values, duration=duration)
-        self.values = values
 
-    def switch(self, arp):
-        self.arp = arp
-        self.values = arp.values
+    @property
+    def values(self):
+        return self.arp.values
 
     def __call__(self):
         next = self.arp()

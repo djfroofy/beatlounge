@@ -292,30 +292,25 @@ class TimingArpTestCase(TestCase):
     def test_reset(self):
         arp = TimingArp([(0, 1), (1, 4), (1, 4), (1, 4), (1, 8)],
                         meter=self.meter)
-        values = [arp() for i in range(16)]
+        values = [arp() for i in range(15)]
         self.assertEqual(values, [0, 24, 24, 24, 12, 12, 24, 24, 24,
-                                  12, 12, 24, 24, 24, 12, 12])
+                                  12, 12, 24, 24, 24, 12])
         arp.reset([(1, 16), (1, 16)], duration=(1, 4))
         values = [arp() for i in range(16)]
-        self.assertEqual(values, [6, 6, 18, 6, 18, 6, 18, 6, 18,
-                                  6, 18, 6, 18, 6, 18, 6])
+        self.assertEqual(values, [12, 6, 6, 18, 6, 18, 6, 18, 6, 18,
+                                  6, 18, 6, 18, 6, 18])
 
     def test_schedule_arp(self):
         arp = TimingArp([(0, 1), (1, 4), (1, 4), (1, 4), (1, 8)],
                         meter=self.meter)
         schedule = ScheduleArp(arp)
-        values = [schedule() for i in range(16)]
+        values = [schedule() for i in range(15)]
         self.assertEqual(values, [0, 24, 48, 72, 84, 96, 120, 144, 168,
-                                  180, 192, 216, 240, 264, 276, 288])
+                                  180, 192, 216, 240, 264, 276])
         schedule.reset([(1, 16), (1, 16)], duration=(1, 4))
         values = [schedule() for i in range(16)]
-        self.assertEqual(values, [294, 300, 318, 324, 342, 348, 366, 372, 390,
-                                  396, 414, 420, 438, 444, 462, 468])
-        arp = TimingArp([(0, 1)], duration=(1, 2))
-        schedule.switch(arp)
-        values = [schedule() for i in range(16)]
-        self.assertEqual(values, [468, 516, 564, 612, 660, 708, 756, 804, 852,
-                                  900, 948, 996, 1044, 1092, 1140, 1188])
+        self.assertEqual(values, [288, 294, 300, 318, 324, 342, 348, 366, 372,
+                                  390, 396, 414, 420, 438, 444, 462])
 
 
 class PhraseRecordingArpTests(TestCase, ClockRunner):

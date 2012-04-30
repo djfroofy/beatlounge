@@ -71,7 +71,9 @@ class FriendlyConsoleManhole(ConsoleManhole):
         namespace = buildNamespace(
                 'twisted.internet', 'itertools', 'functools', 'collections',
                 'bl.instrument.fsynth', 'bl.notes', 'bl.scheduler', 'bl.debug',
-                'bl.arp', 'bl.ugen', 'comps.complib', 'txosc.async', 'bl.osc')
+                'bl.arp', 'bl.ugen', 'comps.complib', 'txosc.async', 'bl.osc',
+                'bl.orchestra.base', 'bl.orchestra.midi', 'bl.orchestra.pyo',
+                'bl.rudiments')
         namespace.update({'random': random})
         self.namespace = namespace
         ConsoleManhole.__init__(self, *p, **kw)
