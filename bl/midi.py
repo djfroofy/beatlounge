@@ -1,5 +1,3 @@
-#from twisted.python import failure, log
-
 import pypm
 
 from bl.utils import getClock
