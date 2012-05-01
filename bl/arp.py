@@ -199,11 +199,13 @@ class ChordPatternArp(PatternArp):
 class TimingArp(object):
     """
     A Timing generates tick intervals which can be used in various scheduled
-    calls such as clock.callLater.
+    calls such as clock.callLater. The values given shoule be note durations
+    given as 2-tuples such as (1, 4) for a quarter, (0, 4) for a quarter rest,
+    etc.
 
     Example:
 
-        >>> arp = TimingArp([(0,1), (1,4)], duration=(1,1))
+        >>> arp = TimingArp([(1, 4), (1,4)], duration=(1,1))
         >>> [arp() for i in range(6)] == [0, 24, 72, 24, 72, 24]
         True
     """
@@ -225,8 +227,21 @@ class TimingArp(object):
         if duration:
             self.duration = self.meter.divisionToTicks(*duration)
         self._current = 0
-        self.values = list(values)
+        self.values = self._compileTiming(values)
         self._timing = cycle(self.values + [self._end]).next
+
+    def _compileTiming(self, values):
+        timing = [0]
+        for v in values:
+            if not v[0]:
+                rest = self.meter.divisionToTicks(1, v[1])
+                if timing:
+                    timing[-1] += rest
+                else:
+                    timing.append(rest)
+            else:
+                timing.append(self.meter.divisionToTicks(*v))
+        return timing[:-1]
 
     def __call__(self):
         offset = 0
@@ -237,7 +252,7 @@ class TimingArp(object):
                 switch = True
             offset = self.duration - self._current
             interval = self._timing()
-        interval = offset + self.meter.divisionToTicks(*interval)
+        interval = offset + interval
         self._current += interval
         self._current %= self.duration
         if switch:
@@ -251,32 +266,29 @@ class ScheduleArp(object):
     """
     A ScheduleArp wraps a TimingArp when called incrementally returns ticks
     appropriate for describing a schedule. Of note: A L{ScheduleArp} can be
-    given as the C{time} for an instance of
-    L{bl.orchestra.base.SchedulePlayer}. Also, the underlying C{TimingArp} can
-    be changed on the fly.
+    given as the C{time} for an instance of L{bl.orchestra.midi.Player}.
 
     Example:
 
-        >>> timingArp = TimingArp([(0,1), (1,4)], duration=(1,1))
-        >>> arp = ScheduleArp(timingArp)
+        >>> arp = ScheduleArp([(1, 4), (1, 4)], duration=(4, 4))
         >>> [arp() for i in range(4)] == [0, 24, 96, 120]
         True
     """
     implements(IArp)
 
-    def __init__(self, arp, start=0):
-        self.arp = arp
+    def __init__(self, values, duration=(1, 1), meter=None, start=0):
+        self._arp = TimingArp(values, duration, meter)
         self._current = start
 
     def reset(self, values, duration=None):
-        self.arp.reset(values, duration=duration)
+        self._arp.reset(values, duration=duration)
 
     @property
     def values(self):
-        return self.arp.values
+        return self._arp.values
 
     def __call__(self):
-        next = self.arp()
+        next = self._arp()
         self._current += next
         return self._current
 
