@@ -213,19 +213,22 @@ class TimingArp(object):
 
     _end = object()
 
-    def __init__(self, values, duration=(1, 1), meter=None):
+    def __init__(self, values, duration=None, meter=None):
         if meter is None:
             meter = getClock(None).meter
         self.meter = meter
         self._timing = self._switch = None
+        self.duration = None
         self.reset(values, duration)
 
-    def reset(self, values, duration=(1, 1)):
+    def reset(self, values, duration=None):
         if self._timing:
             self._switch = (values, duration)
             return
         if duration:
             self.duration = self.meter.divisionToTicks(*duration)
+        if self.duration is None:
+            self.duration = self.meter.ticksPerMeasure
         self._current = 0
         self.values = self._compileTiming(values)
         self._timing = cycle(self.values + [self._end]).next
@@ -276,7 +279,7 @@ class ScheduleArp(object):
     """
     implements(IArp)
 
-    def __init__(self, values, duration=(1, 1), meter=None, start=0):
+    def __init__(self, values, duration=None, meter=None, start=0):
         self._arp = TimingArp(values, duration, meter)
         self._current = start
 

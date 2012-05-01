@@ -275,8 +275,18 @@ class TimingArpTestCase(TestCase):
         self.meter = Meter(4, 4, tempo=Tempo(tpb=24))
 
     def test_default_meter(self):
-        arp = TimingArp([(0, 1)])
+        arp = TimingArp([(1, 4)])
         self.assertIdentical(arp.meter, getClock(None).meter)
+
+    def test_default_duration(self):
+        arp = TimingArp([(1, 4)], meter=self.meter)
+        self.assertEqual(arp.duration, 96)
+        meter = Meter(3, 4, tempo=Tempo(tpb=24))
+        arp = TimingArp([(1, 4)], meter=meter)
+        self.assertEqual(arp.duration, 72)
+        meter = Meter(3, 4, tempo=Tempo(tpb=48))
+        arp = TimingArp([(1, 4)], meter=meter)
+        self.assertEqual(arp.duration, 144)
 
     def test_timing_arp_call(self):
         arp = TimingArp([(1, 4), (1, 4), (1, 4), (1, 8), (1, 8)],
