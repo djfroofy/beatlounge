@@ -238,10 +238,7 @@ class TimingArp(object):
         for v in values:
             if not v[0]:
                 rest = self.meter.divisionToTicks(1, v[1])
-                if timing:
-                    timing[-1] += rest
-                else:
-                    timing.append(rest)
+                timing[-1] += rest
             else:
                 timing.append(self.meter.divisionToTicks(*v))
         return timing[:-1]
