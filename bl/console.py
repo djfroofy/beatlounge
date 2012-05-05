@@ -26,16 +26,11 @@ EXPERIMENTAL = False
 if sys.platform == 'darwin':
     defaultAudioDev = 'coreaudio'
 elif sys.platform == 'linux2':
-    defaultAudioDev = 'alsa'
+    defaultAudioDev = 'oss'
 else:
     defaultAudioDev = 'portaudio'
 
-if sys.platform == 'darwin':
-    defaultAudioDev = 'coreaudio'
-elif sys.platform == 'linux2':
-    defaultAudioDev = 'alsa'
-else:
-    defaultAudioDev = 'portaudio'
+print defaultAudioDev
 
 
 def toMeter(s, tempo):
