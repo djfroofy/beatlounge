@@ -17,8 +17,10 @@ time = ScheduleArp([(1, 8),
 drums = drums_f()
 #velocity = LinearOsc([((0, 1), 127), ((1, 4), 70), ((1, 8), 115), ((1, 8), 120)],
 #                     duration=(3, 4))
-velocity = OrderedArp([127])
+velocity = OrderedArp([100])
 #,80,120,80,120,80, 120,70,90,70,127,70,110,80])
 note = OrderedArp([46])
 player = Player(drums, note, velocity=velocity, time=time)
 player.resumePlaying()
+
+
