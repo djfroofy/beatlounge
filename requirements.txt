@@ -1,6 +1,6 @@
 zope.interface==3.6.1
 Twisted==12.0.0
 pyFluidSynth==1.2.4
-txosc==0.2.0
+#txosc==0.2.0
 #SC==0.2
 #pygame==1.9.1release
