@@ -1,0 +1,2 @@
+txosc==0.2.0
+pyPortMidi==0.0.6
