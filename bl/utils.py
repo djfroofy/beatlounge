@@ -3,8 +3,8 @@ from twisted.python import reflect
 
 def getClock(clock=None):
     if clock is None:
-        from bl.scheduler import BeatClock
-        return BeatClock.defaultClock
+        from bl.itsu import NonIsochronousClock
+        return NonIsochronousClock.singleton
     return clock
 
 

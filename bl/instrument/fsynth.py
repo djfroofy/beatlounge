@@ -38,7 +38,7 @@ class SynthPool:
             reactor = getClock()
         self.reactor = reactor
         self.audiodev = audiodev
-        self.reactor.callWhenRunning(self.startSynths)
+        #self.reactor.callWhenRunning(self.startSynths)
 
     def bindSettings(self, connection, gain=0.5, samplerate=44100):
         self.settings[connection] = (gain, samplerate)
@@ -88,20 +88,20 @@ class SynthPool:
         instr.registerSoundfont(sfid, channel)
 
 
-def MonoPool():
+def MonoPool(audiodev=None):
     router = SynthRouter(mono=Synth)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
 
-def StereoPool():
+def StereoPool(audiodev=None):
     router = SynthRouter(left=Synth, right=Synth, mono=Synth)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
 
-def QuadPool():
+def QuadPool(audiodev=None):
     router = SynthRouter(fleft=Synth, fright=Synth, bleft=Synth, bright=Synth,
                          mono=Synth)
-    return SynthPool(router)
+    return SynthPool(router, audiodev=audiodev)
 
 
 def NConnectionPool(*p, **synth_factories):

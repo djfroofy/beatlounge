@@ -14,6 +14,7 @@ from twisted.python import log, usage
 from twisted.python.filepath import FilePath
 
 from bl.scheduler import Tempo, BeatClock, Meter
+from bl.itsu import NonIsochronousClock
 
 
 __all__ = ['FriendlyConsoleManhole']
@@ -316,6 +317,35 @@ except ImportError, ie:
     warn('%s - connectConsole() will not be avaiable' % ie)
 
 
+
+def initFsynthBackends(synthChannels, audiodev, clock):
+    try:
+        from bl.instrument import fsynth
+        if synthChannels == 'stereo':
+            return
+        if synthChannels == 'mono':
+            pool = fsynth.MonoPool()
+        elif self.synthChannels == 'quad':
+            pool = fsynth.QuadPool()
+        else:
+            try:
+                synthChannels = int(synthChannels)
+            except ValueError:
+                raise ValueError(
+                    'synthChannels should be one of mono, '
+                    'stereo, quad or an integer')
+            synths = dict(
+                (n, fsynth.Synth) for n in range(synthChannels))
+            pool = fsynth.NConnectionPool(synths)
+        pool.audiodev = audiodev
+        pool.reactor = clock
+        fsynth.suggestDefaultPool(pool)
+        clock.callWhenRunning(pool.startSynths)
+    except ImportError:
+        log.msg('fluidsynth will not be available at runtime')
+        pass
+
+
 def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
     fd = sys.__stdin__.fileno()
     oldSettings = termios.tcgetattr(fd)
@@ -326,14 +356,16 @@ def runWithProtocol(klass, audioDev, channels, bpm, tpb, meter):
         # TODO - cleaner strategy for collecting parameters and
         # initializing fluidsynth
         # - initializing fluidsynth shouldn't be necessary
-        if EXPERIMENTAL:
-            from bl.sync import SystemClock
-            clock = BeatClock(tempo=tempo, meter=meter, default=True,
-                              syncClockClass=SystemClock)
-        else:
-            clock = BeatClock(tempo=tempo, meter=meter, default=True)
-        clock.synthAudioDevice = audioDev
-        clock.synthChannels = channels
+#        if EXPERIMENTAL:
+#            from bl.sync import SystemClock
+#            clock = BeatClock(tempo=tempo, meter=meter, default=True,
+#                              syncClockClass=SystemClock)
+#        else:
+#            clock = BeatClock(tempo=tempo, meter=meter, default=True)
+        clock = NonIsochronousClock()
+        #clock.synthAudioDevice = audioDev
+        #clock.synthChannels = channels
+        initFsynthBackends(channels, audioDev, clock)
         p = ServerProtocol(klass)
         stdio.StandardIO(p)
         clock.run()
