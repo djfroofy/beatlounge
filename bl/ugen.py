@@ -173,11 +173,13 @@ class LSystem(object):
     maxSize = 4092
     _halted = False
 
-    def __init__(self, rules, axiom):
+    def __init__(self, rules, axiom, iterations=None):
         self.rules = rules
         self._validateRules()
         self._current = [exhaustCall(axiom)]
         self._gen = self._systemGenerator()
+        if iterations is not None:
+            self.pregenerate(iterations)
 
     def __call__(self):
         return self._gen.next()
@@ -194,12 +196,25 @@ class LSystem(object):
             if self._halted:
                 for node in cycle(self._current):
                     yield node
-            _played = []
+            played = []
             for node in self._current:
                 production = self.rules[node]
                 for element in production:
                     yield element
-                _played.extend(production)
-            if len(_played) >= self.maxSize:
+                played.extend(production)
+            if len(played) >= self.maxSize:
                 self._halted = True
-            self._current = list(_played)
+            self._current = list(played)
+
+    def pregenerate(self, iterations):
+        """
+        Pregenerate L-System productions for given number of iterations.
+        """
+        played = []
+        for i in xrange(iterations):
+            played = []
+            for node in self._current:
+                production = self.rules[node]
+                played.extend([e for e in production])
+            self._current = list(played)
+        self._halted = True

@@ -498,6 +498,9 @@ class PhraseRecordingArp(BaseArp):
 
 
 class LSystemArp(LSystem):
+    """
+    An arpegiator wrapping an LSystem ugen.
+    """
     implements(IArp)
 
     values = ()

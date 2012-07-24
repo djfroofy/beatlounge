@@ -118,3 +118,9 @@ class LSystemTestCase(TestCase):
         productions3 = [lsys() for i in range(8)]
         self.assert_(lsys._halted)
         self.assertEqual(productions2, productions3)
+
+    def test_pregenerate(self):
+        lsys = LSystem({1: [2, 3], 2: [1, 1], 3: [2, 1]}, 1, iterations=3)
+        productions = [lsys() for i in range(8)]
+        self.assertEqual(productions, [2, 3, 2, 3, 1, 1, 2, 3])
+        self.assert_(lsys._halted)
