@@ -18,7 +18,7 @@ __all__ = [
     'RandomArp', 'ArpSwitcher', 'OctaveArp', 'Adder', 'PhraseRecordingArp',
     'Paradiddle', 'SingleParadiddle', 'DoubleParadiddle', 'TripleParadiddle',
     'ParadiddleDiddle', 'ArpMap', 'PatternArp', 'ChordPatternArp', 'TimingArp',
-    'ScheduleArp']
+    'ScheduleArp', 'LSystemArp']
 
 
 class IArp(Interface):

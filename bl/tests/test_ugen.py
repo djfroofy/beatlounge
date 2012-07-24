@@ -5,7 +5,7 @@ from twisted.trial.unittest import TestCase
 from bl.testlib import TestReactor
 from bl.scheduler import BeatClock
 from bl.ugen import (N, R, Random, RandomPhrase, RP, RandomWalk, RW, Weight, W,
-                     C, Cycle, O, Oscillate, LinearOsc)
+                     C, Cycle, O, Oscillate, LinearOsc, LSystem)
 
 
 class UGensTestCase(TestCase):
@@ -93,3 +93,28 @@ class UGensTestCase(TestCase):
                           104, 98, 92, 85, 79, 73, 67, 60, 69, 77, 86, 94,
                           102, 111, 119, 127, 126, 125, 124, 123, 122, 121,
                           120, 119, 118, 117, 116, 115, 114, 113, 112])
+
+
+class LSystemTestCase(TestCase):
+
+    def test_productionRulesValidation(self):
+        self.assertRaises(AssertionError, LSystem,
+                          {1: [1, 2, 3], 2: [1, 2]}, axiom=1)
+
+    def test_productions(self):
+        lsys = LSystem({1: [2, 3], 2: [1, 1], 3: [2, 1]}, axiom=1)
+        productions = [lsys() for i in range(2)]
+        self.assertEqual(productions, [2, 3])
+        productions = [lsys() for i in range(4)]
+        self.assertEqual(productions, [1, 1, 2, 1])
+        productions = [lsys() for i in range(8)]
+        self.assertEqual(productions, [2, 3, 2, 3, 1, 1, 2, 3])
+
+    def test_haltingAfterMaxSize(self):
+        lsys = LSystem({1: [2, 3], 2: [1, 1], 3: [2, 1]}, axiom=1)
+        lsys.maxSize = 8
+        [lsys() for i in range(14)]
+        productions2 = [lsys() for i in range(8)]
+        productions3 = [lsys() for i in range(8)]
+        self.assert_(lsys._halted)
+        self.assertEqual(productions2, productions3)

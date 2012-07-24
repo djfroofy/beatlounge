@@ -11,7 +11,7 @@ from bl.utils import getClock
 from bl.arp import (AscArp, DescArp, OrderedArp, RandomArp, OctaveArp,
     Adder, PhraseRecordingArp, ArpMap, PatternArp, ChordPatternArp)
 from bl.arp import (SingleParadiddle, DoubleParadiddle, TripleParadiddle,
-    ParadiddleDiddle)
+    ParadiddleDiddle, LSystemArp)
 from bl.arp import TimingArp, ScheduleArp
 
 
@@ -267,6 +267,17 @@ class ArpTests(TestCase):
         played = [arp() for i in range(14)]
         self.assertEqual(played,
                          [(1,), (2,), (3,), [2, 3, 4], (4,), (3,), (2,)] * 2)
+
+    def test_lsystem_arp(self):
+        lsys = Adder(LSystemArp({1: [1, 2], 2: [3, 1], 3: [2, 1]}, 1))
+        lsys.arp.maxSize = 8
+        [lsys() for i in range(14)]
+        productions = [lsys() for i in range(8)]
+        self.assertEqual(productions, [1, 2, 3, 1, 2, 1, 1, 2])
+        lsys.reset([])
+        lsys.amount = 1
+        productions = [lsys() for i in range(8)]
+        self.assertEqual(productions, [2, 3, 4, 2, 3, 2, 2, 3])
 
 
 class TimingArpTestCase(TestCase):

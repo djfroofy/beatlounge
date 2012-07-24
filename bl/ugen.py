@@ -5,8 +5,10 @@ from itertools import cycle
 from bl.utils import getClock, exhaustCall
 
 
-__all__ = ['N', 'Cycle', 'C', 'Random', 'R', 'RandomPhrase', 'RP',
-           'RandomWalk', 'RW', 'W', 'Weight', 'Oscillate', 'O', 'LinearOsc']
+__all__ = [
+    'N', 'Cycle', 'C', 'Random', 'R', 'RandomPhrase', 'RP', 'RandomWalk', 'RW',
+    'W', 'Weight', 'Oscillate', 'O', 'LinearOsc', 'LSystem'
+]
 
 
 class _Nothing(object):
@@ -171,31 +173,33 @@ class LSystem(object):
     maxSize = 4092
     _halted = False
 
-    def __init__(self, rules=None, axiom=None):
-        if rules is None:
-            rules = {}
+    def __init__(self, rules, axiom):
         self.rules = rules
+        self._validateRules()
         self._current = [exhaustCall(axiom)]
-        self._played = []
         self._gen = self._systemGenerator()
 
     def __call__(self):
         return self._gen.next()
 
+    def _validateRules(self):
+        for axiom, production in self.rules.iteritems():
+            for element in production:
+                assert element in self.rules, (
+                       'No axiom found for element %s in production %s->%s' %
+                       (element, axiom, production))
+
     def _systemGenerator(self):
         while True:
             if self._halted:
-                for node in cycle(self._played):
+                for node in cycle(self._current):
                     yield node
-                next = self._current.pop(0)
-                self._played.append(next)
-                yield next
+            _played = []
             for node in self._current:
                 production = self.rules[node]
                 for element in production:
                     yield element
-                self._played.extend(production)
-            if len(self._played) >= self.maxSize:
+                _played.extend(production)
+            if len(_played) >= self.maxSize:
                 self._halted = True
-            self._current = self._played
-
+            self._current = list(_played)
