@@ -2,7 +2,7 @@ import math
 import random
 from itertools import cycle
 
-from bl.utils import getClock
+from bl.utils import getClock, exhaustCall
 
 
 __all__ = ['N', 'Cycle', 'C', 'Random', 'R', 'RandomPhrase', 'RP',
@@ -164,3 +164,38 @@ class LinearOsc(object):
 
     def __call__(self):
         return self._table[self.clock.ticks % self.duration]
+
+
+class LSystem(object):
+
+    maxSize = 4092
+    _halted = False
+
+    def __init__(self, rules=None, axiom=None):
+        if rules is None:
+            rules = {}
+        self.rules = rules
+        self._current = [exhaustCall(axiom)]
+        self._played = []
+        self._gen = self._systemGenerator()
+
+    def __call__(self):
+        return self._gen.next()
+
+    def _systemGenerator(self):
+        while True:
+            if self._halted:
+                for node in cycle(self._played):
+                    yield node
+                next = self._current.pop(0)
+                self._played.append(next)
+                yield next
+            for node in self._current:
+                production = self.rules[node]
+                for element in production:
+                    yield element
+                self._played.extend(production)
+            if len(self._played) >= self.maxSize:
+                self._halted = True
+            self._current = self._played
+

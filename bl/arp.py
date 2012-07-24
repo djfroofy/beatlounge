@@ -10,6 +10,7 @@ from twisted.python import log
 
 from bl.debug import debug, DEBUG
 from bl.utils import getClock, exhaustCall
+from bl.ugen import LSystem
 
 
 __all__ = [
@@ -494,6 +495,15 @@ class PhraseRecordingArp(BaseArp):
             tape['dirty'] = True
         sustain = self.clock.ticks - last
         tape['sustains'].append((last, note, sustain))
+
+
+class LSystemArp(LSystem):
+    implements(IArp)
+
+    values = ()
+
+    def reset(self, values):
+        pass
 
 
 class Adder(ArpSwitcher):
